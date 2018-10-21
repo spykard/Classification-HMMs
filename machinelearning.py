@@ -3,15 +3,16 @@ Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-
 '''
 
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
 from sklearn.naive_bayes import ComplementNB
-from sklearn.linear_model import SGDClassifier, LogisticRegression
+from sklearn.linear_model import SGDClassifier, LogisticRegression, LassoCV
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.model_selection import GridSearchCV
-from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2
+from sklearn.model_selection import GridSearchCV, ShuffleSplit
+from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2, VarianceThreshold
 from sklearn.decomposition import TruncatedSVD
 from sklearn import metrics
 from nltk.corpus import stopwords
@@ -58,22 +59,17 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
     if grid_search_enable == 1:
 
         # (1) TRAIN
-        grid_go = GridSearchCV(pipeline, parameters, n_jobs=-1)
+        grid_go = GridSearchCV(pipeline, parameters, cv=3, n_jobs=-1)  # Run GridSearch in all Threads (Parallel)
         grid_go = grid_go.fit(data_train, labels_train)
-        print('- - - - - BEST PARAMETERS - - - - -')
+        print('\n- - - - - BEST PARAMETERS - - - - -')
         print(grid_go.best_score_, 'Accuracy')
         for param_name in sorted(parameters.keys()):
             print("%s: %r" % (param_name, grid_go.best_params_[param_name]))
 
         print('\n- - - - - DETAILS - - - - -')
-        for i in range(len(grid_go.cv_results_['params'])):
-            results_noStopWords = copy.deepcopy(grid_go.cv_results_['params'][i])
-            if model_name != '(MultiLayer Perceptron)':
-                if results_noStopWords['union__vect1__stop_words'] is not None:  # Don't Print the list of Stopwords
-                    results_noStopWords['union__vect1__stop_words'] = ['ListOfStopWords']   
-                if results_noStopWords['union__vect2__stop_words'] is not None:
-                    results_noStopWords['union__vect2__stop_words'] = ['ListOfStopWords']           
-            print(i, 'params - %s; mean - %0.10f; std - %0.10f' % (results_noStopWords.values(), grid_go.cv_results_['mean_test_score'][i], grid_go.cv_results_['std_test_score'][i]))
+        grid_results = grid_go.cv_results_['params']
+        for i in range(len(grid_results)):       
+            print(i, 'params - %s; mean - %0.10f; std - %0.10f' % (grid_results[i].values(), grid_go.cv_results_['mean_test_score'][i], grid_go.cv_results_['std_test_score'][i]))
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(grid_go.best_estimator_, './pickled_models/Classifier.pkl')  
@@ -87,7 +83,7 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
 
         # (1) TRAIN
         pipeline.fit(data_train, labels_train)
-        if model_name != '(MultiLayer Perceptron)': print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
+        if model_name not in ['(k-Nearest Neighbors)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
@@ -152,14 +148,13 @@ k_fold_data = k_fold.split(all_data, all_labels)
 
 
 # Dimensionality Reduction - 4 different ways to pick the best Features 
-#   (1) ('feature_selection', VarianceThreshold(threshold = 0.2)), 
-#   (2) ('feature_selection', SelectKBest(score_func=chi2, k=5000)),                    
-#   (3) ('feature_selection', TruncatedSVD(n_components=1000)),  # Has Many Issues
-#   (4) ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold='2.5*mean')),
-#   (5) ('feature_selection', SelectFromModel(estimator=LinearSVC(penalty='l1', dual=False), threshold='mean')),  # Technically L1 is better than L2
+#   (1) ('feature_selection', SelectKBest(score_func=chi2, k=5000)),                    
+#   (2) ('feature_selection', TruncatedSVD(n_components=1000)),  # Has Many Issues
+#   (3) ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),
+#   (4) ('feature_selection', SelectFromModel(estimator=LinearSVC(penalty='l1', dual=False), threshold=-np.inf, max_features=5000)),  # Technically L1 is better than L2
 
 
-### LET'S BUILD : Naive Bayes
+### (1) LET'S BUILD : Complement Naive Bayes
 
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
@@ -172,28 +167,20 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     # Grid Search On
     pipeline = Pipeline([
                         ('union', FeatureUnion(transformer_list=[      
-                            ('vect1', CountVectorizer()),  # 1-Grams Vectorizer
-                            ('vect2', CountVectorizer()),],  # 2-Grams Vectorizer
+                            ('vect1', CountVectorizer(min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
                         )),
                         ('tfidf', TfidfTransformer()),
-                        ('clf', MultinomialNB()),])  
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('clf', ComplementNB()),])  
 
-    parameters = {'tfidf__use_idf': [True],
+    parameters = {'tfidf__use_idf': [True, False],
                 'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
-                'union__vect1__max_df': [0.90, 0.80, 0.70],
-                'union__vect1__min_df': [5, 8],  # 5 meaning 5 documents
-                'union__vect1__ngram_range': [(1, 1)],              
-                'union__vect1__stop_words': [stopwords.words("english"), 'english', stopwords_complete_lemmatized],
-                'union__vect1__strip_accents': ['unicode'],
-                'union__vect1__tokenizer': [LemmaTokenizer()],
-                'union__vect2__max_df': [0.95, 0.85, 0.75],
-                'union__vect2__min_df': [5, 8],
-                'union__vect2__ngram_range': [(2, 2)],              
-                'union__vect2__stop_words': [stopwords_complete_lemmatized, None],
-                'union__vect2__strip_accents': ['unicode'],
-                'union__vect2__tokenizer': [LemmaTokenizer()],} 
+                'union__vect1__max_df': [0.90, 0.80],
+                'union__vect2__max_df': [0.95, 0.85],
+                'union__vect2__ngram_range': [(2, 2)],} 
 
-    #Run_Classifier(1, 0, 1, pipeline, parameters, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -206,10 +193,63 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                   
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Naive Bayes)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    break  # Disable Cross Validation
+
+# Best Cross Validation
+if cross_validation_best[0] > 0.000:
+    print("\n\n" + "- " * 37, end = "")
+    Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+###
+
+
+### (2) LET'S BUILD : k-Nearest Neighbors
+cross_validation_best = [0.000, "", [], []]
+for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+    print("\n--Current Cross Validation Fold:", k)
+
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+
+    parameters = {#'tfidf__use_idf': [True, False],
+                #'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
+                #'union__vect1__max_df': [0.90, 0.80],
+                #'union__vect2__max_df': [0.95, 0.85],
+                #'union__vect2__ngram_range': [(2, 2)],
+                'clf__n_neighbors': [1, 2],} 
+
+    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
+                        ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
 # Best Cross Validation
@@ -224,18 +264,13 @@ quit()
 
 
 
-
-
-
-
-
 ### LET'S BUILD : SGDC-SVM
-
+cross_validation_best = [0.000, "", [], []]
 # Grid Search On
 pipeline = Pipeline([
                     ('union', FeatureUnion(transformer_list=[      
-                        ('vect1', CountVectorizer()),  # 1-Grams Vectorizer
-                        ('vect2', CountVectorizer()),],  # 2-Grams Vectorizer
+                        ('vect1', CountVectorizer()),  # 1-Gram Vectorizer
+                        ('vect2', CountVectorizer()),],  # 2-Gram Vectorizer
                     )),
                     ('tfidf', TfidfTransformer()),
                     ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, tol=None, n_jobs=-1)),]) 

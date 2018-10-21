@@ -1,11 +1,11 @@
 '''
-Sentiment Analysis Thesis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
+Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import ComplementNB
 from sklearn.linear_model import SGDClassifier, LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
@@ -30,6 +30,8 @@ import numpy as np
 import string
 import copy
 import pandas as pd
+
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 cross_validation_best = [0.000, "", [], []]  # [Score, Model Name, Actual Labels, Predicted]
 
@@ -93,16 +95,16 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
         # (3) PREDICT
         predicted = pipeline.predict(data_test)
 
-    Print_Result_Metrics(labels_test, predicted, targetnames, model_name, silent_enable)  
+    Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, model_name)  
 
 
-def Print_Result_Metrics(labels_test, predicted, targetnames, model_name, silent_enable):
+def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, model_name):
     '''    Print Metrics after Training etc.    '''
     global cross_validation_best
 
+    accuracy = metrics.accuracy_score(labels_test, predicted)
     if silent_enable == 0:
-        print('\n- - - - - RESULT METRICS', model_name, '- - - - -')
-        accuracy = metrics.accuracy_score(labels_test, predicted)
+        print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
         print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
         print(metrics.confusion_matrix(labels_test, predicted))
@@ -144,66 +146,77 @@ all_labels = df_dataset.iloc[:,0]
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
 
-#CONVERT BYTES TO STRING
-df_dataset = df_dataset.applymap(lambda x: x.decode() if isinstance(x, bytes) else x)
+# Split using Cross Validation
+k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
+k_fold_data = k_fold.split(all_data, all_labels)
 
-# Split, data & labels are pairs
-data_train, data_test, labels_train, labels_test = train_test_split(all_data, all_labels, test_size=0.30, random_state=22)
 
 # Dimensionality Reduction - 4 different ways to pick the best Features 
-#   (1) ('feature_selection', SelectKBest(score_func=chi2, k=5000)),                    
-#   (2) ('feature_selection', TruncatedSVD(n_components=1000)),  # Has Many Issues
-#   (3) ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold='2.5*mean')),
-#   (4) ('feature_selection', SelectFromModel(estimator=LinearSVC(penalty='l1', dual=False), threshold='mean')),  # Technically L1 is better than L2
-#   Variance VarianceThreshold
+#   (1) ('feature_selection', VarianceThreshold(threshold = 0.2)), 
+#   (2) ('feature_selection', SelectKBest(score_func=chi2, k=5000)),                    
+#   (3) ('feature_selection', TruncatedSVD(n_components=1000)),  # Has Many Issues
+#   (4) ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold='2.5*mean')),
+#   (5) ('feature_selection', SelectFromModel(estimator=LinearSVC(penalty='l1', dual=False), threshold='mean')),  # Technically L1 is better than L2
 
 
 ### LET'S BUILD : Naive Bayes
 
-# Grid Search On
-pipeline = Pipeline([
-                    ('union', FeatureUnion(transformer_list=[      
-                        ('vect1', CountVectorizer()),  # 1-Grams Vectorizer
-                        ('vect2', CountVectorizer()),],  # 2-Grams Vectorizer
-                    )),
-                    ('tfidf', TfidfTransformer()),
-                    ('clf', MultinomialNB()),])  
+for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+    print("\n--Current Cross Validation Fold:", k)
 
-parameters = {'tfidf__use_idf': [True],
-              'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
-              'union__vect1__max_df': [0.90, 0.80, 0.70],
-              'union__vect1__min_df': [5, 8],  # 5 meaning 5 documents
-              'union__vect1__ngram_range': [(1, 1)],              
-              'union__vect1__stop_words': [stopwords.words("english"), 'english', stopwords_complete_lemmatized],
-              'union__vect1__strip_accents': ['unicode'],
-              'union__vect1__tokenizer': [LemmaTokenizer()],
-              'union__vect2__max_df': [0.95, 0.85, 0.75],
-              'union__vect2__min_df': [5, 8],
-              'union__vect2__ngram_range': [(2, 2)],              
-              'union__vect2__stop_words': [stopwords_complete_lemmatized, None],
-              'union__vect2__strip_accents': ['unicode'],
-              'union__vect2__tokenizer': [LemmaTokenizer()],} 
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
 
-#Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer()),  # 1-Grams Vectorizer
+                            ('vect2', CountVectorizer()),],  # 2-Grams Vectorizer
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('clf', MultinomialNB()),])  
 
-# Grid Search Off
-pipeline = Pipeline([ # Optimal
-                    ('union', FeatureUnion(transformer_list=[      
-                        ('vect1', CountVectorizer(max_df=0.80, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
-                        ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+    parameters = {'tfidf__use_idf': [True],
+                'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
+                'union__vect1__max_df': [0.90, 0.80, 0.70],
+                'union__vect1__min_df': [5, 8],  # 5 meaning 5 documents
+                'union__vect1__ngram_range': [(1, 1)],              
+                'union__vect1__stop_words': [stopwords.words("english"), 'english', stopwords_complete_lemmatized],
+                'union__vect1__strip_accents': ['unicode'],
+                'union__vect1__tokenizer': [LemmaTokenizer()],
+                'union__vect2__max_df': [0.95, 0.85, 0.75],
+                'union__vect2__min_df': [5, 8],
+                'union__vect2__ngram_range': [(2, 2)],              
+                'union__vect2__stop_words': [stopwords_complete_lemmatized, None],
+                'union__vect2__strip_accents': ['unicode'],
+                'union__vect2__tokenizer': [LemmaTokenizer()],} 
 
-                        transformer_weights={
-                            'vect1': 1.0,
-                            'vect2': 1.0,},
-                    )),
-                    ('tfidf', TfidfTransformer(use_idf=True)),
-                    ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                   
-                    ('clf', MultinomialNB()),])  
+    #Run_Classifier(1, 0, 1, pipeline, parameters, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
 
-Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Naive Bayes)')
-###
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                   
+                        ('clf', ComplementNB()),])  
+
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Naive Bayes)')
+    break  # Disable Cross Validation
+
+# Best Cross Validation
+print("\n\n" + "- " * 37, end = "")
+Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
 quit()
-
+###
 
 
 

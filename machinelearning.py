@@ -2,44 +2,46 @@
 Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
-from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
+from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, GridSearchCV
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
-from sklearn.naive_bayes import ComplementNB
-from sklearn.linear_model import SGDClassifier, LogisticRegression, LassoCV
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import LinearSVC
-from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.model_selection import GridSearchCV, ShuffleSplit
-from sklearn.feature_selection import SelectFromModel, SelectKBest, chi2, VarianceThreshold
+from sklearn.feature_selection import SelectKBest, chi2, SelectFromModel
 from sklearn.decomposition import TruncatedSVD
+from sklearn.naive_bayes import ComplementNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+
 from sklearn import metrics
+from sklearn.datasets import load_files
+
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.corpus import sentiwordnet as swn
 from nltk import word_tokenize, sent_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
+from sklearn.externals import joblib
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
-from sklearn.datasets import load_files
-from sklearn.externals import joblib
-from re import sub
+from matplotlib.ticker import MaxNLocator
 import numpy as np
+import pandas as pd
 import string
 import copy
-import pandas as pd
+from re import sub
 
-from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.linear_model import SGDClassifier, LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.neural_network import MLPClassifier
+
 
 cross_validation_best = [0.000, "", [], []]  # [Score, Model Name, Actual Labels, Predicted]
+all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
-    dataset = load_files('./datasets/review_polarity/txt_sentoken', shuffle=False)
+    dataset = load_files('./Datasets/Movie Review Polarity Dataset/txt_sentoken', shuffle=False)
 
     print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
 
@@ -112,6 +114,45 @@ def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, mod
         cross_validation_best[3] = predicted 
 
 
+def Print_Result_Best():
+    '''    Print Metrics only of the best result that occured    '''
+    global cross_validation_best
+    global all_models_accuracy
+
+    if cross_validation_best[0] > 0.000:
+        all_models_accuracy.append((cross_validation_best[0], cross_validation_best[1])) 
+        print("\n\n" + "- " * 37, end = "")
+        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+
+
+def Plot_Results(dataset_name):
+    '''    Plot the Accuracy of all Classifiers in a Graph    '''
+    global all_models_accuracy
+
+    indices = np.arange(len(all_models_accuracy))
+    scores = [x[0] for x in reversed(all_models_accuracy)]  # Reverse of the List to appear in correct order
+    model_names = [x[1][1:-1] for x in reversed(all_models_accuracy)]  # Reverse of the List to appear in correct order
+
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
+    fig.canvas.set_window_title(dataset_name + " - Score")
+    
+    ax1.barh(indices, scores, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
+    ax1.set_title(dataset_name + " - Score")
+    ax1.set_xlim([0, 1])
+    ax1.xaxis.set_major_locator(MaxNLocator(11))
+    ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+
+    # Right-hand Y-axis
+    ax2 = ax1.twinx()
+    ax2.set_yticks(indices)
+    ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
+    ax2.set_yticklabels(scores)
+    ax2.set_ylabel('Test Accuracy')
+
+    plt.show()
+
+
 class LemmaTokenizer(object):
     '''    Override SciKit's default Tokenizer    '''
     def __init__(self):
@@ -136,7 +177,7 @@ stopwords_complete_lemmatized = set([wnl.lemmatize(word) for word in stopwords_c
 
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
-df_dataset = Run_Preprocessing("reviews or something")
+df_dataset = Run_Preprocessing("Movie Review Polarity Dataset")
 all_data = df_dataset.iloc[:,1]
 all_labels = df_dataset.iloc[:,0]
 
@@ -200,10 +241,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
-# Best Cross Validation
-if cross_validation_best[0] > 0.000:
-    print("\n\n" + "- " * 37, end = "")
-    Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+Print_Result_Best()  # Best Cross Validation
 ###
 
 
@@ -251,14 +289,73 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
-# Best Cross Validation
-print("\n\n" + "- " * 37, end = "")
-Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
-quit()
+Print_Result_Best()  # Best Cross Validation
 ###
+
+
+### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous
+cross_validation_best = [0.000, "", [], []]
+for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+    print("\n--Current Cross Validation Fold:", k)
+
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
+                        ('clf', DecisionTreeClassifier()),])  
+
+    parameters = {#'tfidf__use_idf': [True, False],
+                #'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
+                #'union__vect1__max_df': [0.90, 0.80],
+                #'union__vect2__max_df': [0.95, 0.85],
+                #'union__vect2__ngram_range': [(2, 2)],
+                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],} 
+
+    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
+                        ('clf', DecisionTreeClassifier()),])  
+
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    break  # Disable Cross Validation
+
+Print_Result_Best()  # Best Cross Validation
+###
+
+quit()
+
+
+
+
+
+
+Plot_Results("Movie Review Polarity Dataset")
+quit()
+
+
 
 
 

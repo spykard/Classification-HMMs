@@ -171,14 +171,15 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                             ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
                         )),
                         ('tfidf', TfidfTransformer()),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
                         ('clf', ComplementNB()),])  
 
     parameters = {'tfidf__use_idf': [True, False],
                 'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
                 'union__vect1__max_df': [0.90, 0.80],
                 'union__vect2__max_df': [0.95, 0.85],
-                'union__vect2__ngram_range': [(2, 2)],} 
+                'union__vect2__ngram_range': [(2, 2)],
+                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
 
@@ -206,7 +207,7 @@ if cross_validation_best[0] > 0.000:
 ###
 
 
-### (2) LET'S BUILD : k-Nearest Neighbors
+### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
 cross_validation_best = [0.000, "", [], []]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
@@ -223,7 +224,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                             ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
                         )),
                         ('tfidf', TfidfTransformer()),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
                         ('clf', KNeighborsClassifier(n_jobs=-1)),])  
 
     parameters = {#'tfidf__use_idf': [True, False],
@@ -231,9 +232,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                 #'union__vect1__max_df': [0.90, 0.80],
                 #'union__vect2__max_df': [0.95, 0.85],
                 #'union__vect2__ngram_range': [(2, 2)],
-                'clf__n_neighbors': [1, 2],} 
+                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],
+                'clf__n_neighbors': [1, 2, 5, 8, 10, 12],} 
 
-    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -246,8 +248,8 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
-                        ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+                        ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
+                        ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation

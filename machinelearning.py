@@ -1,5 +1,5 @@
 '''
-Sentiment Analysis Thesis: Text Classification using Naive Bayes,
+Sentiment Analysis Thesis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
 from sklearn.model_selection import train_test_split
@@ -29,11 +29,30 @@ from re import sub
 import numpy as np
 import string
 import copy
+import pandas as pd
 
-def Run_Classifier(grid_search_enable, pickle_enable, pipeline, parameters, data_train, data_test, labels_train, labels_test, targetnames, stopwords_complete_lemmatized, model_name):
+cross_validation_best = [0.000, "", [], []]  # [Score, Model Name, Actual Labels, Predicted]
+
+def Run_Preprocessing(dataset_name):
+    '''    Dataset Dependant Preprocessing    '''
+
+    dataset = load_files('./datasets/review_polarity/txt_sentoken', shuffle=False)
+
+    print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
+
+    df_dataset = pd.DataFrame({'Label': dataset.target, 'Data': dataset.data})
+
+    # Remove empty instances from DataFrame
+    emptyCells = df_dataset.loc[df_dataset.iloc[:,1] == ''].index.values
+    df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
+
+    return df_dataset
+
+
+def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, parameters, data_train, data_test, labels_train, labels_test, targetnames, stopwords_complete_lemmatized, model_name):
     '''    Run Classifier with or without Grid Search after Preprocessing is done    '''
 
-    ## PREPARE ON - Grid Search to Look for the Best Parameters
+    ## GRID SEARCH ON - Search for the Best Parameters
     if grid_search_enable == 1:
 
         # (1) TRAIN
@@ -52,18 +71,16 @@ def Run_Classifier(grid_search_enable, pickle_enable, pipeline, parameters, data
                     results_noStopWords['union__vect1__stop_words'] = ['ListOfStopWords']   
                 if results_noStopWords['union__vect2__stop_words'] is not None:
                     results_noStopWords['union__vect2__stop_words'] = ['ListOfStopWords']           
-            print(i, 'params - %s; mean - %0.10f; std - %0.10f'
-                        % (results_noStopWords.values(),
-                        grid_go.cv_results_['mean_test_score'][i],
-                        grid_go.cv_results_['std_test_score'][i]))
+            print(i, 'params - %s; mean - %0.10f; std - %0.10f' % (results_noStopWords.values(), grid_go.cv_results_['mean_test_score'][i], grid_go.cv_results_['std_test_score'][i]))
 
         # (2) Model Persistence (Pickle)
-        if pickle_enable == 1: joblib.dump(grid_go.best_estimator_, './pickled_models/review_polarity/Classifier.pkl')  
+        if pickle_enable == 1: joblib.dump(grid_go.best_estimator_, './pickled_models/Classifier.pkl')  
 
         # (3) PREDICT
         predicted = grid_go.predict(data_test)
 
-    ## PREPARE OFF - Best Parameters are already known
+
+    ## GRID SEARCH OFF - Best Parameters are already known
     else:   
 
         # (1) TRAIN
@@ -71,19 +88,31 @@ def Run_Classifier(grid_search_enable, pickle_enable, pipeline, parameters, data
         if model_name != '(MultiLayer Perceptron)': print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
 
         # (2) Model Persistence (Pickle)
-        if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/review_polarity/Classifier.pkl') 
+        if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
 
         # (3) PREDICT
         predicted = pipeline.predict(data_test)
 
-    Print_Result_Metrics(labels_test, predicted, targetnames, model_name)  
+    Print_Result_Metrics(labels_test, predicted, targetnames, model_name, silent_enable)  
 
-def Print_Result_Metrics(labels_test, predicted, targetnames, model_name):
+
+def Print_Result_Metrics(labels_test, predicted, targetnames, model_name, silent_enable):
     '''    Print Metrics after Training etc.    '''
-    print('\n- - - - - RESULT METRICS', model_name, '- - - - -')
-    print('Exact Accuracy: ', metrics.accuracy_score(labels_test, predicted))
-    print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
-    print(metrics.confusion_matrix(labels_test, predicted))
+    global cross_validation_best
+
+    if silent_enable == 0:
+        print('\n- - - - - RESULT METRICS', model_name, '- - - - -')
+        accuracy = metrics.accuracy_score(labels_test, predicted)
+        print('Exact Accuracy: ', accuracy)
+        print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
+        print(metrics.confusion_matrix(labels_test, predicted))
+
+    if accuracy > cross_validation_best[0]:
+        cross_validation_best[0] = accuracy
+        cross_validation_best[1] = model_name
+        cross_validation_best[2] = labels_test
+        cross_validation_best[3] = predicted 
+
 
 class LemmaTokenizer(object):
     '''    Override SciKit's default Tokenizer    '''
@@ -101,8 +130,7 @@ class LemmaTokenizer(object):
         return temp
 
 
-### PREPROCESSING
-dataset = load_files('./datasets/review_polarity/txt_sentoken', shuffle=False)
+### START
 
 stopwords_complete = set(stopwords.words('english')).union(set(ENGLISH_STOP_WORDS))
 wnl = WordNetLemmatizer()
@@ -110,8 +138,17 @@ stopwords_complete_lemmatized = set([wnl.lemmatize(word) for word in stopwords_c
 
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
+df_dataset = Run_Preprocessing("reviews or something")
+all_data = df_dataset.iloc[:,1]
+all_labels = df_dataset.iloc[:,0]
+
+print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
+
+#CONVERT BYTES TO STRING
+df_dataset = df_dataset.applymap(lambda x: x.decode() if isinstance(x, bytes) else x)
+
 # Split, data & labels are pairs
-data_train, data_test, labels_train, labels_test = train_test_split(dataset.data, dataset.target, test_size=0.30, random_state=22)
+data_train, data_test, labels_train, labels_test = train_test_split(all_data, all_labels, test_size=0.30, random_state=22)
 
 # Dimensionality Reduction - 4 different ways to pick the best Features 
 #   (1) ('feature_selection', SelectKBest(score_func=chi2, k=5000)),                    
@@ -147,7 +184,7 @@ parameters = {'tfidf__use_idf': [True],
               'union__vect2__strip_accents': ['unicode'],
               'union__vect2__tokenizer': [LemmaTokenizer()],} 
 
-#Run_Classifier(1, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
+#Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
 
 # Grid Search Off
 pipeline = Pipeline([ # Optimal
@@ -163,8 +200,20 @@ pipeline = Pipeline([ # Optimal
                     ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                   
                     ('clf', MultinomialNB()),])  
 
-Run_Classifier(0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(Naive Bayes)')
+Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Naive Bayes)')
 ###
+quit()
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### LET'S BUILD : SGDC-SVM

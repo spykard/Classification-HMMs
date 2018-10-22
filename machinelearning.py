@@ -252,12 +252,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
-    #break  # Disable Cross Validation
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
-quit()
+
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
 cross_validation_best = [0.000, "", [], [], 0.000]
@@ -309,7 +309,7 @@ Print_Result_Best()
 ###
 
 
-### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous
+### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous. PRuning is applied through max_depth
 cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
@@ -334,8 +334,8 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('clf', DecisionTreeClassifier()),])  
 
     parameters = {'feature_selection__k': [100, 1000],
-                  'clf__max_depth': [20, 40, 60],
-                  'clf__min_samples_leaf': [3, 8, 16],
+                  'clf__max_depth': [20, 25, 30],
+                  'clf__min_samples_leaf': [2, 3, 8],
                   'clf__max_features': ['sqrt', None, 100]} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
@@ -352,18 +352,13 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
-                        ('clf', DecisionTreeClassifier(min_samples_leaf=3, max_features='sqrt')),])  
+                        ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
-    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
-quit()
-
-
-
-
 
 
 Plot_Results("Movie Review Polarity Dataset")

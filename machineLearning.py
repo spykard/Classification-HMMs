@@ -34,7 +34,7 @@ from nltk.stem import WordNetLemmatizer
 
 
 ########
-from sklearn.linear_model import SGDClassifier, LogisticRegression
+from sklearn.linear_model import LinearRegression, SGDClassifier, LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 #######
@@ -254,7 +254,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -304,7 +304,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -356,7 +356,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -408,11 +408,60 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', RandomForestClassifier(n_estimators=100, max_depth=35, min_samples_leaf=2, max_features='sqrt', n_jobs=-1)),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
+
+#print(len(k_fold_data))
+### (5) LET'S BUILD :
+cross_validation_best = [0.000, "", [], [], 0.000]
+for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+    print("\n--Current Cross Validation Fold:", k)
+
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
+                        ('clf', ComplementNB()),])  
+    print('HELLO')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '()')
+    break  # Disable Cross Validation
+
+Print_Result_Best()
+###
+
+
+quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 Plot_Results("Movie Review Polarity Dataset")

@@ -1,5 +1,5 @@
 '''
-Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
+Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (6) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
 import matplotlib.pyplot as plt
@@ -21,6 +21,8 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 
 from sklearn import metrics
 from sklearn.datasets import load_files
@@ -34,8 +36,6 @@ from nltk.stem import WordNetLemmatizer
 
 
 ########
-from sklearn.linear_model import LinearRegression, SGDClassifier, LogisticRegression
-from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 #######
 
@@ -435,13 +435,13 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer()),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction      
                         ('clf', LogisticRegression(penalty='l2', solver='sag', n_jobs=-1)),])
 
     parameters = {'clf__max_iter': [100],
                   'clf__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],} 
 
-    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -453,11 +453,11 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                                 'vect1': 1.0,
                                 'vect2': 1.0,},
                         )),
-                        ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
+                        ('tfidf', TfidfTransformer(use_idf=True)),  
+                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         ('clf', LogisticRegression(penalty='l2', solver='sag', max_iter=100, C=500, n_jobs=-1)),])  # Sag Solver because it's faster and Liblinear can't even run in Parallel
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
     break  # Disable Cross Validation
 
 Print_Result_Best()

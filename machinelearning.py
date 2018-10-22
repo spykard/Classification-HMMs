@@ -98,19 +98,24 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
         # (3) PREDICT
         predicted = pipeline.predict(data_test)
 
-    Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, model_name)  
+    Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, 0, model_name)  
 
 
-def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, model_name):
+def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, time_flag, model_name):
     '''    Print Metrics after Training etc.    '''
     global cross_validation_best
+
+    if time_flag == 0:
+        time_final = time()-time_counter
+    else:
+        time_final = time_counter
 
     accuracy = metrics.accuracy_score(labels_test, predicted)
     if silent_enable == 0:
         if time_counter == 0.0:
             print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
         else:
-            print('\n- - - - - RESULT METRICS -', "%.2fsec" % (time()-time_counter), model_name, '- - - - -')
+            print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
         print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
         print(metrics.confusion_matrix(labels_test, predicted))
@@ -120,7 +125,7 @@ def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, tim
         cross_validation_best[1] = model_name
         cross_validation_best[2] = labels_test
         cross_validation_best[3] = predicted 
-        cross_validation_best[4] = time_counter         
+        cross_validation_best[4] = time_final         
 
 
 def Print_Result_Best():
@@ -131,7 +136,7 @@ def Print_Result_Best():
     if cross_validation_best[0] > 0.0:
         all_models_accuracy.append((cross_validation_best[0], cross_validation_best[1])) 
         print("\n\n" + "- " * 37, end = "")
-        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[4], cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[4], 1, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
 
 
 def Plot_Results(dataset_name):
@@ -247,12 +252,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
-    break  # Disable Cross Validation
+    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    #break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
-
+quit()
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
 cross_validation_best = [0.000, "", [], [], 0.000]
@@ -349,7 +354,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(min_samples_leaf=3, max_features='sqrt')),])  
 
-    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()

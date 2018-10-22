@@ -1,5 +1,5 @@
 '''
-Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
+Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
 import matplotlib.pyplot as plt
@@ -201,7 +201,6 @@ print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_data
 
 # Split using Cross Validation
 k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
-k_fold_data = k_fold.split(all_data, all_labels)
 
 
 # Dimensionality Reduction - 4 different ways to pick the best Features 
@@ -213,7 +212,7 @@ k_fold_data = k_fold.split(all_data, all_labels)
 
 ### (1) LET'S BUILD : Complement Naive Bayes
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -263,7 +262,7 @@ Print_Result_Best()
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -313,7 +312,7 @@ Print_Result_Best()
 
 ### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous. PRuning is applied through max_depth
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -338,7 +337,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     parameters = {'feature_selection__k': [100, 1000],
                   'clf__max_depth': [20, 25, 30],
                   'clf__min_samples_leaf': [2, 3, 8],
-                  'clf__max_features': ['sqrt', None, 100]} 
+                  'clf__max_features': ['sqrt', None, 100],} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
 
@@ -365,7 +364,7 @@ Print_Result_Best()
 
 ### (4) LET'S BUILD : Random Forest  //  Ideal depth can be found from the previous Decision Tree classifier
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -390,7 +389,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     parameters = {'feature_selection__k': [1000],
                   'clf__max_depth': [20, 25, 35],
                   'clf__min_samples_leaf': [2],
-                  'clf__max_features': ['sqrt', None]} 
+                  'clf__max_features': ['sqrt', None],} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
 
@@ -414,16 +413,35 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
 Print_Result_Best()
 ###
 
-#print(len(k_fold_data))
-### (5) LET'S BUILD :
+
+### (5) LET'S BUILD : Logistic Regression (Linear)
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
     data_test = all_data.reindex(test_indexes, copy=True, axis=0)
     labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
+                        ('clf', LogisticRegression(penalty='l2', solver='sag', n_jobs=-1)),])
+
+    parameters = {'clf__max_iter': [100],
+                  'clf__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],} 
+
+    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -436,10 +454,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
-                        ('clf', ComplementNB()),])  
-    print('HELLO')
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '()')
+                        ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
+                        ('clf', LogisticRegression(penalty='l2', solver='sag', max_iter=100, C=500, n_jobs=-1)),])  # Sag Solver because it's faster and Liblinear can't even run in Parallel
+
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
     break  # Disable Cross Validation
 
 Print_Result_Best()

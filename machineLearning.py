@@ -1,5 +1,5 @@
 '''
-Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (6) Linear SVM, (7) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
+Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (6) Linear SVM, (7) Stochastic Gradient Descent on SVM, (8) Multi-layer Perceptron
 '''
 
 import matplotlib.pyplot as plt
@@ -21,8 +21,9 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import LinearSVC
+from sklearn.neural_network import MLPClassifier
 
 from sklearn import metrics
 from sklearn.datasets import load_files
@@ -34,10 +35,6 @@ from nltk.corpus import sentiwordnet as swn
 from nltk import word_tokenize, sent_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
 
-
-########
-from sklearn.neural_network import MLPClassifier
-#######
 
 cross_validation_best = [0.0, "", [], [], 0.0]  # [Score, Model Name, Actual Labels, Predicted, Time]
 all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
@@ -90,7 +87,7 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
 
         # (1) TRAIN
         pipeline.fit(data_train, labels_train)
-        if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(Random Forest)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
+        if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(Random Forest)', '(Multi-layer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
         if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_, '| Tree Depth is:', pipeline.named_steps['clf'].tree_.max_depth)
         if model_name in ['(Random Forest)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_)
 
@@ -514,7 +511,7 @@ Print_Result_Best()
 ###
 
 
-### (7) LET'S BUILD : 
+### (7) LET'S BUILD : Stochastic Gradient Descent on SVM
 cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
     print("\n--Current Cross Validation Fold:", k)
@@ -536,12 +533,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         )),
                         ('tfidf', TfidfTransformer()),
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction      
-                        ('clf', LinearSVC(penalty='l2', max_iter=1000, dual=True)),])
+                        ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, tol=None, n_jobs=-1)),])
 
-    parameters = {'clf__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
-                  'clf__loss': ['squared_hinge'],} 
-
-    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
+    parameters = {'clf__alpha': [0.1, 0.01, 0.001, 0.0001, 1e-05, 1e-06],  # list(10.0 ** -np.arange(1, 7))
+                  'clf__tol': [None, 1e-3, 1e-4],}
+    
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -555,13 +552,76 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),  
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
-                        ('clf', LinearSVC(penalty='l2', max_iter=1000, C=1, dual=True)),])  # Dual: True for Text/High Feature Count
+                        ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, alpha=0.001, tol=None, n_jobs=-1)),])  # Loss: Hinge means SVM, Log means Logistic Regression
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
+
+
+### (8) LET'S BUILD : Multi-layer Perceptron
+cross_validation_best = [0.000, "", [], [], 0.000]
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+    print("\n--Current Cross Validation Fold:", k)
+
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction      
+                        ('clf', MLPClassifier()),])
+
+    parameters = {'clf__alpha': [0.1, 0.01, 0.001, 0.0001, 1e-05, 1e-06],  # list(10.0 ** -np.arange(1, 7))
+                  'clf__tol': [None, 1e-3, 1e-4],}
+    
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
+
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),  
+                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
+                        #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,), max_iter=200, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01),)  ),
+                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=1e-01)),])  
+
+
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
+    break  # Disable Cross Validation
+
+Print_Result_Best()
+###
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -794,7 +854,8 @@ pipeline = Pipeline([ # Optimal
                     # Either of 2 Choices
                     #('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction
                     ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold='2.5*mean')),  # Dimensionality Reduction  
-                    ('clf', MLPClassifier(verbose=False, hidden_layer_sizes=(200,), max_iter=500, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01)),])  
+                    #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,), max_iter=200, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01),)  ),
+                    ('clf', MLPClassifier(verbose=False, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=1e-01)),])  
 
 Run_Classifier(0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, dataset.target_names, stopwords_complete_lemmatized, '(MultiLayer Perceptron)')
 ###

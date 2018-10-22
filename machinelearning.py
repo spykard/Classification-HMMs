@@ -38,7 +38,7 @@ from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 #######
 
-cross_validation_best = [0.000, "", [], []]  # [Score, Model Name, Actual Labels, Predicted]
+cross_validation_best = [0.0, "", [], [], 0.0]  # [Score, Model Name, Actual Labels, Predicted, Time]
 all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
 
 def Run_Preprocessing(dataset_name):
@@ -59,6 +59,7 @@ def Run_Preprocessing(dataset_name):
 
 def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, parameters, data_train, data_test, labels_train, labels_test, targetnames, stopwords_complete_lemmatized, model_name):
     '''    Run Classifier with or without Grid Search after Preprocessing is done    '''
+    time_counter = time()
 
     ## GRID SEARCH ON - Search for the Best Parameters
     if grid_search_enable == 1:
@@ -97,16 +98,19 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
         # (3) PREDICT
         predicted = pipeline.predict(data_test)
 
-    Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, model_name)  
+    Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, model_name)  
 
 
-def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, model_name):
+def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, model_name):
     '''    Print Metrics after Training etc.    '''
     global cross_validation_best
 
     accuracy = metrics.accuracy_score(labels_test, predicted)
     if silent_enable == 0:
-        print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
+        if time_counter == 0.0:
+            print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
+        else:
+            print('\n- - - - - RESULT METRICS -', "%.2fsec" % (time()-time_counter), model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
         print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
         print(metrics.confusion_matrix(labels_test, predicted))
@@ -116,6 +120,7 @@ def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, mod
         cross_validation_best[1] = model_name
         cross_validation_best[2] = labels_test
         cross_validation_best[3] = predicted 
+        cross_validation_best[4] = time_counter         
 
 
 def Print_Result_Best():
@@ -123,10 +128,10 @@ def Print_Result_Best():
     global cross_validation_best
     global all_models_accuracy
 
-    if cross_validation_best[0] > 0.000:
+    if cross_validation_best[0] > 0.0:
         all_models_accuracy.append((cross_validation_best[0], cross_validation_best[1])) 
         print("\n\n" + "- " * 37, end = "")
-        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[4], cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
 
 
 def Plot_Results(dataset_name):
@@ -200,7 +205,7 @@ k_fold_data = k_fold.split(all_data, all_labels)
 
 
 ### (1) LET'S BUILD : Complement Naive Bayes
-
+cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
 
@@ -250,7 +255,7 @@ Print_Result_Best()
 
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
-cross_validation_best = [0.000, "", [], []]
+cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
 
@@ -300,7 +305,7 @@ Print_Result_Best()
 
 
 ### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous
-cross_validation_best = [0.000, "", [], []]
+cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
 
@@ -344,7 +349,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(min_samples_leaf=3, max_features='sqrt')),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()

@@ -90,6 +90,7 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
         if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(Random Forest)', '(Multi-layer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
         if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_, '| Tree Depth is:', pipeline.named_steps['clf'].tree_.max_depth)
         if model_name in ['(Random Forest)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_)
+        if model_name in ['(Multi-layer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coefs_[0].shape[0]) 
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
@@ -250,7 +251,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -300,7 +301,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -352,7 +353,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -404,7 +405,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', RandomForestClassifier(n_estimators=100, max_depth=35, min_samples_leaf=2, max_features='sqrt', n_jobs=-1)),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -454,7 +455,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         ('clf', LogisticRegression(penalty='l2', solver='sag', max_iter=100, C=500, n_jobs=-1, random_state=22)),])  # Sag Solver because it's faster and Liblinear can't even run in Parallel
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -504,7 +505,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         ('clf', LinearSVC(penalty='l2', max_iter=1000, C=1, dual=True)),])  # Dual: True for Text/High Feature Count
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -554,7 +555,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, alpha=0.001, tol=None, n_jobs=-1)),])  # Loss: Hinge means SVM, Log means Logistic Regression
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -583,10 +584,11 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         )),
                         ('tfidf', TfidfTransformer()),
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction      
-                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', momentum=0.90)),])
+                        ('clf', MLPClassifier(verbose=False, random_state=22, max_iter=200, solver='sgd', learning_rate='constant', momentum=0.90)),])
 
-    parameters = {'clf__learning_rate_init': [0.001, 0.01, 0.07],}
-    
+    parameters = {'clf__learning_rate_init': [0.07],  #'clf__learning_rate_init': [0.001, 0.01, 0.07],
+                  'clf__alpha': [0.1, 0.01, 0.001, 0.0001, 1e-05, 1e-06],  # list(10.0 ** -np.arange(1, 7))
+                  'clf__hidden_layer_sizes': [(100,)],}
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
 
     # Grid Search Off
@@ -602,7 +604,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('tfidf', TfidfTransformer(use_idf=True)),  
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,), max_iter=200, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01)),])
-                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=1e-01)),])  
+                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=0.001)),])  
 
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
@@ -610,44 +612,6 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
 Print_Result_Best()
 ###
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Plot_Results("Movie Review Polarity Dataset")

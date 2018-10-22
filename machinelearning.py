@@ -20,6 +20,7 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.naive_bayes import ComplementNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 from sklearn import metrics
 from sklearn.datasets import load_files
@@ -89,8 +90,9 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
 
         # (1) TRAIN
         pipeline.fit(data_train, labels_train)
-        if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
+        if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(Random Forest)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
         if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_, '| Tree Depth is:', pipeline.named_steps['clf'].tree_.max_depth)
+        if model_name in ['(Random Forest)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_)
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
@@ -354,11 +356,77 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
-    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
+
+
+### (4) LET'S BUILD : Random Forest 
+cross_validation_best = [0.000, "", [], [], 0.000]
+for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
+    print("\n--Current Cross Validation Fold:", k)
+
+    data_train = all_data.reindex(train_indexes, copy=True, axis=0)
+    labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
+    data_test = all_data.reindex(test_indexes, copy=True, axis=0)
+    labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
+
+    # Grid Search On
+    pipeline = Pipeline([
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer()),
+                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
+                        ('clf', RandomForestClassifier(n_estimators=100, n_jobs=-1)),])  
+
+    parameters = {'feature_selection__k': [600, 1000, 3000],
+                  'clf__max_depth': [18, 25, 70],
+                  'clf__min_samples_leaf': [2],
+                  'clf__max_features': ['sqrt', None]} 
+
+    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+
+    # Grid Search Off
+    pipeline = Pipeline([ # Optimal
+                        ('union', FeatureUnion(transformer_list=[      
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode', tokenizer=LemmaTokenizer())),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
+                        ('clf', RandomForestClassifier(n_estimators=100, max_depth=25, min_samples_leaf=2, max_features=None, n_jobs=-1)),])  
+
+    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+    break  # Disable Cross Validation
+
+Print_Result_Best()
+###
+quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 Plot_Results("Movie Review Polarity Dataset")

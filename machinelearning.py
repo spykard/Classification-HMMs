@@ -2,6 +2,15 @@
 Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Linear Regression, (6) Logistic Regression, (7) Linear SVM, (8) Stochastic Gradient Descent on SVM, (9) Multi-layer Perceptron
 '''
 
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+import numpy as np
+import pandas as pd
+import string
+import copy
+from re import sub
+from time import time
+
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, GridSearchCV
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
@@ -14,26 +23,20 @@ from sklearn.tree import DecisionTreeClassifier
 
 from sklearn import metrics
 from sklearn.datasets import load_files
+from sklearn.externals import joblib
 
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.corpus import sentiwordnet as swn
 from nltk import word_tokenize, sent_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
-from sklearn.externals import joblib
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-import numpy as np
-import pandas as pd
-import string
-import copy
-from re import sub
 
+########
 from sklearn.linear_model import SGDClassifier, LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
-
+#######
 
 cross_validation_best = [0.000, "", [], []]  # [Score, Model Name, Actual Labels, Predicted]
 all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
@@ -85,8 +88,8 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
 
         # (1) TRAIN
         pipeline.fit(data_train, labels_train)
-        if model_name not in ['(k-Nearest Neighbors)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
-        if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_)
+        if model_name not in ['(k-Nearest Neighbors)', '(Decision Tree)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
+        if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_, '| Tree Depth is:', pipeline.named_steps['clf'].tree_.max_depth)
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
@@ -242,7 +245,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
-Print_Result_Best()  # Best Cross Validation
+Print_Result_Best()
 ###
 
 
@@ -289,10 +292,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
-Print_Result_Best()  # Best Cross Validation
+Print_Result_Best()
 ###
 
 
@@ -320,10 +323,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
                         ('clf', DecisionTreeClassifier()),])  
 
-    parameters = {'feature_selection__k': [100, 500, 1000],
-                  'clf__max_features': ['sqrt', 'log2', None]} 
+    parameters = {'feature_selection__k': [100, 1000],
+                  'clf__max_depth': [20, 40, 60],
+                  'clf__min_samples_leaf': [3, 8, 16],
+                  'clf__max_features': ['sqrt', None, 100]} 
 
-    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -337,12 +342,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
-                        ('clf', DecisionTreeClassifier()),])  
+                        ('clf', DecisionTreeClassifier(min_samples_leaf=3, max_features='sqrt')),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
-Print_Result_Best()  # Best Cross Validation
+Print_Result_Best()
 ###
 quit()
 

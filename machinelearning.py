@@ -254,7 +254,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=5000)),  # Dimensionality Reduction                  
                         ('clf', ComplementNB()),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -304,7 +304,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
@@ -356,14 +356,14 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
-    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
+    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
 
 
-### (4) LET'S BUILD : Random Forest 
+### (4) LET'S BUILD : Random Forest  //  Ideal depth can be found from the previous Decision Tree classifier
 cross_validation_best = [0.000, "", [], [], 0.000]
 for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     print("\n--Current Cross Validation Fold:", k)
@@ -387,12 +387,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
                         ('clf', RandomForestClassifier(n_estimators=100, n_jobs=-1)),])  
 
-    parameters = {'feature_selection__k': [600, 1000, 3000],
-                  'clf__max_depth': [18, 25, 70],
+    parameters = {'feature_selection__k': [1000],
+                  'clf__max_depth': [20, 25, 35],
                   'clf__min_samples_leaf': [2],
                   'clf__max_features': ['sqrt', None]} 
 
-    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+    #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -406,27 +406,13 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
-                        ('clf', RandomForestClassifier(n_estimators=100, max_depth=25, min_samples_leaf=2, max_features=None, n_jobs=-1)),])  
+                        ('clf', RandomForestClassifier(n_estimators=100, max_depth=35, min_samples_leaf=2, max_features='sqrt', n_jobs=-1)),])  
 
-    #Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
+    Run_Classifier(0, 0, 0, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
     break  # Disable Cross Validation
 
 Print_Result_Best()
 ###
-quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Plot_Results("Movie Review Polarity Dataset")

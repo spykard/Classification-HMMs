@@ -86,6 +86,7 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
         # (1) TRAIN
         pipeline.fit(data_train, labels_train)
         if model_name not in ['(k-Nearest Neighbors)', '(MultiLayer Perceptron)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].coef_.shape[1])
+        if model_name in ['(Decision Tree)']: print('\nNumber of Features/Dimension is:', pipeline.named_steps['clf'].n_features_)
 
         # (2) Model Persistence (Pickle)
         if pickle_enable == 1: joblib.dump(pipeline, './pickled_models/Classifier.pkl') 
@@ -216,11 +217,11 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('clf', ComplementNB()),])  
 
     parameters = {'tfidf__use_idf': [True, False],
-                'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
-                'union__vect1__max_df': [0.90, 0.80],
-                'union__vect2__max_df': [0.95, 0.85],
-                'union__vect2__ngram_range': [(2, 2)],
-                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],} 
+                  'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
+                  'union__vect1__max_df': [0.90, 0.80],
+                  'union__vect2__max_df': [0.95, 0.85],
+                  'union__vect2__ngram_range': [(2, 2)],
+                  'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
 
@@ -258,20 +259,19 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     # Grid Search On
     pipeline = Pipeline([
                         ('union', FeatureUnion(transformer_list=[      
-                            ('vect1', CountVectorizer(min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
-                            ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
-                        )),
-                        ('tfidf', TfidfTransformer()),
-                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
-                        ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
 
-    parameters = {#'tfidf__use_idf': [True, False],
-                #'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
-                #'union__vect1__max_df': [0.90, 0.80],
-                #'union__vect2__max_df': [0.95, 0.85],
-                #'union__vect2__ngram_range': [(2, 2)],
-                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],
-                'clf__n_neighbors': [1, 2, 5, 8, 10, 12],} 
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
+                        )),
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
+                         ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+
+    parameters = {'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],
+                  'clf__n_neighbors': [2, 5, 10, 12],} 
 
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
 
@@ -289,7 +289,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
 Print_Result_Best()  # Best Cross Validation
@@ -309,21 +309,21 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
     # Grid Search On
     pipeline = Pipeline([
                         ('union', FeatureUnion(transformer_list=[      
-                            ('vect1', CountVectorizer(min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
-                            ('vect2', CountVectorizer(min_df=8, stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+                            ('vect1', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized, strip_accents='unicode')),  # 1-Gram Vectorizer
+                            ('vect2', CountVectorizer(max_df=0.95, min_df=8, ngram_range=(2, 2), stop_words=None, strip_accents='unicode')),],  # 2-Gram Vectorizer
+
+                            transformer_weights={
+                                'vect1': 1.0,
+                                'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer()),
                         ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
                         ('clf', DecisionTreeClassifier()),])  
 
-    parameters = {#'tfidf__use_idf': [True, False],
-                #'union__transformer_weights': [{'vect1':1.0, 'vect2':1.0},],
-                #'union__vect1__max_df': [0.90, 0.80],
-                #'union__vect2__max_df': [0.95, 0.85],
-                #'union__vect2__ngram_range': [(2, 2)],
-                'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],} 
+    parameters = {'feature_selection__k': [100, 500, 1000],
+                  'clf__max_features': ['sqrt', 'log2', None]} 
 
-    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
 
     # Grid Search Off
     pipeline = Pipeline([ # Optimal
@@ -339,12 +339,11 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold_data):
                         ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
                         ('clf', DecisionTreeClassifier()),])  
 
-    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
+    #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
 Print_Result_Best()  # Best Cross Validation
 ###
-
 quit()
 
 

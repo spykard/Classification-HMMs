@@ -6,10 +6,10 @@ s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ source activate base
 --Dataset Name: Movie Review Polarity Dataset
 
 --Dataset Info:
-               Label                                               Data
+              Labels                                               Data
 count   2000.000000                                               2000
 unique          NaN                                               2000
-top             NaN  b'movies don\'t come much more ridiculously ti...
+top             NaN  b'fit for a ghoul\'s night out , fat girl stan...
 freq            NaN                                                  1
 mean       0.500000                                                NaN
 std        0.500125                                                NaN

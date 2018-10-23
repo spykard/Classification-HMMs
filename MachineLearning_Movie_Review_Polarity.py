@@ -211,7 +211,7 @@ k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 
 ### (1) LET'S BUILD : Complement Naive Bayes
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -261,7 +261,7 @@ Print_Result_Best(k)
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -311,7 +311,7 @@ Print_Result_Best(k)
 
 ### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous. PRuning is applied through max_depth
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -363,7 +363,7 @@ Print_Result_Best(k)
 
 ### (4) LET'S BUILD : Random Forest  //  Ideal depth can be found from the previous Decision Tree classifier
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -415,7 +415,7 @@ Print_Result_Best(k)
 
 ### (5) LET'S BUILD : Logistic Regression (Linear)
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -465,7 +465,7 @@ Print_Result_Best(k)
 
 ### (6) LET'S BUILD : Linear SVM
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -515,7 +515,7 @@ Print_Result_Best(k)
 
 ### (7) LET'S BUILD : Stochastic Gradient Descent on SVM
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -565,7 +565,7 @@ Print_Result_Best(k)
 
 ### (8) LET'S BUILD : Multi-layer Perceptron
 cross_validation_best = [0.000, "", [], [], 0.000]
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)

@@ -119,6 +119,7 @@ def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, tim
         print('Exact Accuracy: ', accuracy)
         print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
         print(metrics.confusion_matrix(labels_test, predicted))
+        print()
 
     if accuracy > cross_validation_best[0]:
         cross_validation_best[0] = accuracy
@@ -135,7 +136,7 @@ def Print_Result_Best(k):
 
     if cross_validation_best[0] > 0.0:
         all_models_accuracy.append((cross_validation_best[0], cross_validation_best[1])) 
-        print("\n\n" + "- " * 37, end = "")
+        print("\n" + "- " * 37, end = "")
         Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[4], 1, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
 
 

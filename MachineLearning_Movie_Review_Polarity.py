@@ -46,7 +46,7 @@ def Run_Preprocessing(dataset_name):
 
     print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
 
-    df_dataset = pd.DataFrame({'Label': dataset.target, 'Data': dataset.data})
+    df_dataset = pd.DataFrame({'Labels': dataset.target, 'Data': dataset.data})
 
     # Remove empty instances from DataFrame
     emptyCells = df_dataset.loc[df_dataset.iloc[:,1] == ''].index.values

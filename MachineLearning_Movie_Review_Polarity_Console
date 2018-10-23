@@ -1,4 +1,4 @@
-(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ /home/s/anaconda3/bin/python /home/s/Desktop/repo_Sentiment-Analysis-Thesis/machineLearning_Movie_Review_Polarity.py
+(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ /home/s/anaconda3/bin/python /home/s/Desktop/repo_Sentiment-Analysis-Thesis/MachineLearning_Movie_Review_Polarity.py
 --Processed 2000 documents
 --Dataset Name: Movie Review Polarity Dataset
 

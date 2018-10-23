@@ -64,7 +64,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     # The sequences are stored as a String in the Dataframe, time to transform them to the correct form
     data_train_asList = list() 
     data_test_asList = list()       
-    if n == 1:
+    if n == 1:  # No need to do ngrams on 1st Order
         for x in data_train:
             data_train_asList.append(list(x))
         # Same
@@ -89,11 +89,8 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
             data_test_asList.append(temp)   
 
-
-
     ### (Unsupervised) Train
-
-    # hmm_leanfrominput_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, n_jobs=-1, verbose=False, name="FineGrained HMM")
+    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
 
     # # Find out which which State number corresponds to pos/neg/neu respectively
     # positiveState = list()
@@ -102,8 +99,8 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     # print()
     # for x in range(0, len(documentSentiments)):
     #     if silent_enable != 1:
-    #         print("State", hmm_leanfrominput_2.states[x].name, hmm_leanfrominput_2.states[x].distribution.parameters)
-    #     temp_dict = hmm_leanfrominput_2.states[x].distribution.parameters[0]
+    #         print("State", hmm_leanfrominput.states[x].name, hmm_leanfrominput.states[x].distribution.parameters)
+    #     temp_dict = hmm_leanfrominput.states[x].distribution.parameters[0]
     #     positiveState.append(temp_dict["p" * n])
     #     negativeState.append(temp_dict["n" * n])
     #     neutralState.append(temp_dict["u" * n])
@@ -117,7 +114,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     # predicted = list()
     # for x in range(0, len(data_test_asList)):
     #     try:
-    #         predict = hmm_leanfrominput_2.predict(data_test_asList[x], algorithm='viterbi')
+    #         predict = hmm_leanfrominput.predict(data_test_asList[x], algorithm='viterbi')
     #     except ValueError as err:  # Prediction failed, predict randomly
     #         print("Prediction Failed:", err)
     #         predict = [randint(0, 2)]
@@ -129,7 +126,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     #     else:
     #         predicted.append("neu")
 
-    #     #predicted.append(hmm_leanfrominput_2.states[predict[-1]].name)
+    #     #predicted.append(hmm_leanfrominput.states[predict[-1]].name)
 
     # #Print_Result_Metrics(labels_test.tolist(), predicted, None, "HMM "+str(n)+"th Order Unsupervised")
     # ###
@@ -151,7 +148,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     negativeState = 1
     neutralState = 2              
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=1, verbose=False, name="FineGrained HMM")
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
@@ -187,7 +184,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
         ax = plt.subplot(121)
         ax.set_title("Unsupervised")
-        #hmm_leanfrominput_2.plot() 
+        #hmm_leanfrominput.plot() 
         ax = plt.subplot(122)
         ax.set_title("Supervised")
         hmm_leanfrominput_supervised_2.plot()

@@ -1,0 +1,389 @@
+source activate base
+/home/s/anaconda3/bin/python /home/s/Desktop/repo_Sentiment-Analysis-Thesis/HiddenMarkovModel_Finegrained.py
+s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ source activate base
+(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ /home/s/anaconda3/bin/python /home/s/Desktop/repo_Sentiment-Analysis-Thesis/HiddenMarkovModel_Finegrained.py
+--Processed 294 documents
+--Dataset Name: Finegrained
+
+--Dataset Info:
+           0       1                                                  2
+count   292     292                                                292
+unique    3     225                                                292
+top     neg  pppppp  This is a really cool story.I loved the strong...
+freq     98      10                                                  1
+
+      0          1                                                  2
+0  neg    nnnnnuu  The book is disproportionally focused on singl...
+1  neg    nnnnnmn  I began this novel with the greatest of hopes,...
+2  neg  nnpnnnpnn  Readers of Dean Koontz's Frankenstein have bee...
+3  neg   nnnnnnnn  I used to wait in anticipation for the next Sc...
+4  neg   nnnnnppn  Mortimer's "How to read a book" is a 400 page ...
+
+
+--Current Cross Validation Fold: 0
+
+--Number of Observed States is 4
+--Number of Hidden States is 3
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.47sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.68
+              precision    recall  f1-score   support
+
+         neg       0.56      0.88      0.69        25
+         neu       0.60      0.36      0.45        25
+         pos       0.95      0.80      0.87        25
+
+   micro avg       0.68      0.68      0.68        75
+   macro avg       0.71      0.68      0.67        75
+weighted avg       0.71      0.68      0.67        75
+
+[[22  3  0]
+ [15  9  1]
+ [ 2  3 20]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
+Exact Accuracy:  0.76
+              precision    recall  f1-score   support
+
+         neg       0.75      0.84      0.79        25
+         neu       0.75      0.48      0.59        25
+         pos       0.77      0.96      0.86        25
+
+   micro avg       0.76      0.76      0.76        75
+   macro avg       0.76      0.76      0.74        75
+weighted avg       0.76      0.76      0.74        75
+
+[[21  3  1]
+ [ 7 12  6]
+ [ 0  1 24]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
+Exact Accuracy:  0.6666666666666666
+              precision    recall  f1-score   support
+
+         neg       0.64      0.84      0.72        25
+         neu       0.53      0.32      0.40        25
+         pos       0.78      0.84      0.81        25
+
+   micro avg       0.67      0.67      0.67        75
+   macro avg       0.65      0.67      0.64        75
+weighted avg       0.65      0.67      0.64        75
+
+[[21  4  0]
+ [11  8  6]
+ [ 1  3 21]]
+
+
+
+- - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
+Exact Accuracy:  0.72
+              precision    recall  f1-score   support
+
+         neg       0.67      0.88      0.76        25
+         neu       0.62      0.40      0.49        25
+         pos       0.85      0.88      0.86        25
+
+   micro avg       0.72      0.72      0.72        75
+   macro avg       0.71      0.72      0.70        75
+weighted avg       0.71      0.72      0.70        75
+
+[[22  3  0]
+ [11 10  4]
+ [ 0  3 22]]
+
+
+--Current Cross Validation Fold: 1
+
+--Number of Observed States is 4
+--Number of Hidden States is 3
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.82sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.7397260273972602
+              precision    recall  f1-score   support
+
+         neg       0.63      0.96      0.76        25
+         neu       0.73      0.46      0.56        24
+         pos       0.95      0.79      0.86        24
+
+   micro avg       0.74      0.74      0.74        73
+   macro avg       0.77      0.74      0.73        73
+weighted avg       0.77      0.74      0.73        73
+
+[[24  0  1]
+ [13 11  0]
+ [ 1  4 19]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
+Exact Accuracy:  0.7123287671232876
+              precision    recall  f1-score   support
+
+         neg       0.65      0.88      0.75        25
+         neu       0.69      0.38      0.49        24
+         pos       0.81      0.88      0.84        24
+
+   micro avg       0.71      0.71      0.71        73
+   macro avg       0.72      0.71      0.69        73
+weighted avg       0.71      0.71      0.69        73
+
+[[22  2  1]
+ [11  9  4]
+ [ 1  2 21]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
+Exact Accuracy:  0.6986301369863014
+              precision    recall  f1-score   support
+
+         neg       0.65      0.88      0.75        25
+         neu       0.60      0.38      0.46        24
+         pos       0.83      0.83      0.83        24
+
+   micro avg       0.70      0.70      0.70        73
+   macro avg       0.69      0.70      0.68        73
+weighted avg       0.69      0.70      0.68        73
+
+[[22  2  1]
+ [12  9  3]
+ [ 0  4 20]]
+
+
+
+- - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
+Exact Accuracy:  0.7123287671232876
+              precision    recall  f1-score   support
+
+         neg       0.65      0.96      0.77        25
+         neu       0.67      0.42      0.51        24
+         pos       0.86      0.75      0.80        24
+
+   micro avg       0.71      0.71      0.71        73
+   macro avg       0.72      0.71      0.70        73
+weighted avg       0.72      0.71      0.70        73
+
+[[24  0  1]
+ [12 10  2]
+ [ 1  5 18]]
+
+
+--Current Cross Validation Fold: 2
+
+--Number of Observed States is 4
+--Number of Hidden States is 3
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.39sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.6666666666666666
+              precision    recall  f1-score   support
+
+         neg       0.54      0.92      0.68        24
+         neu       0.64      0.29      0.40        24
+         pos       0.95      0.79      0.86        24
+
+   micro avg       0.67      0.67      0.67        72
+   macro avg       0.71      0.67      0.65        72
+weighted avg       0.71      0.67      0.65        72
+
+[[22  2  0]
+ [16  7  1]
+ [ 3  2 19]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
+Exact Accuracy:  0.7777777777777778
+              precision    recall  f1-score   support
+
+         neg       0.71      0.83      0.77        24
+         neu       0.73      0.67      0.70        24
+         pos       0.91      0.83      0.87        24
+
+   micro avg       0.78      0.78      0.78        72
+   macro avg       0.78      0.78      0.78        72
+weighted avg       0.78      0.78      0.78        72
+
+[[20  4  0]
+ [ 6 16  2]
+ [ 2  2 20]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+Prediction Failed: Symbol 'mpu' is not defined in a distribution
+
+- - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
+Exact Accuracy:  0.7222222222222222
+              precision    recall  f1-score   support
+
+         neg       0.61      0.79      0.69        24
+         neu       0.69      0.46      0.55        24
+         pos       0.88      0.92      0.90        24
+
+   micro avg       0.72      0.72      0.72        72
+   macro avg       0.73      0.72      0.71        72
+weighted avg       0.73      0.72      0.71        72
+
+[[19  4  1]
+ [11 11  2]
+ [ 1  1 22]]
+
+
+Prediction Failed: Symbol 'mpu' is not defined in a distribution
+
+- - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
+Exact Accuracy:  0.7361111111111112
+              precision    recall  f1-score   support
+
+         neg       0.63      0.92      0.75        24
+         neu       0.75      0.50      0.60        24
+         pos       0.90      0.79      0.84        24
+
+   micro avg       0.74      0.74      0.74        72
+   macro avg       0.76      0.74      0.73        72
+weighted avg       0.76      0.74      0.73        72
+
+[[22  2  0]
+ [10 12  2]
+ [ 3  2 19]]
+
+
+--Current Cross Validation Fold: 3
+
+--Number of Observed States is 4
+--Number of Hidden States is 3
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.81sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.7361111111111112
+              precision    recall  f1-score   support
+
+         neg       0.67      1.00      0.80        24
+         neu       0.72      0.54      0.62        24
+         pos       0.89      0.67      0.76        24
+
+   micro avg       0.74      0.74      0.74        72
+   macro avg       0.76      0.74      0.73        72
+weighted avg       0.76      0.74      0.73        72
+
+[[24  0  0]
+ [ 9 13  2]
+ [ 3  5 16]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
+Exact Accuracy:  0.6944444444444444
+              precision    recall  f1-score   support
+
+         neg       0.71      0.71      0.71        24
+         neu       0.67      0.50      0.57        24
+         pos       0.70      0.88      0.78        24
+
+   micro avg       0.69      0.69      0.69        72
+   macro avg       0.69      0.69      0.69        72
+weighted avg       0.69      0.69      0.69        72
+
+[[17  5  2]
+ [ 5 12  7]
+ [ 2  1 21]]
+
+
+
+Pos Index is 0 Neg Index is 1 Neu Index is 2
+Prediction Failed: Symbol 'mmu' is not defined in a distribution
+
+- - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
+Exact Accuracy:  0.7361111111111112
+              precision    recall  f1-score   support
+
+         neg       0.82      0.75      0.78        24
+         neu       0.62      0.67      0.64        24
+         pos       0.79      0.79      0.79        24
+
+   micro avg       0.74      0.74      0.74        72
+   macro avg       0.74      0.74      0.74        72
+weighted avg       0.74      0.74      0.74        72
+
+[[18  5  1]
+ [ 4 16  4]
+ [ 0  5 19]]
+
+
+Prediction Failed: Symbol 'mmu' is not defined in a distribution
+
+- - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
+Exact Accuracy:  0.7777777777777778
+              precision    recall  f1-score   support
+
+         neg       0.72      0.88      0.79        24
+         neu       0.75      0.62      0.68        24
+         pos       0.87      0.83      0.85        24
+
+   micro avg       0.78      0.78      0.78        72
+   macro avg       0.78      0.78      0.78        72
+weighted avg       0.78      0.78      0.78        72
+
+[[21  3  0]
+ [ 6 15  3]
+ [ 2  2 20]]
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised, best of 4 Cross Validations - - - - -
+Exact Accuracy:  0.7777777777777778
+              precision    recall  f1-score   support
+
+         neg       0.71      0.83      0.77        24
+         neu       0.73      0.67      0.70        24
+         pos       0.91      0.83      0.87        24
+
+   micro avg       0.78      0.78      0.78        72
+   macro avg       0.78      0.78      0.78        72
+weighted avg       0.78      0.78      0.78        72
+
+[[20  4  0]
+ [ 6 16  2]
+ [ 2  2 20]]
+
+
+- - - - - RESULT METRICS - 0.00sec Ensemble, best of 4 Cross Validations - - - - -
+Exact Accuracy:  0.7777777777777778
+              precision    recall  f1-score   support
+
+         neg       0.72      0.88      0.79        24
+         neu       0.75      0.62      0.68        24
+         pos       0.87      0.83      0.85        24
+
+   micro avg       0.78      0.78      0.78        72
+   macro avg       0.78      0.78      0.78        72
+weighted avg       0.78      0.78      0.78        72
+
+[[21  3  0]
+ [ 6 15  3]
+ [ 2  2 20]]
+
+(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$

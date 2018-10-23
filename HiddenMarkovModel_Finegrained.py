@@ -128,7 +128,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
     #     #predicted.append(hmm_leanfrominput.states[predict[-1]].name)
 
-    # #Print_Result_Metrics(labels_test.tolist(), predicted, None, "HMM "+str(n)+"th Order Unsupervised")
+    # #Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
     # ###
 
     print()
@@ -267,7 +267,7 @@ all_labels = df_dataset.iloc[:,0]
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
 
 # Split using Cross Validation
-k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
+k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object:
     print("\n--Current Cross Validation Fold:", k)
@@ -284,7 +284,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     documentSentiments = set(labels_train.unique())  # get Unique Sentiments
     print ("--Number of Hidden States is", len(documentSentiments))
 
-    # Parameters: targetnames, targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
+    # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
     predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 1)
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 3)

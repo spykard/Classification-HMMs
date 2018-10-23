@@ -193,8 +193,8 @@ stopwords_complete_lemmatized = set([wnl.lemmatize(word) for word in stopwords_c
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
 df_dataset = Run_Preprocessing("Movie Review Polarity Dataset")
-all_data = df_dataset.iloc[:,1]
-all_labels = df_dataset.iloc[:,0]
+all_data = df_dataset.loc[:,'Data']
+all_labels = df_dataset.loc[:,'Labels']
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
 

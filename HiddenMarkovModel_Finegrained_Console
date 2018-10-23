@@ -9,7 +9,7 @@ s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ source activate base
         Labels                                               Data                       Sequences
 count     292                                                292                             292
 unique      3                                                292                             225
-top       neg  I suppose this game is just the icing on the c...  [pos, pos, pos, pos, pos, pos]
+top       neg  This is my third set.(Before I had Motorola, t...  [pos, pos, pos, pos, pos, pos]
 freq       98                                                  1                              10
 
    Labels                                               Data                                      Sequences
@@ -27,7 +27,7 @@ freq       98                                                  1                
 
 Indexes: (('pos', 's0'), ('neg', 's1'), ('neu', 's2'))
 
-- - - - - RESULT METRICS - 0.47sec HMM 1th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.49sec HMM 1th Order Supervised - - - - -
 Exact Accuracy:  0.68
               precision    recall  f1-score   support
 
@@ -47,7 +47,7 @@ weighted avg       0.71      0.68      0.67        75
 
 Indexes: (('pos', 's0'), ('neg', 's1'), ('neu', 's2'))
 
-- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.02sec HMM 2th Order Supervised - - - - -
 Exact Accuracy:  0.7466666666666667
               precision    recall  f1-score   support
 
@@ -109,7 +109,7 @@ weighted avg       0.71      0.72      0.70        75
 
 Indexes: (('pos', 's0'), ('neg', 's1'), ('neu', 's2'))
 
-- - - - - RESULT METRICS - 0.92sec HMM 1th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.94sec HMM 1th Order Supervised - - - - -
 Exact Accuracy:  0.7397260273972602
               precision    recall  f1-score   support
 
@@ -275,7 +275,7 @@ weighted avg       0.76      0.74      0.73        72
 
 Indexes: (('pos', 's0'), ('neg', 's1'), ('neu', 's2'))
 
-- - - - - RESULT METRICS - 0.82sec HMM 1th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.83sec HMM 1th Order Supervised - - - - -
 Exact Accuracy:  0.7361111111111112
               precision    recall  f1-score   support
 
@@ -295,7 +295,7 @@ weighted avg       0.76      0.74      0.73        72
 
 Indexes: (('pos', 's0'), ('neg', 's1'), ('neu', 's2'))
 
-- - - - - RESULT METRICS - 0.02sec HMM 2th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.01sec HMM 2th Order Supervised - - - - -
 Exact Accuracy:  0.6805555555555556
               precision    recall  f1-score   support
 

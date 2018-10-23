@@ -586,9 +586,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction      
                         ('clf', MLPClassifier(verbose=False, random_state=22, max_iter=200, solver='sgd', learning_rate='constant', momentum=0.90)),])
 
-    parameters = {'clf__learning_rate_init': [0.07],  #'clf__learning_rate_init': [0.001, 0.01, 0.07],
-                  'clf__alpha': [0.1, 0.01, 0.001, 0.0001, 1e-05, 1e-06],  # list(10.0 ** -np.arange(1, 7))
-                  'clf__hidden_layer_sizes': [(100,)],}
+    parameters = {'clf__alpha': [0.1, 0.01, 0.001, 0.0001, 1e-05, 1e-06],  # list(10.0 ** -np.arange(1, 7))
+                  'clf__learning_rate_init': [0.001, 0.01, 0.07],
+                  'clf__hidden_layer_sizes': [(100,), (200,50)],}
+    
     #Run_Classifier(1, 0, 0, pipeline, parameters, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
 
     # Grid Search Off
@@ -603,8 +604,8 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),  
                         ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
-                        #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,), max_iter=200, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01)),])
-                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(100,), max_iter=200, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=0.001)),])  
+                        #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,50), max_iter=400, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01)),])
+                        ('clf', MLPClassifier(verbose=True, random_state=22, hidden_layer_sizes=(200,50), max_iter=400, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=0.001)),])  
 
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
@@ -615,4 +616,3 @@ Print_Result_Best()
 
 
 Plot_Results("Movie Review Polarity Dataset")
-quit()

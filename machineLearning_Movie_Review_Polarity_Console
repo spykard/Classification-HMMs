@@ -1,0 +1,258 @@
+(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ /home/s/anaconda3/bin/python /home/s/Desktop/repo_Sentiment-Analysis-Thesis/machineLearning_Movie_Review_Polarity.py
+--Processed 2000 documents
+--Dataset Name: Movie Review Polarity Dataset
+
+--Dataset Info:
+               Label                                               Data
+count   2000.000000                                               2000
+unique          NaN                                               2000
+top             NaN  b' " the 13th warrior " comes at the end of as...
+freq            NaN                                                  1
+mean       0.500000                                                NaN
+std        0.500125                                                NaN
+min        0.000000                                                NaN
+25%        0.000000                                                NaN
+50%        0.500000                                                NaN
+75%        1.000000                                                NaN
+max        1.000000                                                NaN
+
+    Label                                               Data
+0      0  b'plot : two teen couples go to a church party...
+1      0  b'the happy bastard\'s quick movie review \nda...
+2      0  b"it is movies like these that make a jaded mo...
+3      0  b' " quest for camelot " is warner bros . \' f...
+4      0  b'synopsis : a mentally unstable man undergoin...
+
+
+--Current Cross Validation Fold: 0
+
+Number of Features/Dimension is: 5000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 23.84sec (Complement Naive Bayes) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.828
+              precision    recall  f1-score   support
+
+           0       0.82      0.85      0.83       250
+           1       0.84      0.81      0.82       250
+
+   micro avg       0.83      0.83      0.83       500
+   macro avg       0.83      0.83      0.83       500
+weighted avg       0.83      0.83      0.83       500
+
+[[212  38]
+ [ 48 202]]
+
+--Current Cross Validation Fold: 0
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 25.09sec (k-Nearest Neighbors) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.646
+              precision    recall  f1-score   support
+
+           0       0.68      0.56      0.61       250
+           1       0.62      0.74      0.68       250
+
+   micro avg       0.65      0.65      0.65       500
+   macro avg       0.65      0.65      0.64       500
+weighted avg       0.65      0.65      0.64       500
+
+[[139 111]
+ [ 66 184]]
+
+--Current Cross Validation Fold: 0
+
+Number of Features/Dimension is: 1000 | Tree Depth is: 25
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 23.71sec (Decision Tree) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.666
+              precision    recall  f1-score   support
+
+           0       0.65      0.71      0.68       250
+           1       0.68      0.62      0.65       250
+
+   micro avg       0.67      0.67      0.67       500
+   macro avg       0.67      0.67      0.67       500
+weighted avg       0.67      0.67      0.67       500
+
+[[177  73]
+ [ 94 156]]
+
+--Current Cross Validation Fold: 0
+
+Number of Features/Dimension is: 1000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 24.08sec (Random Forest) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.808
+              precision    recall  f1-score   support
+
+           0       0.79      0.83      0.81       250
+           1       0.82      0.78      0.80       250
+
+   micro avg       0.81      0.81      0.81       500
+   macro avg       0.81      0.81      0.81       500
+weighted avg       0.81      0.81      0.81       500
+
+[[208  42]
+ [ 54 196]]
+
+--Current Cross Validation Fold: 0
+/home/s/anaconda3/lib/python3.7/site-packages/sklearn/linear_model/sag.py:334: ConvergenceWarning: The max_iter was reached which means the coef_ did not converge
+  "the coef_ did not converge", ConvergenceWarning)
+
+Number of Features/Dimension is: 5000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 23.47sec (Logistic Regression) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.86
+              precision    recall  f1-score   support
+
+           0       0.86      0.86      0.86       250
+           1       0.86      0.86      0.86       250
+
+   micro avg       0.86      0.86      0.86       500
+   macro avg       0.86      0.86      0.86       500
+weighted avg       0.86      0.86      0.86       500
+
+[[214  36]
+ [ 34 216]]
+
+--Current Cross Validation Fold: 0
+
+Number of Features/Dimension is: 5000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 23.27sec (Linear SVM) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.864
+              precision    recall  f1-score   support
+
+           0       0.87      0.86      0.86       250
+           1       0.86      0.87      0.87       250
+
+   micro avg       0.86      0.86      0.86       500
+   macro avg       0.86      0.86      0.86       500
+weighted avg       0.86      0.86      0.86       500
+
+[[214  36]
+ [ 32 218]]
+
+--Current Cross Validation Fold: 0
+
+Number of Features/Dimension is: 5000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 23.85sec (Stochastic Gradient Descent on SVM) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.862
+              precision    recall  f1-score   support
+
+           0       0.88      0.84      0.86       250
+           1       0.84      0.89      0.87       250
+
+   micro avg       0.86      0.86      0.86       500
+   macro avg       0.86      0.86      0.86       500
+weighted avg       0.86      0.86      0.86       500
+
+[[209  41]
+ [ 28 222]]
+
+--Current Cross Validation Fold: 0
+Iteration 1, loss = 0.69728479
+Iteration 2, loss = 0.69429740
+Iteration 3, loss = 0.69252199
+Iteration 4, loss = 0.69169435
+Iteration 5, loss = 0.68934952
+Iteration 6, loss = 0.68740896
+Iteration 7, loss = 0.68455478
+Iteration 8, loss = 0.68050864
+Iteration 9, loss = 0.67631239
+Iteration 10, loss = 0.66926051
+Iteration 11, loss = 0.66030393
+Iteration 12, loss = 0.64776731
+Iteration 13, loss = 0.62929389
+Iteration 14, loss = 0.60277472
+Iteration 15, loss = 0.56296704
+Iteration 16, loss = 0.50915499
+Iteration 17, loss = 0.45715690
+Iteration 18, loss = 0.49598867
+Iteration 19, loss = 0.50581559
+Iteration 20, loss = 0.40248705
+Iteration 21, loss = 0.52331237
+Iteration 22, loss = 0.23471828
+Iteration 23, loss = 0.16774218
+Iteration 24, loss = 0.12095000
+Iteration 25, loss = 0.09877073
+Iteration 26, loss = 0.06799143
+Iteration 27, loss = 0.05183874
+Iteration 28, loss = 0.04008515
+Iteration 29, loss = 0.03189519
+Iteration 30, loss = 0.02606205
+Iteration 31, loss = 0.02244168
+Iteration 32, loss = 0.01910825
+Iteration 33, loss = 0.01645544
+Iteration 34, loss = 0.01443595
+Iteration 35, loss = 0.01313868
+Iteration 36, loss = 0.01177388
+Iteration 37, loss = 0.01078161
+Iteration 38, loss = 0.01002283
+Iteration 39, loss = 0.00923244
+Iteration 40, loss = 0.00865765
+Iteration 41, loss = 0.00811452
+Iteration 42, loss = 0.00761989
+Iteration 43, loss = 0.00720444
+Iteration 44, loss = 0.00686175
+Iteration 45, loss = 0.00655233
+Iteration 46, loss = 0.00636523
+Iteration 47, loss = 0.00598722
+Iteration 48, loss = 0.00574893
+Iteration 49, loss = 0.00551521
+Iteration 50, loss = 0.00537109
+Iteration 51, loss = 0.00515620
+Iteration 52, loss = 0.00497766
+Iteration 53, loss = 0.00485067
+Iteration 54, loss = 0.00475043
+Iteration 55, loss = 0.00457500
+Iteration 56, loss = 0.00445307
+Iteration 57, loss = 0.00434420
+Iteration 58, loss = 0.00425976
+Iteration 59, loss = 0.00415632
+Iteration 60, loss = 0.00405276
+Iteration 61, loss = 0.00396477
+Iteration 62, loss = 0.00388707
+Iteration 63, loss = 0.00382118
+Iteration 64, loss = 0.00374625
+Iteration 65, loss = 0.00367433
+Iteration 66, loss = 0.00361067
+Iteration 67, loss = 0.00355162
+Iteration 68, loss = 0.00350081
+Iteration 69, loss = 0.00343814
+Iteration 70, loss = 0.00339178
+Iteration 71, loss = 0.00334077
+Training loss did not improve more than tol=0.000100 for 10 consecutive epochs. Stopping.
+
+Number of Features/Dimension is: 5000
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - RESULT METRICS - 48.71sec (Multi-layer Perceptron) best of 1 Cross Validations - - - - -
+Exact Accuracy:  0.87
+              precision    recall  f1-score   support
+
+           0       0.87      0.87      0.87       250
+           1       0.87      0.87      0.87       250
+
+   micro avg       0.87      0.87      0.87       500
+   macro avg       0.87      0.87      0.87       500
+weighted avg       0.87      0.87      0.87       500
+
+[[218  32]
+ [ 33 217]]
+(base) s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ some

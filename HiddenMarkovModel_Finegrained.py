@@ -84,88 +84,51 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
             data_test_transformed.append(temp)   
 
 
-    ### (Unsupervised) Train
+    ### (Unsupervised) Train - Old Implementation
     # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
-
-    # # Find out which which State number corresponds to pos/neg/neu respectively
-    # positiveState = list()
-    # negativeState = list()
-    # neutralState = list()
-    # print()
-    # for x in range(0, len(documentSentiments)):
-    #     if silent_enable != 1:
-    #         print("State", hmm_leanfrominput.states[x].name, hmm_leanfrominput.states[x].distribution.parameters)
-    #     temp_dict = hmm_leanfrominput.states[x].distribution.parameters[0]
-    #     positiveState.append(temp_dict["p" * n])
-    #     negativeState.append(temp_dict["n" * n])
-    #     neutralState.append(temp_dict["u" * n])
-    # positiveState = positiveState.index(max(positiveState))
-    # negativeState = negativeState.index(max(negativeState))
-    # neutralState = neutralState.index(max(neutralState))
-    # print("Pos Index is", positiveState, "Neg Index is", negativeState, "Neu Index is", neutralState)
-    # ###
-
+    #
+    # # Find out which which State number corresponds to which documentSentiment respectively
+    # ...
     # ### (Unsupervised) Predict
-    # predicted = list()
-    # for x in range(0, len(data_test_transformed)):
-    #     try:
-    #         predict = hmm_leanfrominput.predict(data_test_transformed[x], algorithm='viterbi')
-    #     except ValueError as err:  # Prediction failed, predict randomly
-    #         print("Prediction Failed:", err)
-    #         predict = [randint(0, 2)]
-
-    #     if predict[-1] == positiveState:  # I only care about the last Prediction
-    #         predicted.append("pos")
-    #     elif predict[-1] == negativeState:
-    #         predicted.append("neg")
-    #     else:
-    #         predicted.append("neu")
-
-    #     #predicted.append(hmm_leanfrominput.states[predict[-1]].name)
-
+    # ...  
     # #Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
     # ###
 
     print()
 
     ### (Supervised) Train
-    # In this case, find out which State corresponds to pos/neg/neu before training   
+    # In this case, find out which State corresponds to pos/neg/neu before training  
     labels_supervised = list()
     for i, x in enumerate(labels_train):
         getlength = len(data_train_transformed[i])
-        if x == "pos":  # state0 is pos, state1 is neg, state2 is neu
-            labels_supervised.append(["s0"] * getlength)
-        elif x == "neg":      
-            labels_supervised.append(["s1"] * getlength)    
-        else:
-            labels_supervised.append(["s2"] * getlength)  
-    positiveState = 0
-    negativeState = 1
-    neutralState = 2              
+        state_name = "s" + str(documentSentiments.index(x))
+        labels_supervised.append([state_name] * getlength)
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
+    state_names = list()
+    for i in range(0, len(documentSentiments)):
+        state_names.append("s" + str(i))
+
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
             print("State", hmm_leanfrominput_supervised_2.states[x].name, hmm_leanfrominput_supervised_2.states[x].distribution.parameters)
-    print("Pos Index is", positiveState, "Neg Index is", negativeState, "Neu Index is", neutralState)
+    print("Indexes:", tuple(zip(documentSentiments, state_names)))
     ###
 
     ### (Supervised) Predict
     predicted = list()
     for x in range(0, len(data_test_transformed)):
-        try:        
-            predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
-        except ValueError as err:  # Prediction failed, predict randomly
-            print("Prediction Failed:", err)
-            predict = [randint(0, 2)]           
+        if len(data_test_transformed[x]) > 0:        
+            try:        
+                predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
+            except ValueError as err:  # Prediction failed, predict randomly
+                print("Prediction Failed:", err)
+                predict = [randint(0, 2)]           
+        else:  #  Prediction would be stuck at Starting State
+            predict = [randint(0, 2)] 
 
-        if predict[-1] == positiveState:  # I only care about the last Prediction
-            predicted.append("pos")
-        elif predict[-1] == negativeState:
-            predicted.append("neg")
-        else:
-            predicted.append("neu")
+        predicted.append(documentSentiments[predict[-1]])  # I only care about the last Prediction
 
         #predicted.append(hmm_leanfrominput_supervised_2.states[predict[-1]].name)
 
@@ -189,7 +152,10 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     print()
 
     ### (Supervised) Log Probabilities for Ensembling
-    predicted_proba = pd.DataFrame.from_dict({'Pos_Prob': None, 'Neg_Prob': None, 'Neu_Prob': None, 'PhraseId': data_test})
+    predicted_proba = pd.DataFrame.from_dict({'Data': data_test})
+    for i in range(0, len(documentSentiments)):
+        predicted_proba.insert(loc=i, column=documentSentiments[i], value=np.nan)
+
     for x in range(0, len(data_test_transformed)):
         if len(data_test_transformed[x]) > 0:
             try:      
@@ -197,11 +163,11 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
             except ValueError as err:  # Prediction failed, predict equal probabilities
                 print("Prediction Failed:", err)
                 temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
-        else:  #  Prediction would return: Sequence is Impossible
+        else:  #  Prediction would be stuck at Starting State
             temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e
-        predicted_proba.iloc[x, positiveState] = temp[positiveState]
-        predicted_proba.iloc[x, negativeState] = temp[negativeState]
-        predicted_proba.iloc[x, neutralState] = temp[neutralState]
+
+        for j in range (0, len(documentSentiments)):
+            predicted_proba.iloc[x, j] = temp[j] 
     ###
     return predicted_proba
 
@@ -264,7 +230,7 @@ print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_data
 # Split using Cross Validation
 k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object:
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -273,10 +239,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
 
     ### LET'S BUILD : High-Order Hidden Markov Model
-    sentenceSentiments = set(x for l in data_train for x in l)  # get Unique Sentiments
+    sentenceSentiments = list(set(x for l in data_train for x in l))  # get Unique Sentiments
     print ("\n--Number of Observed States is", len(sentenceSentiments))
 
-    documentSentiments = set(labels_train.unique())  # get Unique Sentiments
+    documentSentiments = list(set(labels_train.unique()))  # get Unique Sentiments, everything is mapped against this List
     print ("--Number of Hidden States is", len(documentSentiments))
 
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
@@ -287,17 +253,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
 
     ### Ensemble
-    time_counter = my_time.time()    
-    ensemble = 0.40*predicted_proba_1[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values + 0.30*predicted_proba_2[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values + 0.30*predicted_proba_3[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values  # Weights taken from C. Quan, F. Ren [2015]
+    time_counter = my_time.time()  
+    ensemble = 0.40*predicted_proba_1.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_2.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_3.iloc[:, 0:len(documentSentiments)].values  # Weights taken from C. Quan, F. Ren [2015]      
     predicted_indexes = np.round(np.argmax(ensemble, axis=1)).astype(int)
     predicted = list()
     for x in predicted_indexes:  # Convert Indexes to Strings
-        if x == 0:    # positiveState
-            predicted.append("pos")
-        elif x == 1:  # negativeState
-            predicted.append("neg")
-        else:         # neutralState
-            predicted.append("neu")
+        predicted.append(documentSentiments[x])
 
     Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble") 
     ###   

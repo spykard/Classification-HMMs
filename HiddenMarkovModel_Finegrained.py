@@ -21,55 +21,49 @@ cross_validation_best_ensemble = [0.000, "", [], [], 0.0]  # [Score, Model Name,
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
-    dataset = [["" for j in range(3)] for i in range(294)]
+    # data = [["" for j in range(3)] for i in range(294)]
+    data = ["" for i in range(294)]
+    sequences = [[] for i in range(294)]
+    labels = ["" for i in range(294)]
     count = 0
     with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
         for line in file:
             if len(line.split("_")) == 3:
-                dataset[count][0] = line.split("_")[1]
+                labels[count] = line.split("_")[1]
             elif len(line.strip()) == 0:
                 count += 1
             else:
                 temp = [x.strip() for x in line.split("\t")]
                 if len(temp[1]) > 1:
-                    # n for negative - u for neutral - p for positive - m for mix --- nr is ignored
-                    if temp[0].startswith("neg"):
-                        dataset[count][1] += "n"
-                    elif temp[0].startswith("neu"):
-                        dataset[count][1] += "u"
-                    elif temp[0].startswith("pos"):
-                        dataset[count][1] += "p"
-                    elif temp[0].startswith("mix"):
-                        dataset[count][1] += "m"                    
+                    # "nr" label is ignored
+                    if temp[0] in ["neg", "neu", "pos", "mix"]:
+                        sequences[count].append(temp[0])              
 
-                    dataset[count][2] += temp[1]
-
+                    data[count] += temp[1]
 
     print("--Processed", count+1, "documents", "\n--Dataset Name:", dataset_name)
 
-    df_dataset = pd.DataFrame(data=dataset)
+    df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
 
-    # Remove empty instances from DataFrame
-    emptyCells = df_dataset.loc[df_dataset.iloc[:,1] == ''].index.values
+    # Remove empty instances from DataFrame, actually affects accuracy
+    emptyCells = df_dataset.loc[df_dataset.Sequences.map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
     return df_dataset
 
 
-def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n):
+def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n):
     '''    Create 2 Hidden Markov Models of Nth Order, first is Unsupervised, second is Supervised    '''
     '''    Returns:     Predicted log probability Matrix                                              '''
     time_counter = my_time.time()
 
-    # The sequences are stored as a String in the Dataframe, time to transform them to the correct form
-    data_train_asList = list() 
-    data_test_asList = list()       
+    # The sequences are stored as a List in the Dataframe, time to transform them to the correct form
+    data_train_transformed = list() 
+    data_test_transformed = list()       
     if n == 1:  # No need to do ngrams on 1st Order
-        for x in data_train:
-            data_train_asList.append(list(x))
+        data_train_transformed = data_train.tolist()
         # Same
-        for x in data_test:
-            data_test_asList.append(list(x)) 
+        data_test_transformed = data_test.tolist()
     else:
         for x in data_train:
             ngrams_temp = ngrams(x, n)
@@ -78,7 +72,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                 for grams in ngrams_temp:
                     temp.append("".join(grams))
 
-            data_train_asList.append(temp)   
+            data_train_transformed.append(temp)   
         # Same
         for x in data_test:
             ngrams_temp = ngrams(x, n)
@@ -87,10 +81,11 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                 for grams in ngrams_temp:
                     temp.append("".join(grams))
 
-            data_test_asList.append(temp)   
+            data_test_transformed.append(temp)   
+
 
     ### (Unsupervised) Train
-    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
+    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
 
     # # Find out which which State number corresponds to pos/neg/neu respectively
     # positiveState = list()
@@ -112,9 +107,9 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
     # ### (Unsupervised) Predict
     # predicted = list()
-    # for x in range(0, len(data_test_asList)):
+    # for x in range(0, len(data_test_transformed)):
     #     try:
-    #         predict = hmm_leanfrominput.predict(data_test_asList[x], algorithm='viterbi')
+    #         predict = hmm_leanfrominput.predict(data_test_transformed[x], algorithm='viterbi')
     #     except ValueError as err:  # Prediction failed, predict randomly
     #         print("Prediction Failed:", err)
     #         predict = [randint(0, 2)]
@@ -137,7 +132,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     # In this case, find out which State corresponds to pos/neg/neu before training   
     labels_supervised = list()
     for i, x in enumerate(labels_train):
-        getlength = len(data_train_asList[i])
+        getlength = len(data_train_transformed[i])
         if x == "pos":  # state0 is pos, state1 is neg, state2 is neu
             labels_supervised.append(["s0"] * getlength)
         elif x == "neg":      
@@ -148,7 +143,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     negativeState = 1
     neutralState = 2              
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
@@ -158,9 +153,9 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
     ### (Supervised) Predict
     predicted = list()
-    for x in range(0, len(data_test_asList)):
+    for x in range(0, len(data_test_transformed)):
         try:        
-            predict = hmm_leanfrominput_supervised_2.predict(data_test_asList[x], algorithm='viterbi')
+            predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
         except ValueError as err:  # Prediction failed, predict randomly
             print("Prediction Failed:", err)
             predict = [randint(0, 2)]           
@@ -195,10 +190,10 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
     ### (Supervised) Log Probabilities for Ensembling
     predicted_proba = pd.DataFrame.from_dict({'Pos_Prob': None, 'Neg_Prob': None, 'Neu_Prob': None, 'PhraseId': data_test})
-    for x in range(0, len(data_test_asList)):
-        if len(data_test_asList[x]) > 0:
+    for x in range(0, len(data_test_transformed)):
+        if len(data_test_transformed[x]) > 0:
             try:      
-                temp = hmm_leanfrominput_supervised_2.predict_log_proba(data_test_asList[x])[-1]
+                temp = hmm_leanfrominput_supervised_2.predict_log_proba(data_test_transformed[x])[-1]
             except ValueError as err:  # Prediction failed, predict equal probabilities
                 print("Prediction Failed:", err)
                 temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
@@ -261,8 +256,8 @@ def Print_Result_Best(k):
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
 df_dataset = Run_Preprocessing("Finegrained")
-all_data = df_dataset.iloc[:,1]
-all_labels = df_dataset.iloc[:,0]
+all_data = df_dataset.loc[:,'Sequences']
+all_labels = df_dataset.loc[:,'Labels']
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
 
@@ -278,16 +273,16 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
 
     ### LET'S BUILD : High-Order Hidden Markov Model
-    sentenceSentiments = set("".join(list(data_train.unique())))  # get Unique Sentiments
+    sentenceSentiments = set(x for l in data_train for x in l)  # get Unique Sentiments
     print ("\n--Number of Observed States is", len(sentenceSentiments))
 
     documentSentiments = set(labels_train.unique())  # get Unique Sentiments
     print ("--Number of Hidden States is", len(documentSentiments))
 
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
-    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 1)
-    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 1, 0, 3)
+    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
+    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
+    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
     ###
 
 

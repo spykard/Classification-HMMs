@@ -6,18 +6,18 @@ s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ source activate base
 --Dataset Name: Finegrained
 
 --Dataset Info:
-           0       1                                                  2
-count   292     292                                                292
-unique    3     225                                                292
-top     neg  pppppp  This is a really cool story.I loved the strong...
-freq     98      10                                                  1
+        Labels                                               Data                       Sequences
+count     292                                                292                             292
+unique      3                                                292                             225
+top       neg  Not often does a story touch me in a way that ...  [pos, pos, pos, pos, pos, pos]
+freq       98                                                  1                              10
 
-      0          1                                                  2
-0  neg    nnnnnuu  The book is disproportionally focused on singl...
-1  neg    nnnnnmn  I began this novel with the greatest of hopes,...
-2  neg  nnpnnnpnn  Readers of Dean Koontz's Frankenstein have bee...
-3  neg   nnnnnnnn  I used to wait in anticipation for the next Sc...
-4  neg   nnnnnppn  Mortimer's "How to read a book" is a 400 page ...
+   Labels                                               Data                                      Sequences
+0    neg  The book is disproportionally focused on singl...            [neg, neg, neg, neg, neg, neu, neu]
+1    neg  I began this novel with the greatest of hopes,...            [neg, neg, neg, neg, neg, mix, neg]
+2    neg  Readers of Dean Koontz's Frankenstein have bee...  [neg, neg, pos, neg, neg, neg, pos, neg, neg]
+3    neg  I used to wait in anticipation for the next Sc...       [neg, neg, neg, neg, neg, neg, neg, neg]
+4    neg  Mortimer's "How to read a book" is a 400 page ...       [neg, neg, neg, neg, neg, pos, pos, neg]
 
 
 --Current Cross Validation Fold: 0
@@ -27,7 +27,7 @@ freq     98      10                                                  1
 
 Pos Index is 0 Neg Index is 1 Neu Index is 2
 
-- - - - - RESULT METRICS - 0.47sec HMM 1th Order Supervised - - - - -
+- - - - - RESULT METRICS - 0.48sec HMM 1th Order Supervised - - - - -
 Exact Accuracy:  0.68
               precision    recall  f1-score   support
 
@@ -230,7 +230,7 @@ weighted avg       0.78      0.78      0.78        72
 
 
 Pos Index is 0 Neg Index is 1 Neu Index is 2
-Prediction Failed: Symbol 'mpu' is not defined in a distribution
+Prediction Failed: Symbol 'mixposneu' is not defined in a distribution
 
 - - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
 Exact Accuracy:  0.7222222222222222
@@ -249,7 +249,7 @@ weighted avg       0.73      0.72      0.71        72
  [ 1  1 22]]
 
 
-Prediction Failed: Symbol 'mpu' is not defined in a distribution
+Prediction Failed: Symbol 'mixposneu' is not defined in a distribution
 
 - - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
 Exact Accuracy:  0.7361111111111112
@@ -314,7 +314,7 @@ weighted avg       0.69      0.69      0.69        72
 
 
 Pos Index is 0 Neg Index is 1 Neu Index is 2
-Prediction Failed: Symbol 'mmu' is not defined in a distribution
+Prediction Failed: Symbol 'mixmixneu' is not defined in a distribution
 
 - - - - - RESULT METRICS - 0.01sec HMM 3th Order Supervised - - - - -
 Exact Accuracy:  0.7361111111111112
@@ -333,7 +333,7 @@ weighted avg       0.74      0.74      0.74        72
  [ 0  5 19]]
 
 
-Prediction Failed: Symbol 'mmu' is not defined in a distribution
+Prediction Failed: Symbol 'mixmixneu' is not defined in a distribution
 
 - - - - - RESULT METRICS - 0.00sec Ensemble - - - - -
 Exact Accuracy:  0.7777777777777778

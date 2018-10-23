@@ -128,7 +128,7 @@ def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, tim
         cross_validation_best[4] = time_final         
 
 
-def Print_Result_Best():
+def Print_Result_Best(k):
     '''    Print Metrics only of the best result that occured    '''
     global cross_validation_best
     global all_models_accuracy
@@ -254,7 +254,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -304,7 +304,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -356,7 +356,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -408,7 +408,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -458,7 +458,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -508,7 +508,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -558,7 +558,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 
@@ -611,7 +611,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
     break  # Disable Cross Validation
 
-Print_Result_Best()
+Print_Result_Best(k)
 ###
 
 

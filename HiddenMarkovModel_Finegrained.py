@@ -306,6 +306,6 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble") 
     ###   
-    break  # Disable Cross Validation
+    #break  # Disable Cross Validation
 
 Print_Result_Best(k)

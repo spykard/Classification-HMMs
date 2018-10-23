@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from math import log
 from random import randint
+import time as my_time  # Required to avoid some sort of conflict with pomegranate
 
 from pomegranate import *
 from sklearn.model_selection import RepeatedStratifiedKFold
@@ -145,7 +146,7 @@ def HMM_1stOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
         #predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, None, "HMM 1st Order Supervised")
+    Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, 0.0, 1, "HMM 1st Order Supervised")    
     ###
     
     ### Graph Plotting
@@ -178,9 +179,10 @@ def HMM_1stOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     return predicted_proba
 
 
-def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, silent_enable, plot_enable, n):
+def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, targetnames, silent_enable, silent_enable_2, plot_enable, n):
     '''    Create 2 Hidden Markov Models of Nth Order, first is Unsupervised, second is Supervised    '''
     '''    Returns:     Predicted log probability Matrix                                              '''
+    time_counter = my_time.time()
 
     ### (Unsupervised) Train
     # The sequences are stored as a String in the Dataframe, time to transform them to the correct form
@@ -288,7 +290,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
         #predicted.append(hmm_leanfrominput_supervised_2.states[predict[-1]].name)
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, None, "HMM "+str(n)+"th Order Supervised")
+    Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
     ###
 
     ### Graph Plotting
@@ -325,30 +327,54 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     return predicted_proba
 
 
-def Print_Result_Metrics(labels_test, predicted, targetnames, model_name):
+def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
     '''    Print Metrics after Training etc.    '''
     global cross_validation_best
 
-    print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
+    if time_flag == 0:
+        time_final = my_time.time()-time_counter
+    else:
+        time_final = time_counter
+
     accuracy = metrics.accuracy_score(labels_test, predicted)
-    print('Exact Accuracy: ', accuracy)
-    print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
-    print(metrics.confusion_matrix(labels_test, predicted))
+    if silent_enable == 0:
+        if time_counter == 0.0:
+            print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
+        else:
+            print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
+        print('Exact Accuracy: ', accuracy)
+        print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
+        print(metrics.confusion_matrix(labels_test, predicted))
+        print()
 
     if accuracy > cross_validation_best[0]:
         cross_validation_best[0] = accuracy
         cross_validation_best[1] = model_name
         cross_validation_best[2] = labels_test
         cross_validation_best[3] = predicted 
+        cross_validation_best[4] = time_final 
     if model_name == "Ensemble":
         if accuracy > cross_validation_best_ensemble[0]:
             cross_validation_best_ensemble[0] = accuracy
             cross_validation_best_ensemble[1] = model_name
             cross_validation_best_ensemble[2] = labels_test
-            cross_validation_best_ensemble[3] = predicted            
+            cross_validation_best_ensemble[3] = predicted  
+            cross_validation_best_ensemble[4] = time_final           
+
+
+def Print_Result_Best(k):
+    '''    Print Metrics only of the best result that occured    '''
+    global cross_validation_best
+
+    if cross_validation_best[0] > 0.0:
+        print("\n" + "- " * 37, end = "")
+        Print_Result_Metrics(cross_validation_best[2], cross_validation_best[3], None, 0, cross_validation_best[4], 1, cross_validation_best[1] + "best overall of " + str(k+1) + " Cross Validations")
+        Print_Result_Metrics(cross_validation_best_ensemble[2], cross_validation_best_ensemble[3], None, 0, cross_validation_best_ensemble[4], 1, "Best ensemble of " + str(k+1) + " Cross Validations")
 
 
 ### START
+
+np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
 df_dataset = Run_Preprocessing("Finegrained")
 all_data = df_dataset.iloc[:,1]
@@ -357,16 +383,15 @@ all_labels = df_dataset.iloc[:,0]
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
 
 # Split using Cross Validation
-k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
+k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Spit must be done before every classifier because enumerate actually destroys the object:
     print("\n--Current Cross Validation Fold:", k)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
     data_test = all_data.reindex(test_indexes, copy=True, axis=0)
     labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
-
 
     ### LET'S BUILD : High-Order Hidden Markov Model
     sentenceSentiments = set("".join(list(data_train.unique())))  # get Unique Sentiments
@@ -376,10 +401,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print ("--Number of Hidden States is", len(documentSentiments))
 
     predicted_proba_1 = HMM_1stOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, 1, 0)
-    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, 1, 0, 3)
+    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 0, 2)
+    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, None, 1, 0, 0, 3)
+    ###
 
     ### Ensemble
+    time_counter = my_time.time()    
     ensemble = 0.40*predicted_proba_1[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values + 0.30*predicted_proba_2[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values + 0.30*predicted_proba_3[['Pos_Prob', 'Neg_Prob', 'Neu_Prob']].values  # Weights taken from C. Quan, F. Ren [2015]
     predicted_indexes = np.round(np.argmax(ensemble, axis=1)).astype(int)
     predicted = list()
@@ -391,11 +418,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
         else:         # neutralState
             predicted.append("neu")
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, None, "Ensemble")
-    ###
+    Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble")    
+    #break  # Disable Cross Validation
 
-
-# Best Cross Validations
-print("\n\n" + "- " * 37, end = "")
-Print_Result_Metrics(cross_validation_best[2], cross_validation_best[3], None, "Best Overall: " + cross_validation_best[1])
-Print_Result_Metrics(cross_validation_best_ensemble[2], cross_validation_best_ensemble[3], None, "Best Ensemble")
+Print_Result_Best(k)

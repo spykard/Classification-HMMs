@@ -123,7 +123,7 @@ def HMM_1stOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     negativeState = 1
     neutralState = 2
 
-    hmm_leanfrominput_supervised = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=-1, verbose=False, name="FineGrained HMM")
+    hmm_leanfrominput_supervised = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_asList, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=1, verbose=False, name="FineGrained HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
@@ -262,7 +262,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     negativeState = 1
     neutralState = 2              
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_ngram, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=-1, verbose=False, name="FineGrained HMM")
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_ngram, labels=labels_supervised, state_names=["s0", "s1", "s2"], n_jobs=1, verbose=False, name="FineGrained HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):

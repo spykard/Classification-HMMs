@@ -43,26 +43,18 @@ def Run_Preprocessing(dataset_name):
                 data[count] = temp[1]
             count += 1
 
-            # if len(line.split("_")) == 3:
-            #     labels[count] = line.split("_")[1]
-            # elif len(line.strip()) == 0:
-            #     count += 1
-            # else:
-            #     temp = [x.strip() for x in line.split("\t")]
-            #     if len(temp[1]) > 1:
-            #         # "nr" label is ignored
-            #         if temp[0] in ["neg", "neu", "pos", "mix"]:
-            #             sequences[count].append(temp[0])              
-
-            #         data[count] += temp[1]
-
     print("--Processed", count+1, "documents", "\n--Dataset Name:", dataset_name)
 
     df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
 
     # Remove empty instances from DataFrame, actually affects accuracy
-    emptyCells = df_dataset.loc[df_dataset.Sequences.map(len) < 1].index.values
+    emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
+
+    mask = df_dataset.loc[:,'Labels'] == "No"
+    df_dataset_to_undersample_ = df_dataset[mask]
+    df_dataset = df_dataset[~mask]
+ 
 
     return df_dataset
 
@@ -240,8 +232,8 @@ df_dataset = Run_Preprocessing("Finegrained")
 all_data = df_dataset.loc[:,'Sequences']
 all_labels = df_dataset.loc[:,'Labels']
 
-print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
-
+print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+quit()
 # Split using Cross Validation
 k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 

@@ -6,18 +6,24 @@ s@s-PC:~/Desktop/repo_Sentiment-Analysis-Thesis$ source activate base
 --Dataset Name: Finegrained
 
 --Dataset Info:
-        Labels                                               Data                       Sequences
+       Labels                                               Data                       Sequences
 count     292                                                292                             292
 unique      3                                                292                             225
-top       neg  This is my third set.(Before I had Motorola, t...  [pos, pos, pos, pos, pos, pos]
+top       neg  Having just finished a long journey through "T...  [pos, pos, pos, pos, pos, pos]
 freq       98                                                  1                              10
 
-   Labels                                               Data                                      Sequences
+  Labels                                               Data                                      Sequences
 0    neg  The book is disproportionally focused on singl...            [neg, neg, neg, neg, neg, neu, neu]
 1    neg  I began this novel with the greatest of hopes,...            [neg, neg, neg, neg, neg, mix, neg]
 2    neg  Readers of Dean Koontz's Frankenstein have bee...  [neg, neg, pos, neg, neg, neg, pos, neg, neg]
 3    neg  I used to wait in anticipation for the next Sc...       [neg, neg, neg, neg, neg, neg, neg, neg]
 4    neg  Mortimer's "How to read a book" is a 400 page ...       [neg, neg, neg, neg, neg, pos, pos, neg]
+
+neg    98
+neu    97
+pos    97
+Name: Labels, dtype: int64
+--
 
 
 --Current Cross Validation Fold: 0

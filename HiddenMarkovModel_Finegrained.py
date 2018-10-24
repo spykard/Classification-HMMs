@@ -124,7 +124,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                 predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
             except ValueError as err:  # Prediction failed, predict randomly
                 print("Prediction Failed:", err)
-                predict = [randint(0, len(documentSentiments)-1)]           
+                predict = [randint(0, len(documentSentiments)-1)] 
         else:  #  Prediction would be stuck at Starting State
             predict = [randint(0, len(documentSentiments)-1)] 
 

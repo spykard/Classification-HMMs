@@ -46,7 +46,7 @@ def Run_Preprocessing(dataset_name):
     df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
 
     # Remove empty instances from DataFrame, actually affects accuracy
-    emptyCells = df_dataset.loc[df_dataset.Sequences.map(len) < 1].index.values
+    emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
     return df_dataset

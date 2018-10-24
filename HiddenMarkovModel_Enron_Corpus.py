@@ -147,7 +147,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                 predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
             except ValueError as err:  # Prediction failed, predict randomly
                 print("Prediction Failed:", err)
-                predict = [randint(0, len(documentSentiments)-1)]           
+                predict = [randint(0, len(documentSentiments)-1)]
         else:  #  Prediction would be stuck at Starting State
             predict = [randint(0, len(documentSentiments)-1)] 
 
@@ -269,7 +269,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print ("--Number of Hidden States is", len(documentSentiments))
 
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
-    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
+    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
     quit()
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)

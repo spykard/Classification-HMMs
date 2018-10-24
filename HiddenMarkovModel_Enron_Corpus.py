@@ -51,9 +51,9 @@ def Run_Preprocessing(dataset_name):
     emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
-    # Balance the Dataset
+    # Balance the Dataset in terms of Instance Count per Label
     mask = df_dataset.loc[:,'Labels'] == "No"
-    df_dataset_to_undersample = df_dataset[mask].sample(n=1000, random_state=22)
+    df_dataset_to_undersample = df_dataset[mask].sample(n=500, random_state=22)
     df_dataset = df_dataset[~mask]
  
     df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
@@ -118,7 +118,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     for i in range(0, len(documentSentiments)):
         state_names.append("s" + str(i))
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=True, name="Enron Corpus HMM")
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Enron Corpus HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
@@ -256,7 +256,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print ("--Number of Hidden States is", len(documentSentiments))
 
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
-    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
+    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 0, 0, 1)
     quit()
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)

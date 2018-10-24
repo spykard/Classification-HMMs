@@ -51,10 +51,13 @@ def Run_Preprocessing(dataset_name):
     emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
+    # Balance the Dataset
     mask = df_dataset.loc[:,'Labels'] == "No"
-    df_dataset_to_undersample_ = df_dataset[mask]
+    df_dataset_to_undersample = df_dataset[mask].sample(n=1000, random_state=22)
     df_dataset = df_dataset[~mask]
  
+    df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
+    df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -233,7 +236,7 @@ all_data = df_dataset.loc[:,'Sequences']
 all_labels = df_dataset.loc[:,'Labels']
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
-quit()
+
 # Split using Cross Validation
 k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 

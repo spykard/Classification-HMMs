@@ -225,7 +225,7 @@ df_dataset = Run_Preprocessing("Finegrained")
 all_data = df_dataset.loc[:,'Sequences']
 all_labels = df_dataset.loc[:,'Labels']
 
-print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n")
+print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n")
 
 # Split using Cross Validation
 k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
@@ -247,6 +247,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
     predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
+    quit()
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
     ###

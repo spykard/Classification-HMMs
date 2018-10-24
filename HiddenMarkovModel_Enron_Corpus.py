@@ -108,7 +108,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
 
     ### (Unsupervised) Train - Old Implementation
-    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Enron Corpus HMM")
+    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Enron HMM")
     #
     # # Find out which which State number corresponds to which documentSentiment respectively
     # ...
@@ -131,7 +131,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     for i in range(0, len(documentSentiments)):
         state_names.append("s" + str(i))
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Enron Corpus HMM")
+    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Enron HMM")
 
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
@@ -147,7 +147,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                 predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
             except ValueError as err:  # Prediction failed, predict randomly
                 print("Prediction Failed:", err)
-                predict = [randint(0, len(documentSentiments)-1)]
+                predict = [randint(0, len(documentSentiments)-1)] 
         else:  #  Prediction would be stuck at Starting State
             predict = [randint(0, len(documentSentiments)-1)] 
 

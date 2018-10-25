@@ -125,7 +125,6 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
     print("Indexes:", tuple(zip(documentSentiments, state_names)))
     ###
 
-    countfails = 0
     ### (Supervised) Predict
     predicted = list()
     for x in range(0, len(data_test_transformed)):
@@ -135,7 +134,6 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
             except ValueError as err:  # Prediction failed, predict randomly
                 print("Prediction Failed:", err)
                 predict = [randint(0, len(documentSentiments)-1)] 
-                countfails += 1
         else:  #  Prediction would be stuck at Starting State
             predict = [randint(0, len(documentSentiments)-1)] 
 
@@ -144,10 +142,6 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
         #predicted.append(hmm_leanfrominput_supervised_2.states[predict[-1]].name)
 
     Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
-
-    print(countfails)
-    quit()
-
     ###
 
     ### Graph Plotting
@@ -262,9 +256,9 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     # Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
-    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
-    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
+    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
+    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
+    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
     ###
 
 

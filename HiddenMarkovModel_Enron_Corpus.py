@@ -51,26 +51,12 @@ def Run_Preprocessing(dataset_name):
     emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
-    # Balance the Dataset in terms of Instance Count per Label
-    mask = df_dataset.loc[:,'Labels'] == "No"
-    df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
-
-    # Debug
-    # df_dataset_to_undersample = df_dataset[mask].sample(n=500, random_state=22).reset_index(drop=True)
-    # for index, xxx in enumerate(df_dataset_to_undersample.loc[:,'Sequences']):
-    #     print(index)
-    #     print(df_dataset_to_undersample.loc[:,'Sequences'][index][-2:])
-
-    df_dataset = df_dataset[~mask]
-
-    # Debug
-    # df_dataset = df_dataset[~mask].sample(n=500, random_state=22).reset_index(drop=True)
-    # for index, xxx in enumerate(df_dataset_to_undersample.loc[:,'Sequences']):
-    #     print(index)
-    #     print(df_dataset.loc[:,'Sequences'][index][-2:])
-
-    df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
-    df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
+    # # Balance the Dataset in terms of Instance Count per Label
+    # mask = df_dataset.loc[:,'Labels'] == "No"
+    # df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
+    # df_dataset = df_dataset[~mask]
+    # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
+    # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -277,7 +263,6 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     # Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
     predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
-    quit()
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
     ###

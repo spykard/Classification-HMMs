@@ -49,6 +49,13 @@ def Run_Preprocessing(dataset_name):
     emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
+    # # Balance the Dataset in terms of Instance Count per Label
+    # mask = df_dataset.loc[:,'Labels'] == "No"
+    # df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
+    # df_dataset = df_dataset[~mask]
+    # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
+    # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
+
     return df_dataset
 
 

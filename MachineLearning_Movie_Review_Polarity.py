@@ -42,7 +42,7 @@ all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
-    dataset = load_files('./Datasets/Movie Review Polarity Dataset//Full Length Reviews version/txt_sentoken', shuffle=False)
+    dataset = load_files('./Datasets/Movie Review Polarity Dataset/Full Length Reviews version/txt_sentoken', shuffle=False)
 
     print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
 

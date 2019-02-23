@@ -66,15 +66,17 @@ def Run_Preprocessing(dataset_name):
     return df_dataset
 
 
-def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, graph_print_enable, silent_enable, silent_enable_2, n_order):
+def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order):
     '''    Create a Hidden Markov Model of n-th Order, trained in a Supervised manner    '''
     '''    Input:     
                     data_train, data_test, labels_train, labels_test: Data and their labels
                     documentSentiments: A list of Unique Sentiments which are the Hidden States
                     targetnames: Optional list of labels to display on the testing/evaluation phase
                     n_jobs: The number of jobs to run in parallel. Value of 1 means use 1 processor and -1 means use all processors
+                    algorithm: Prediction Algorithm, can be either:
+                                Viterbi ('viterbi') or Maximum a posteriori ('map')
                     graph_print_enable: Enables the plotting the graph of the Hidden Markov Model
-                    silent_enable
+                    silent_enable: Enable/disable printing the entire matrix of observation probabilities
                     silent_enable_2
     
     
@@ -92,6 +94,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         data_train_transformed = data_train.tolist()
         # Same
         data_test_transformed = data_test.tolist()
+    # High-Order
     else:
         for x in data_train:
             ngrams_temp = ngrams(x, n_order)
@@ -111,10 +114,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
             data_test_transformed.append(temp)   
 
-    print()
 
-    ### (Supervised) Train
-    # In this case, find out which State corresponds to pos/neg/neu before training  
+    ### Supervised Training
+    # In this case we need to find out which State corresponds to each label (pos/neg/neu) before training  
     labels_supervised = list()
     for i, x in enumerate(labels_train):
         getlength = len(data_train_transformed[i])
@@ -125,20 +127,24 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     for i in range(0, len(documentSentiments)):
         state_names.append("s" + str(i))
 
-    hmm_leanfrominput_supervised_2 = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
+    hmm_leanfrominput_supervised = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
+    # Note: Algorithm used is Baum-Welch
+    ###
 
+    ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
+    print()
     if silent_enable != 1:
         for x in range(0, len(documentSentiments)):
-            print("State", hmm_leanfrominput_supervised_2.states[x].name, hmm_leanfrominput_supervised_2.states[x].distribution.parameters)
+            print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
     print("Indexes:", tuple(zip(documentSentiments, state_names)))
     ###
 
-    ### (Supervised) Predict
+    ### Supervised Prediction (Testing)
     predicted = list()
     for x in range(0, len(data_test_transformed)):
         if len(data_test_transformed[x]) > 0:        
             try:        
-                predict = hmm_leanfrominput_supervised_2.predict(data_test_transformed[x], algorithm='viterbi')
+                predict = hmm_leanfrominput_supervised.predict(data_test_transformed[x], algorithm='viterbi')
             except ValueError as err:  # Prediction failed, predict randomly
                 print("Prediction Failed:", err)
                 predict = [randint(0, len(documentSentiments)-1)] 
@@ -147,7 +153,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         predicted.append(documentSentiments[predict[-1]])  # I only care about the last Prediction
 
-        #predicted.append(hmm_leanfrominput_supervised_2.states[predict[-1]].name)
+        #predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
 
     Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
     ###
@@ -162,7 +168,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #hmm_leanfrominput.plot() 
         ax = plt.subplot(122)
         ax.set_title("Supervised")
-        hmm_leanfrominput_supervised_2.plot()
+        hmm_leanfrominput_supervised.plot()
         plt.show()
     ###
 
@@ -176,7 +182,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     for x in range(0, len(data_test_transformed)):
         if len(data_test_transformed[x]) > 0:
             try:      
-                temp = hmm_leanfrominput_supervised_2.predict_log_proba(data_test_transformed[x])[-1]
+                temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x])[-1]
             except ValueError as err:  # Prediction failed, predict equal probabilities
                 print("Prediction Failed:", err)
                 temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
@@ -226,7 +232,7 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
         cross_validation_best[3] = labels_test
         cross_validation_best[4] = predicted 
         cross_validation_best[5] = time_final 
-    if model_name == "Ensemble":
+    if model_name.startswith("Ensemble") == True:
         if accuracy > cross_validation_best_ensemble[0]:
             cross_validation_best_ensemble[0] = accuracy
             cross_validation_best_ensemble[1] = weighted_f1
@@ -241,7 +247,7 @@ def Print_Result_CrossVal_Final(k):
     global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
 
     print()
-    print("- " * 18, "CONCLUSION across", str(k), "\b-fold Cross Validation", "- " * 18)
+    print("- " * 18, "CONCLUSION across", str(k), "\b-fold Cross Validation", "- " * 18, "\n")
     if cross_validation_best[0] > 0.0:
         print("- " * 18, "BEST SINGLE MODEL", "- " * 18)
         Print_Result_Metrics(cross_validation_best[3], cross_validation_best[4], None, 0, cross_validation_best[5], 1, cross_validation_best[2])
@@ -336,10 +342,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     # Note 1:!!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
     # Note 2: Using Parallelism with n_jobs at -1 gives big speed boost but reduces accuracy   
-    # Parameters: ..., ..., ..., ..., ..., targetnames, n_jobs, graph_print_enable, silent_enable, silent_enable_2, n_order
-    predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
-    predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
+    # Parameters: ..., ..., ..., ..., ..., targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order
+    predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 1)
+    predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 2)
+    predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 3)
     #predicted_proba_4 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
     #predicted_proba_5 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
     #predicted_proba_6 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)

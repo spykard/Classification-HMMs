@@ -76,14 +76,12 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                     algorithm: Prediction Algorithm, can be either:
                                 Viterbi ('viterbi') or Maximum a posteriori ('map')
                     graph_print_enable: Enables the plotting the graph of the Hidden Markov Model
-                    silent_enable: Enable/disable printing the entire matrix of observation probabilities
-                    silent_enable_2
-    
-    
-    L123                            '''
-
-
-    '''    Output:     Log probability Matrix of Predictions                            '''
+                    silent_enable: If set to 1 disables printing the entire matrix of observation probabilities
+                    silent_enable_2: If set to 1 disables printing metrics and confusion matrix on every single model that is built
+                    n_order: The order n of the Hidden Markov Model that is about to be built '''
+    '''    Output:  
+                    If Maximum a posteriori is chosen, returns the Log probability Matrix of Predictions,
+                    else returns nothing, since we will not be performing an Ensemble on Viterbi '''
 
     time_counter = my_time.time()
 
@@ -148,50 +146,58 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         plt.show()
     ###
 
-    ### Supervised Prediction (Testing)
+    ### Supervised Prediction (Testing) - Uses either Viterbi or Maximum a posteriori. Ensembling cannot be used with Viterbi predictions.
     predicted = list()
 
-    #if algorithm == "viterbi"
-    for x in range(0, len(data_test_transformed)):
-        if len(data_test_transformed[x]) > 0:        
-            try:        
-                predict = hmm_leanfrominput_supervised.predict(data_test_transformed[x], algorithm='viterbi')
-            except ValueError as err:  # Prediction failed, predict randomly
-                print("Prediction Failed:", err)
+    if algorithm == 'viterbi':
+        for x in range(0, len(data_test_transformed)):
+            if len(data_test_transformed[x]) > 0:        
+                try:        
+                    predict = hmm_leanfrominput_supervised.predict(data_test_transformed[x], algorithm='viterbi')
+                except ValueError as err:  # Prediction failed, predict randomly
+                    print("Prediction Failed:", err)
+                    predict = [randint(0, len(documentSentiments)-1)] 
+            else:  #  Prediction would be stuck at Starting State
                 predict = [randint(0, len(documentSentiments)-1)] 
-        else:  #  Prediction would be stuck at Starting State
-            predict = [randint(0, len(documentSentiments)-1)] 
 
-        predicted.append(documentSentiments[predict[-1]])  # I only care about the last Prediction
+            predicted.append(documentSentiments[predict[-1]])  # I only care about the last transition/prediction
+            #predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
 
-        #predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
+        Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
+        return None      
+    else:
+
+        # Dataframe that will be used to the Ensemble
+        predicted_proba = pd.DataFrame.from_dict({'Data': data_test})
+        for i in range(0, len(documentSentiments)):
+            predicted_proba.insert(loc=i, column=documentSentiments[i], value=np.nan)
+
+        for x in range(0, len(data_test_transformed)):
+            if len(data_test_transformed[x]) > 0:
+                try:      
+                    temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x])
+                    predict = temp[-1] # I only care about the last transition/prediction
+                except ValueError as err:  # Prediction failed, predict equal probabilities
+                    print("Prediction Failed:", err)
+                    predict = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
+            else:  #  Prediction would be stuck at Starting State
+                predict = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e
+
+            for j in range (0, len(documentSentiments)):
+                predicted_proba.iloc[x, j] = predict[j] 
+
+        # Find argmax on the probability matrix
+        # This entire process would be equivalent to simply calling predict(data_test_transformed[x], algorithm='map'), but predict two times would be more costly
+        predicted_indexes = np.round(np.argmax(predicted_proba.iloc[:, 0:len(documentSentiments)].values, axis=1)).astype(int)
+        predicted = list()
+        for x in predicted_indexes:  # Convert Indexes to Strings
+            predicted.append(documentSentiments[x])
+
+        Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")   
+        
+        return predicted_proba
     ###
-
-
-
-    print()
-
-    ### (Supervised) Log Probabilities for Ensembling
-    predicted_proba = pd.DataFrame.from_dict({'Data': data_test})
-    for i in range(0, len(documentSentiments)):
-        predicted_proba.insert(loc=i, column=documentSentiments[i], value=np.nan)
-
-    for x in range(0, len(data_test_transformed)):
-        if len(data_test_transformed[x]) > 0:
-            try:      
-                temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x])[-1]
-            except ValueError as err:  # Prediction failed, predict equal probabilities
-                print("Prediction Failed:", err)
-                temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
-        else:  #  Prediction would be stuck at Starting State
-            temp = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e
-
-        for j in range (0, len(documentSentiments)):
-            predicted_proba.iloc[x, j] = temp[j] 
-    ###
-    return predicted_proba
 
 
 def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
@@ -342,31 +348,34 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     # Note 1:!!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
     # Note 2: Using Parallelism with n_jobs at -1 gives big speed boost but reduces accuracy   
     # Parameters: ..., ..., ..., ..., ..., targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order
-    predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 1)
-    predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, "map", 0, 1, 0, 3)
-    #predicted_proba_4 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
-    #predicted_proba_5 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
-    #predicted_proba_6 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)
-    #predicted_proba_7 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 7)
-    #predicted_proba_8 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 8)
-    #predicted_proba_9 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 9)
-    #predicted_proba_10 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 10)
+    set_algorithm = 'map'
+    predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 1)
+    predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 2)
+    predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
+    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
+    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
+    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
+    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
+    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)  
     ###
 
 
     ### Ensemble
-    time_counter = my_time.time()  
-    ensemble = 0.40*predicted_proba_1.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_2.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_3.iloc[:, 0:len(documentSentiments)].values  # Weights taken from C. Quan, F. Ren [2015]      
-    predicted_indexes = np.round(np.argmax(ensemble, axis=1)).astype(int)
-    predicted = list()
-    for x in predicted_indexes:  # Convert Indexes to Strings
-        predicted.append(documentSentiments[x])
+    if set_algorithm != 'viterbi':  # Ensemble does not work on the Viterbi algorithm. It works Maximum a posteriori and its Log probability Matrix of Predictions
+        time_counter = my_time.time()  
+        ensemble = 0.40*predicted_proba_1.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_2.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_3.iloc[:, 0:len(documentSentiments)].values  # Weights taken from C. Quan, F. Ren [2015]      
+        predicted_indexes = np.round(np.argmax(ensemble, axis=1)).astype(int)
+        predicted = list()
+        for x in predicted_indexes:  # Convert Indexes to Strings
+            predicted.append(documentSentiments[x])
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble of 1+2+3 orders") 
+        Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble of 1+2+3 orders") 
     ###   
 
     #break  # Disable Cross Validation
+
+if set_algorithm == 'viterbi':
+    print("\nWarning: Ensemble will not be performed on Viterbi, select Maximum a posteriori instead...\n")
 
 Print_Result_CrossVal_Final(set_fold)
 Plot_Results(set_fold, "Finegrained Sentiment Dataset")

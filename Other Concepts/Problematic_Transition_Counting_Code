@@ -1,0 +1,2 @@
+        with open(str(n_order) + "order.txt", 'a') as testfile:
+            testfile.write(str(count1) + ", ")

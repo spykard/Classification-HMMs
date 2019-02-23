@@ -150,10 +150,10 @@ def Plot_Results(dataset_name):
 
     fig, ax1 = plt.subplots(figsize=(15, 8))
     fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
-    fig.canvas.set_window_title(dataset_name + " - Score")
+    fig.canvas.set_window_title(dataset_name + " - Metrics")
     
     ax1.barh(indices, scores, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
-    ax1.set_title(dataset_name + " - Score")
+    ax1.set_title(dataset_name + " - Metrics")
     ax1.set_xlim([0, 1])
     ax1.xaxis.set_major_locator(MaxNLocator(11))
     ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
@@ -163,7 +163,7 @@ def Plot_Results(dataset_name):
     ax2.set_yticks(indices)
     ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
     ax2.set_yticklabels(scores)
-    ax2.set_ylabel('Test Accuracy')
+    ax2.set_ylabel("Accuracy")
 
     plt.show()
 

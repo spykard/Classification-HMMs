@@ -4,11 +4,13 @@ Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import itertools
 import numpy as np
 import pandas as pd
 import string
 import copy
 from re import sub
+from collections import defaultdict
 from time import time
 
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
@@ -36,21 +38,32 @@ from nltk import word_tokenize, sent_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
 
 
-cross_validation_best = [0.0, "", [], [], 0.0]  # [Score, Model Name, Actual Labels, Predicted, Time]
-all_models_accuracy = []  # [(Score, Model Name)]  To show comparison in a Graph
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]           # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
+cross_validation_all = defaultdict(list)                      # {Name: (Accuracy, F1-score), (Accuracy, F1-score), ...}
+cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accuracy), Avg(F1-score)), ...}
+time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
+
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
+    # 1. Load the Dataset
     dataset = load_files('./Datasets/Movie Review Polarity Dataset/Full Length Reviews version/txt_sentoken', shuffle=False)
 
     print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
 
     df_dataset = pd.DataFrame({'Labels': dataset.target, 'Data': dataset.data})
 
-    # Remove empty instances from DataFrame
+    # 2. Remove empty instances from DataFrame, actually affects accuracy
     emptyCells = df_dataset.loc[df_dataset.iloc[:,1] == ''].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
+
+    # 3. Balance the Dataset by Undersampling
+    # mask = df_dataset.loc[:,'Labels'] == "No"
+    # df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
+    # df_dataset = df_dataset[~mask]
+    # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
+    # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -101,71 +114,102 @@ def Run_Classifier(grid_search_enable, pickle_enable, silent_enable, pipeline, p
     Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, 0, model_name)  
 
 
-def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, time_flag, model_name):
-    '''    Print Metrics after Training etc.    '''
-    global cross_validation_best
+def Print_Result_Metrics(silent_enable, labels_test, predicted, targetnames, time_counter, not_new_model, model_name):
+    '''    Print Metrics after Training (Testing phase)    '''
+    global cross_validation_best, cross_validation_all, time_complexity_average
 
-    if time_flag == 0:
+    # Times
+    if not_new_model == 0:
         time_final = time()-time_counter
     else:
         time_final = time_counter
 
+    # Metrics
     accuracy = metrics.accuracy_score(labels_test, predicted)
+    other_metrics_to_print = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=False)
+    other_metrics_as_dict = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=True)
+    confusion_matrix = metrics.confusion_matrix(labels_test, predicted)
+
     if silent_enable == 0:
-        if time_counter == 0.0:
-            print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
-        else:
-            print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
+        print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
-        print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
-        print(metrics.confusion_matrix(labels_test, predicted))
+        print(other_metrics_to_print)
+        print(confusion_matrix)
         print()
 
-    if accuracy > cross_validation_best[0]:
-        cross_validation_best[0] = accuracy
-        cross_validation_best[1] = model_name
-        cross_validation_best[2] = labels_test
-        cross_validation_best[3] = predicted 
-        cross_validation_best[4] = time_final         
+    # Save to Global Variables
+    if not_new_model == 0:  # Lack of this is a fatal Bug; If this flag is 1 we are storing the same model twice
+        weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
+        cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
+        time_complexity_average[model_name].append(time_final)
+
+        if accuracy > cross_validation_best[0]:
+            cross_validation_best[0] = accuracy
+            cross_validation_best[1] = weighted_f1
+            cross_validation_best[2] = model_name
+            cross_validation_best[3] = labels_test
+            cross_validation_best[4] = predicted 
+            cross_validation_best[5] = time_final         
 
 
-def Print_Result_Best(k):
+def Print_Result_CrossVal_Best(k):
     '''    Print Metrics only of the best result that occured    '''
     global cross_validation_best
-    global all_models_accuracy
 
     if cross_validation_best[0] > 0.0:
-        all_models_accuracy.append((cross_validation_best[0], cross_validation_best[1])) 
         print("\n" + "- " * 37, end = "")
-        Print_Result_Metrics(0, cross_validation_best[2], cross_validation_best[3], None, cross_validation_best[4], 1, cross_validation_best[1] + " best of " + str(k+1) + " Cross Validations")
+        Print_Result_Metrics(0, cross_validation_best[3], cross_validation_best[4], None, cross_validation_best[5], 1, cross_validation_best[2] + " best of " + str(k+1) + " Cross Validations")
 
 
-def Plot_Results(dataset_name):
+def Plot_Results(k, dataset_name):
     '''    Plot the Accuracy of all Classifiers in a Graph    '''
-    global all_models_accuracy
+    global cross_validation_all, cross_validation_average
 
-    indices = np.arange(len(all_models_accuracy))
-    scores = [x[0] for x in reversed(all_models_accuracy)]  # Reverse of the List to appear in correct order
-    model_names = [x[1][1:-1] for x in reversed(all_models_accuracy)]  # Reverse of the List to appear in correct order
+    print("Plotting AVERAGES of Cross Validation...")
+    for model in cross_validation_all:
+        avg = tuple(np.mean(cross_validation_all[model], axis=0))
+        cross_validation_average[model] = avg  # Save the average on a global variable
+    indices = np.arange(len(cross_validation_average))
+    scores_acc = []
+    scores_f1 = []
+    model_names = []
+    for model in cross_validation_average:
+        scores_acc.append(cross_validation_average[model][0]) 
+        scores_f1.append(cross_validation_average[model][1])
+        model_names.append(model)
+
+    # Reverse the items to appear in correct order
+    scores_acc.reverse()
+    scores_f1.reverse()
+    model_names.reverse()
 
     fig, ax1 = plt.subplots(figsize=(15, 8))
     fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
-    fig.canvas.set_window_title(dataset_name + " - Metrics")
+    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
     
-    ax1.barh(indices, scores, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
-    ax1.set_title(dataset_name + " - Metrics")
+    p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)    
+    p2 = ax1.barh(indices, scores_f1, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)
+   
+    ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
     ax1.set_xlim([0, 1])
     ax1.xaxis.set_major_locator(MaxNLocator(11))
     ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
 
     # Right-hand Y-axis
+    indices_new = []
+    for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
+        indices_new.append(indices[i])
+        indices_new.append(indices[i] + 0.35) 
+
     ax2 = ax1.twinx()
-    ax2.set_yticks(indices)
+    ax2.set_yticks(indices_new)
     ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
-    ax2.set_yticklabels(scores)
-    ax2.set_ylabel("Accuracy")
+    ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
+    ax2.set_ylabel("Performance")
 
     plt.show()
+    print()
 
 
 class LemmaTokenizer(object):
@@ -186,9 +230,11 @@ class LemmaTokenizer(object):
 
 ### START
 
+# Stopwords
 stopwords_complete = set(stopwords.words('english')).union(set(ENGLISH_STOP_WORDS))
 wnl = WordNetLemmatizer()
 stopwords_complete_lemmatized = set([wnl.lemmatize(word) for word in stopwords_complete])
+#
 
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
@@ -199,7 +245,9 @@ all_labels = df_dataset.loc[:,'Labels']
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
 # Split using Cross Validation
-k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
+set_fold = 5
+cross_validation_enable = False  # Enable/Disable Flag; if disabled runs the evaluation just once
+k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
 
 
 # Dimensionality Reduction - 4 different ways to pick the best Features 
@@ -210,9 +258,9 @@ k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
 
 
 ### (1) LET'S BUILD : Complement Naive Bayes
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -253,16 +301,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', ComplementNB()),])  
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
-    break  # Disable Cross Validation
+    
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
 
-Print_Result_Best(k)
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (2) LET'S BUILD : k-Nearest Neighbors  //  Noticed that it performs better when a much bigger Dimensionality Reduction is performed
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -281,7 +331,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),
                         ('feature_selection', SelectKBest(score_func=chi2)),  # Dimensionality Reduction
-                         ('clf', KNeighborsClassifier(n_jobs=-1)),])  
+                        ('clf', KNeighborsClassifier(n_jobs=-1)),])  
 
     parameters = {'feature_selection__k': [100, 500, 1000, 5000, 8000, 14000],
                   'clf__n_neighbors': [2, 5, 10, 12],} 
@@ -303,16 +353,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', KNeighborsClassifier(n_neighbors=2, n_jobs=-1)),])  
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(k-Nearest Neighbors)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (3) LET'S BUILD : Decision Tree  //  Classification trees are used when the target (label) variable is categorical in nature and Regression trees when it's continuous. PRuning is applied through max_depth
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -355,16 +407,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', DecisionTreeClassifier(max_depth=25 , min_samples_leaf=2, max_features=None)),])  
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Decision Tree)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (4) LET'S BUILD : Random Forest  //  Ideal depth can be found from the previous Decision Tree classifier
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -407,16 +461,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', RandomForestClassifier(n_estimators=100, max_depth=35, min_samples_leaf=2, max_features='sqrt', n_jobs=-1)),])  
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Random Forest)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (5) LET'S BUILD : Logistic Regression (Linear)
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -457,16 +513,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', LogisticRegression(penalty='l2', solver='sag', max_iter=100, C=500, n_jobs=-1, random_state=22)),])  # Sag Solver because it's faster and Liblinear can't even run in Parallel
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Logistic Regression)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (6) LET'S BUILD : Linear SVM
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -507,16 +565,21 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', LinearSVC(penalty='l2', max_iter=1000, C=1, dual=True)),])  # Dual: True for Text/High Feature Count
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Linear SVM)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
+# Don't print, just plot the averages of all models
+Plot_Results(set_fold, "Movie Review Polarity Dataset")
+quit()
 
 ### (7) LET'S BUILD : Stochastic Gradient Descent on SVM
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -557,16 +620,18 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                         ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, alpha=0.001, tol=None, n_jobs=-1)),])  # Loss: Hinge means SVM, Log means Logistic Regression
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
 
 
 ### (8) LET'S BUILD : Multi-layer Perceptron
-cross_validation_best = [0.000, "", [], [], 0.000]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -610,10 +675,9 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Multi-layer Perceptron)')
-    break  # Disable Cross Validation
 
-Print_Result_Best(k)
+    if cross_validation_enable == False:
+        break  # Disable Cross Validation
+
+Print_Result_CrossVal_Best(k)
 ###
-
-
-Plot_Results("Movie Review Polarity Dataset")

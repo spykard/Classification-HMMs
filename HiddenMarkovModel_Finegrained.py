@@ -21,8 +21,9 @@ from nltk import ngrams
 # Both F1 and Accuracy
 cross_validation_best = [0.0, 0.0, "", [], [], 0.0]           # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 cross_validation_best_ensemble = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
-cross_validation_all = defaultdict(list)                      # {Name: [Accuracy, F1-score], [Accuracy, F1-score], ...]
-cross_validation_average = defaultdict(list)                  # {Name: [Avg(Accuracy), Avg(F1-score])]
+cross_validation_all = defaultdict(list)                      # {Name: (Accuracy, F1-score), (Accuracy, F1-score), ...}
+cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accuracy), Avg(F1-score)), ...}
+time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
@@ -167,7 +168,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         return None      
     else:
-
         # Dataframe that will be used to the Ensemble
         predicted_proba = pd.DataFrame.from_dict({'Data': data_test})
         for i in range(0, len(documentSentiments)):
@@ -180,7 +180,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                     predict = temp[-1] # I only care about the last transition/prediction
                 except ValueError as err:  # Prediction failed, predict equal probabilities
                     print("Prediction Failed:", err)
-                    predict = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                 
+                    predict = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e                
             else:  #  Prediction would be stuck at Starting State
                 predict = [log(1.0 / len(documentSentiments))] * len(documentSentiments)  # log of base e
 
@@ -189,13 +189,13 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         # Find argmax on the probability matrix
         # This entire process would be equivalent to simply calling predict(data_test_transformed[x], algorithm='map'), but predict two times would be more costly
-        predicted_indexes = np.round(np.argmax(predicted_proba.iloc[:, 0:len(documentSentiments)].values, axis=1)).astype(int)
+        predicted_indexes = np.argmax(predicted_proba.iloc[:, 0:len(documentSentiments)].values, axis=1)
         predicted = list()
         for x in predicted_indexes:  # Convert Indexes to Strings
             predicted.append(documentSentiments[x])
 
         Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")   
-        
+
         return predicted_proba
     ###
 
@@ -217,10 +217,7 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
     confusion_matrix = metrics.confusion_matrix(labels_test, predicted)
 
     if silent_enable == 0:
-        if time_counter == 0.0:
-            print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
-        else:
-            print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
+        print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
         print(other_metrics_to_print)
         print(confusion_matrix)
@@ -229,6 +226,7 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
     # Save to Global Variables
     weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
     cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
+    time_complexity_average[model_name].append(time_final)
     
     if accuracy > cross_validation_best[0]:
         cross_validation_best[0] = accuracy
@@ -352,24 +350,26 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 1)
     predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
-    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
-    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
-    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
-    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)
-    #predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 3)  
+    predicted_proba_4 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 4)
+    predicted_proba_5 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 5)
+    predicted_proba_6 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 6)
+    predicted_proba_7 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 7)
+    predicted_proba_8 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 8) 
+    predicted_proba_9 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 9)
+    predicted_proba_10 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, set_algorithm, 0, 1, 0, 10) 
     ###
 
 
     ### Ensemble
     if set_algorithm != 'viterbi':  # Ensemble does not work on the Viterbi algorithm. It works Maximum a posteriori and its Log probability Matrix of Predictions
         time_counter = my_time.time()  
-        ensemble = 0.40*predicted_proba_1.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_2.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_3.iloc[:, 0:len(documentSentiments)].values  # Weights taken from C. Quan, F. Ren [2015]      
-        predicted_indexes = np.round(np.argmax(ensemble, axis=1)).astype(int)
+        ensemble = 0.40*predicted_proba_1.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_2.iloc[:, 0:len(documentSentiments)].values + 0.30*predicted_proba_3.iloc[:, 0:len(documentSentiments)].values  # Weights taken from C. Quan, F. Ren [2016]      
+        predicted_indexes = np.argmax(ensemble, axis=1)
         predicted = list()
         for x in predicted_indexes:  # Convert Indexes to Strings
             predicted.append(documentSentiments[x])
 
-        Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble of 1+2+3 orders") 
+        Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble of 1+2+3 Orders") 
     ###   
 
     #break  # Disable Cross Validation
@@ -379,3 +379,4 @@ if set_algorithm == 'viterbi':
 
 Print_Result_CrossVal_Final(set_fold)
 Plot_Results(set_fold, "Finegrained Sentiment Dataset")
+#print(time_complexity_average)

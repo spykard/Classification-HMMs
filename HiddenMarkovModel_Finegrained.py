@@ -227,7 +227,7 @@ def Print_Result_CrossVal_Final(k):
     global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
 
     print()
-    print("- " * 18, "CONCLUSION across", str(k+1), "Cross Validations", "- " * 18)
+    print("- " * 18, "CONCLUSION across", str(k), "\b-fold Cross Validation", "- " * 18)
     if cross_validation_best[0] > 0.0:
         print("- " * 18, "BEST SINGLE MODEL", "- " * 18)
         Print_Result_Metrics(cross_validation_best[3], cross_validation_best[4], None, 0, cross_validation_best[5], 1, cross_validation_best[2])
@@ -242,7 +242,7 @@ def Print_Result_CrossVal_Final(k):
         cross_validation_average[model] = avg  # Save the average on a global variable
 
 
-def Plot_Results(dataset_name):
+def Plot_Results(k, dataset_name):
     '''    Plot the Metrics of all Hidden Markov Models in a Graph    '''
     global cross_validation_average
 
@@ -263,12 +263,12 @@ def Plot_Results(dataset_name):
 
     fig, ax1 = plt.subplots(figsize=(15, 8))
     fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
-    fig.canvas.set_window_title(dataset_name + " - Metrics")
+    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
 
     p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)    
     p2 = ax1.barh(indices, scores_f1, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)
 
-    ax1.set_title(dataset_name + " - Metrics")
+    ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
     ax1.set_xlim([0, 1])
     ax1.xaxis.set_major_locator(MaxNLocator(11))
     ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
@@ -301,10 +301,11 @@ all_labels = df_dataset.loc[:,"Labels"]
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
 # Split using k-fold Cross Validation
-k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
+set_fold = 5
+k_fold = RepeatedStratifiedKFold(set_fold, n_repeats=1, random_state=22)
 
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
-    print("\n--Current Cross Validation Fold:", k)
+    print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
     labels_train = all_labels.reindex(train_indexes, copy=True, axis=0)
@@ -327,6 +328,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     #predicted_proba_4 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
     #predicted_proba_5 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
     #predicted_proba_6 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)
+    #predicted_proba_7 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 7)
+    #predicted_proba_8 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 8)
+    #predicted_proba_9 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 9)
+    #predicted_proba_10 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 10)
     ###
 
 
@@ -338,10 +343,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     for x in predicted_indexes:  # Convert Indexes to Strings
         predicted.append(documentSentiments[x])
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble") 
+    Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble of 1+2+3 orders") 
     ###   
-    
+
     #break  # Disable Cross Validation
 
-Print_Result_CrossVal_Final(k)
-Plot_Results("Finegrained Sentiment Dataset")
+Print_Result_CrossVal_Final(set_fold)
+Plot_Results(set_fold, "Finegrained Sentiment Dataset")

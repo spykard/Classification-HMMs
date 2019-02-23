@@ -203,7 +203,7 @@ def Plot_Results(k, dataset_name):
     for model in cross_validation_average:
         scores_acc.append(cross_validation_average[model][0]) 
         scores_f1.append(cross_validation_average[model][1])
-        model_names.append(model)
+        model_names.append(model[1:-1])  # Remove Parentheses
 
     # Reverse the items to appear in correct order
     scores_acc.reverse()

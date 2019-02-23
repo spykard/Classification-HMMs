@@ -139,8 +139,19 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     print("Indexes:", tuple(zip(documentSentiments, state_names)))
     ###
 
+    ### Plot the Hidden Markov Model Graph
+    if graph_print_enable == 1:
+        fig, ax1 = plt.subplots()
+        fig.canvas.set_window_title("Hidden Markov Model Graph")
+        ax1.set_title(str(n_order) + "-th Order")
+        hmm_leanfrominput_supervised.plot()
+        plt.show()
+    ###
+
     ### Supervised Prediction (Testing)
     predicted = list()
+
+    #if algorithm == "viterbi"
     for x in range(0, len(data_test_transformed)):
         if len(data_test_transformed[x]) > 0:        
             try:        
@@ -158,19 +169,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
     ###
 
-    ### Graph Plotting
-    if graph_print_enable == 1:
-        fig = plt.figure()
-        fig.suptitle("Graph")
 
-        ax = plt.subplot(121)
-        ax.set_title("Unsupervised")
-        #hmm_leanfrominput.plot() 
-        ax = plt.subplot(122)
-        ax.set_title("Supervised")
-        hmm_leanfrominput_supervised.plot()
-        plt.show()
-    ###
 
     print()
 

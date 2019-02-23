@@ -3,6 +3,8 @@ Sentiment Analysis: Text Classification using Hidden Markov Models
 '''
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+import itertools
 import numpy as np
 import pandas as pd
 from math import log
@@ -17,10 +19,10 @@ from nltk import ngrams
 
 
 # Both F1 and Accuracy
-cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]           # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 cross_validation_best_ensemble = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
-cross_validation_all = defaultdict(list)  # {Name: [Accuracy, F1-score], ...]
-
+cross_validation_all = defaultdict(list)                      # {Name: [Accuracy, F1-score], [Accuracy, F1-score], ...]
+cross_validation_average = defaultdict(list)                  # {Name: [Avg(Accuracy), Avg(F1-score])]
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
@@ -201,7 +203,7 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
 
     # Save to Global Variables
     weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
-    cross_validation_all[model_name].append((accuracy, weighted_f1)) # Tuple
+    cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
     
     if accuracy > cross_validation_best[0]:
         cross_validation_best[0] = accuracy
@@ -229,21 +231,70 @@ def Print_Result_CrossVal_Final(k):
     if cross_validation_best[0] > 0.0:
         print("- " * 18, "BEST SINGLE MODEL", "- " * 18)
         Print_Result_Metrics(cross_validation_best[3], cross_validation_best[4], None, 0, cross_validation_best[5], 1, cross_validation_best[2])
-        print("- " * 18, "BEST ENSEMBLE MODEL", "- " * 18)
-        Print_Result_Metrics(cross_validation_best_ensemble[3], cross_validation_best_ensemble[4], None, 0, cross_validation_best_ensemble[5], 1, cross_validation_best_ensemble[2])
+        if cross_validation_best_ensemble[0] > 0.0:
+            print("- " * 18, "BEST ENSEMBLE MODEL", "- " * 18)
+            Print_Result_Metrics(cross_validation_best_ensemble[3], cross_validation_best_ensemble[4], None, 0, cross_validation_best_ensemble[5], 1, cross_validation_best_ensemble[2])
 
-    print("- " * 18 + "AVERAGES" + "- " * 18)
-    print(cross_validation_all)
+    print("- " * 18, "AVERAGES", "- " * 18)
     for model in cross_validation_all:
         avg = tuple(np.mean(cross_validation_all[model], axis=0))
         print(model, ": Accuracy is", "{:0.4f}".format(avg[0]), "F1-score is", "{:0.4f}".format(avg[1]))
+        cross_validation_average[model] = avg  # Save the average on a global variable
+
+
+def Plot_Results(dataset_name):
+    '''    Plot the Metrics of all Hidden Markov Models in a Graph    '''
+    global cross_validation_average
+
+    print("Plotting AVERAGES of Cross Validation...")
+    indices = np.arange(len(cross_validation_average))
+    scores_acc = []
+    scores_f1 = []
+    model_names = []
+    for model in cross_validation_average:
+        scores_acc.append(cross_validation_average[model][0]) 
+        scores_f1.append(cross_validation_average[model][1])
+        model_names.append(model)
+             
+    # Reverse the items to appear in correct order
+    scores_acc.reverse()
+    scores_f1.reverse()
+    model_names.reverse()
+
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
+    fig.canvas.set_window_title(dataset_name + " - Metrics")
+
+    p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)    
+    p2 = ax1.barh(indices, scores_f1, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)
+
+    ax1.set_title(dataset_name + " - Metrics")
+    ax1.set_xlim([0, 1])
+    ax1.xaxis.set_major_locator(MaxNLocator(11))
+    ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
+
+    # Right-hand Y-axis
+    indices_new = []
+    for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
+        indices_new.append(indices[i])
+        indices_new.append(indices[i] + 0.35) 
+
+    ax2 = ax1.twinx()
+    ax2.set_yticks(indices_new)
+    ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
+    ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
+    ax2.set_ylabel("Performance")
+
+    plt.show()
+    print()
 
 
 ### START
 
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
-df_dataset = Run_Preprocessing("Finegrained")
+df_dataset = Run_Preprocessing("Finegrained Sentiment Dataset")
 all_data = df_dataset.loc[:,"Sequences"]
 all_labels = df_dataset.loc[:,"Labels"]
 
@@ -273,6 +324,9 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
     predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
+    #predicted_proba_4 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
+    #predicted_proba_5 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
+    #predicted_proba_6 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)
     ###
 
 
@@ -286,6 +340,8 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     Print_Result_Metrics(labels_test.tolist(), predicted, None, 0, time_counter, 0, "Ensemble") 
     ###   
+    
     #break  # Disable Cross Validation
 
 Print_Result_CrossVal_Final(k)
+Plot_Results("Finegrained Sentiment Dataset")

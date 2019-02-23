@@ -19,12 +19,12 @@ from sklearn import metrics
 from nltk import ngrams
 
 
-# Both F1 and Accuracy
 cross_validation_best = [0.0, 0.0, "", [], [], 0.0]           # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 cross_validation_best_ensemble = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 cross_validation_all = defaultdict(list)                      # {Name: (Accuracy, F1-score), (Accuracy, F1-score), ...}
 cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accuracy), Avg(F1-score)), ...}
 time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
+
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''

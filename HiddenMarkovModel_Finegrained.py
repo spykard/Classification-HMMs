@@ -65,6 +65,9 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
+    # 4. Shuffle the Datasets, it seems to be too perfeclty ordered
+    # df_dataset = df_dataset.sample(frac=1).reset_index(drop=True)
+
     return df_dataset
 
 
@@ -163,7 +166,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 predict = [randint(0, len(documentSentiments)-1)] 
 
             predicted.append(documentSentiments[predict[-1]])  # I only care about the last transition/prediction
-            #predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
+            # predicted.append(hmm_leanfrominput_supervised.states[predict[-1]].name)
 
         Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 

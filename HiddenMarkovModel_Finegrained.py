@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from math import log
 from random import randint
+from collections import defaultdict
 import time as my_time  # Required to avoid some sort of conflict with pomegranate
 
 from pomegranate import *
@@ -15,12 +16,16 @@ from sklearn import metrics
 from nltk import ngrams
 
 
-cross_validation_best = [0.0, "", [], [], 0.0]  # [Score, Model Name, Actual Labels, Predicted, Time]
-cross_validation_best_ensemble = [0.000, "", [], [], 0.0]  # [Score, Model Name, Actual Labels, Predicted, Time]
+# Both F1 and Accuracy
+cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
+cross_validation_best_ensemble = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
+cross_validation_all = defaultdict(list)  # {Name: [Accuracy, F1-score], ...]
+
 
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
+    # 1. Load Dataset
     # data = [["" for j in range(3)] for i in range(294)]
     data = ["" for i in range(294)]
     sequences = [[] for i in range(294)]
@@ -45,11 +50,11 @@ def Run_Preprocessing(dataset_name):
 
     df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
 
-    # Remove empty instances from DataFrame, actually affects accuracy
+    # 2. Remove empty instances from DataFrame, actually affects accuracy
     emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
-    # # Balance the Dataset in terms of Instance Count per Label
+    # 3. Balance the Dataset by Undersampling
     # mask = df_dataset.loc[:,'Labels'] == "No"
     # df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
     # df_dataset = df_dataset[~mask]
@@ -89,17 +94,6 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
                     temp.append("".join(grams))
 
             data_test_transformed.append(temp)   
-
-
-    ### (Unsupervised) Train - Old Implementation
-    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
-    #
-    # # Find out which which State number corresponds to which documentSentiment respectively
-    # ...
-    # ### (Unsupervised) Predict
-    # ...  
-    # #Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
-    # ###
 
     print()
 
@@ -181,47 +175,68 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
 def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
     '''    Print Metrics after Training etc.    '''
-    global cross_validation_best
+    global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
 
+    # Time
     if time_flag == 0:
         time_final = my_time.time()-time_counter
     else:
         time_final = time_counter
 
+    # Metrics
     accuracy = metrics.accuracy_score(labels_test, predicted)
+    other_metrics_to_print = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=False)
+    other_metrics_as_dict = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=True)
+    confusion_matrix = metrics.confusion_matrix(labels_test, predicted)
+
     if silent_enable == 0:
         if time_counter == 0.0:
             print('\n- - - - - RESULT METRICS -', model_name, '- - - - -')
         else:
             print('\n- - - - - RESULT METRICS -', "%.2fsec" % time_final, model_name, '- - - - -')
         print('Exact Accuracy: ', accuracy)
-        print(metrics.classification_report(labels_test, predicted, target_names=targetnames))
-        print(metrics.confusion_matrix(labels_test, predicted))
+        print(other_metrics_to_print)
+        print(confusion_matrix)
         print()
 
+    # Save to Global Variables
+    weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
+    cross_validation_all[model_name].append((accuracy, weighted_f1)) # Tuple
+    
     if accuracy > cross_validation_best[0]:
         cross_validation_best[0] = accuracy
-        cross_validation_best[1] = model_name
-        cross_validation_best[2] = labels_test
-        cross_validation_best[3] = predicted 
-        cross_validation_best[4] = time_final 
+        cross_validation_best[1] = weighted_f1
+        cross_validation_best[2] = model_name
+        cross_validation_best[3] = labels_test
+        cross_validation_best[4] = predicted 
+        cross_validation_best[5] = time_final 
     if model_name == "Ensemble":
         if accuracy > cross_validation_best_ensemble[0]:
             cross_validation_best_ensemble[0] = accuracy
-            cross_validation_best_ensemble[1] = model_name
-            cross_validation_best_ensemble[2] = labels_test
-            cross_validation_best_ensemble[3] = predicted  
-            cross_validation_best_ensemble[4] = time_final           
+            cross_validation_best_ensemble[1] = weighted_f1
+            cross_validation_best_ensemble[2] = model_name
+            cross_validation_best_ensemble[3] = labels_test
+            cross_validation_best_ensemble[4] = predicted  
+            cross_validation_best_ensemble[5] = time_final           
 
 
-def Print_Result_Best(k):
-    '''    Print Metrics only of the best result that occured    '''
-    global cross_validation_best
+def Print_Result_CrossVal_Final(k):
+    '''    Print the best and average results across all cross validations    '''
+    global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
 
+    print()
+    print("- " * 18, "CONCLUSION across", str(k+1), "Cross Validations", "- " * 18)
     if cross_validation_best[0] > 0.0:
-        print("\n" + "- " * 37, end = "")
-        Print_Result_Metrics(cross_validation_best[2], cross_validation_best[3], None, 0, cross_validation_best[4], 1, cross_validation_best[1] + ", best of " + str(k+1) + " Cross Validations")
-        Print_Result_Metrics(cross_validation_best_ensemble[2], cross_validation_best_ensemble[3], None, 0, cross_validation_best_ensemble[4], 1, cross_validation_best_ensemble[1] + ", best of " + str(k+1) + " Cross Validations")
+        print("- " * 18, "BEST SINGLE MODEL", "- " * 18)
+        Print_Result_Metrics(cross_validation_best[3], cross_validation_best[4], None, 0, cross_validation_best[5], 1, cross_validation_best[2])
+        print("- " * 18, "BEST ENSEMBLE MODEL", "- " * 18)
+        Print_Result_Metrics(cross_validation_best_ensemble[3], cross_validation_best_ensemble[4], None, 0, cross_validation_best_ensemble[5], 1, cross_validation_best_ensemble[2])
+
+    print("- " * 18 + "AVERAGES" + "- " * 18)
+    print(cross_validation_all)
+    for model in cross_validation_all:
+        avg = tuple(np.mean(cross_validation_all[model], axis=0))
+        print(model, ": Accuracy is", "{:0.4f}".format(avg[0]), "F1-score is", "{:0.4f}".format(avg[1]))
 
 
 ### START
@@ -229,13 +244,13 @@ def Print_Result_Best(k):
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
 df_dataset = Run_Preprocessing("Finegrained")
-all_data = df_dataset.loc[:,'Sequences']
-all_labels = df_dataset.loc[:,'Labels']
+all_data = df_dataset.loc[:,"Sequences"]
+all_labels = df_dataset.loc[:,"Labels"]
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
-# Split using Cross Validation
-k_fold = RepeatedStratifiedKFold(4, n_repeats=1, random_state=22)
+# Split using k-fold Cross Validation
+k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
 
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k)
@@ -245,14 +260,15 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     data_test = all_data.reindex(test_indexes, copy=True, axis=0)
     labels_test = all_labels.reindex(test_indexes, copy=True, axis=0)
 
-    ### LET'S BUILD : High-Order Hidden Markov Model
+
+    ### LET'S BUILD : HIGH-ORDER HIDDEN MARKOV MODEL
     sentenceSentiments = list(set(x for l in data_train for x in l))  # get Unique Sentiments
     print ("\n--Number of Observed States is", len(sentenceSentiments))
 
     documentSentiments = list(set(labels_train.unique()))  # get Unique Sentiments, everything is mapped against this List
     print ("--Number of Hidden States is", len(documentSentiments))
 
-    # Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
+    # !!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
     # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
     predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
     predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
@@ -272,4 +288,4 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     ###   
     #break  # Disable Cross Validation
 
-Print_Result_Best(k)
+Print_Result_CrossVal_Final(k)

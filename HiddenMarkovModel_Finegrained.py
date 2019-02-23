@@ -177,7 +177,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         for x in range(0, len(data_test_transformed)):
             if len(data_test_transformed[x]) > 0:
                 try:      
-                    temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x])
+                    temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x][-2:])
                     predict = temp[-1] # I only care about the last transition/prediction
                 except ValueError as err:  # Prediction failed, predict equal probabilities
                     print("Prediction Failed:", err)
@@ -225,7 +225,7 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
         print()
 
     # Save to Global Variables
-    if not_new_model == 0:  # Lack of this is a fatal Bug; If this flag is 1 we are storing the same model twice
+    if not_new_model == 0:  # Lack of this leads to an important Bug; If this flag is 1 we are storing the same model twice
         weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
         cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
         time_complexity_average[model_name].append(time_final)
@@ -345,7 +345,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     documentSentiments = list(set(labels_train.unique()))             # get Unique Sentiments, everything is mapped against this List
     print ("--Number of Hidden States is", len(documentSentiments))
 
-    # Note 1:!!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
+    # Note 1: We can increase the accuracy of high-orders but decrease the respective accuracy of low-oders, if we give only the end of the sequence for prediction -> (data_test_transformed[x][-2:], algorithm='viterbi') because way too many predictions/transtions fail
     # Note 2: Using Parallelism with n_jobs at -1 gives big speed boost but reduces accuracy   
     # Parameters: ..., ..., ..., ..., ..., targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order
     set_algorithm = 'map'

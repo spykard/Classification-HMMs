@@ -246,7 +246,7 @@ print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_data
 
 # Split using Cross Validation
 set_fold = 5
-cross_validation_enable = False  # Enable/Disable Flag; if disabled runs the evaluation just once
+cross_validation_enable = True  # Enable/Disable Flag; if disabled runs the evaluation just once
 k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
 
 

@@ -203,7 +203,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
 def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
     '''    Print Metrics after Training (Testing phase)    '''
-    global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
+    global cross_validation_best, cross_validation_best_ensemble, cross_validation_all, time_complexity_average
 
     # Time
     if time_flag == 0:

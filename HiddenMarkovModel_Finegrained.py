@@ -12,7 +12,8 @@ from random import randint
 from collections import defaultdict
 import time as my_time  # Required to avoid some sort of conflict with pomegranate
 
-from pomegranate import *
+from pomegranate import HiddenMarkovModel
+from pomegranate import DiscreteDistribution
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn import metrics
 from nltk import ngrams

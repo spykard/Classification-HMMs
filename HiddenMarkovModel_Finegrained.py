@@ -201,12 +201,12 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     ###
 
 
-def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
+def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, not_new_model, model_name):
     '''    Print Metrics after Training (Testing phase)    '''
     global cross_validation_best, cross_validation_best_ensemble, cross_validation_all, time_complexity_average
 
     # Time
-    if time_flag == 0:
+    if not_new_model == 0:
         time_final = my_time.time()-time_counter
     else:
         time_final = time_counter
@@ -225,25 +225,26 @@ def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, tim
         print()
 
     # Save to Global Variables
-    weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
-    cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
-    time_complexity_average[model_name].append(time_final)
-    
-    if accuracy > cross_validation_best[0]:
-        cross_validation_best[0] = accuracy
-        cross_validation_best[1] = weighted_f1
-        cross_validation_best[2] = model_name
-        cross_validation_best[3] = labels_test
-        cross_validation_best[4] = predicted 
-        cross_validation_best[5] = time_final 
-    if model_name.startswith("Ensemble") == True:
-        if accuracy > cross_validation_best_ensemble[0]:
-            cross_validation_best_ensemble[0] = accuracy
-            cross_validation_best_ensemble[1] = weighted_f1
-            cross_validation_best_ensemble[2] = model_name
-            cross_validation_best_ensemble[3] = labels_test
-            cross_validation_best_ensemble[4] = predicted  
-            cross_validation_best_ensemble[5] = time_final           
+    if not_new_model == 0:  # Lack of this is a fatal Bug; If this flag is 1 we are storing the same model twice
+        weighted_f1 = other_metrics_as_dict['weighted avg']['f1-score']
+        cross_validation_all[model_name].append((accuracy, weighted_f1))  # Tuple
+        time_complexity_average[model_name].append(time_final)
+        
+        if accuracy > cross_validation_best[0]:
+            cross_validation_best[0] = accuracy
+            cross_validation_best[1] = weighted_f1
+            cross_validation_best[2] = model_name
+            cross_validation_best[3] = labels_test
+            cross_validation_best[4] = predicted 
+            cross_validation_best[5] = time_final 
+        if model_name.startswith("Ensemble") == True:
+            if accuracy > cross_validation_best_ensemble[0]:
+                cross_validation_best_ensemble[0] = accuracy
+                cross_validation_best_ensemble[1] = weighted_f1
+                cross_validation_best_ensemble[2] = model_name
+                cross_validation_best_ensemble[3] = labels_test
+                cross_validation_best_ensemble[4] = predicted  
+                cross_validation_best_ensemble[5] = time_final           
 
 
 def Print_Result_CrossVal_Final(k):

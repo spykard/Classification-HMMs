@@ -66,32 +66,46 @@ def Run_Preprocessing(dataset_name):
     return df_dataset
 
 
-def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n):
-    '''    Create 2 Hidden Markov Models of Nth Order, first is Unsupervised, second is Supervised    '''
-    '''    Returns:     Predicted log probability Matrix                                              '''
+def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, graph_print_enable, silent_enable, silent_enable_2, n_order):
+    '''    Create a Hidden Markov Model of n-th Order, trained in a Supervised manner    '''
+    '''    Input:     
+                    data_train, data_test, labels_train, labels_test: Data and their labels
+                    documentSentiments: A list of Unique Sentiments which are the Hidden States
+                    targetnames: Optional list of labels to display on the testing/evaluation phase
+                    n_jobs: The number of jobs to run in parallel. Value of 1 means use 1 processor and -1 means use all processors
+                    graph_print_enable: Enables the plotting the graph of the Hidden Markov Model
+                    silent_enable
+                    silent_enable_2
+    
+    
+    L123                            '''
+
+
+    '''    Output:     Log probability Matrix of Predictions                            '''
+
     time_counter = my_time.time()
 
     # The sequences are stored as a List in the Dataframe, time to transform them to the correct form
     data_train_transformed = list() 
     data_test_transformed = list()       
-    if n == 1:  # No need to do ngrams on 1st Order
+    if n_order == 1:  # No need to do ngrams on 1st Order
         data_train_transformed = data_train.tolist()
         # Same
         data_test_transformed = data_test.tolist()
     else:
         for x in data_train:
-            ngrams_temp = ngrams(x, n)
+            ngrams_temp = ngrams(x, n_order)
             temp = list()
-            if len(x) >= n:
+            if len(x) >= n_order:
                 for grams in ngrams_temp:
                     temp.append("".join(grams))
 
             data_train_transformed.append(temp)   
         # Same
         for x in data_test:
-            ngrams_temp = ngrams(x, n)
+            ngrams_temp = ngrams(x, n_order)
             temp = list()
-            if len(x) >= n:
+            if len(x) >= n_order:
                 for grams in ngrams_temp:
                     temp.append("".join(grams))
 
@@ -135,11 +149,11 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
         #predicted.append(hmm_leanfrominput_supervised_2.states[predict[-1]].name)
 
-    Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
+    Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
     ###
 
     ### Graph Plotting
-    if plot_enable == 1:
+    if graph_print_enable == 1:
         fig = plt.figure()
         fig.suptitle("Graph")
 
@@ -176,7 +190,7 @@ def HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train
 
 
 def Print_Result_Metrics(labels_test, predicted, targetnames, silent_enable, time_counter, time_flag, model_name):
-    '''    Print Metrics after Training etc.    '''
+    '''    Print Metrics after Training (Testing phase)    '''
     global cross_validation_best, cross_validation_best_ensemble, cross_validation_all
 
     # Time
@@ -317,21 +331,22 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     sentenceSentiments = list(set(x for l in data_train for x in l))  # get Unique Sentiments
     print ("\n--Number of Observed States is", len(sentenceSentiments))
 
-    documentSentiments = list(set(labels_train.unique()))  # get Unique Sentiments, everything is mapped against this List
+    documentSentiments = list(set(labels_train.unique()))             # get Unique Sentiments, everything is mapped against this List
     print ("--Number of Hidden States is", len(documentSentiments))
 
-    # !!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
-    # Parameters: targetnames, n_jobs, plot_enable, silent_enable, silent_enable_2, n      Running in Parallel with n_jobs at -1 gives big speed boost but reduces accuracy
-    predicted_proba_1 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
-    predicted_proba_2 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
-    predicted_proba_3 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
-    #predicted_proba_4 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
-    #predicted_proba_5 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
-    #predicted_proba_6 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)
-    #predicted_proba_7 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 7)
-    #predicted_proba_8 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 8)
-    #predicted_proba_9 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 9)
-    #predicted_proba_10 = HMM_NthOrder_Unsupervised_and_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 10)
+    # Note 1:!!!!!!!!!!! CHECK VALIDITY OF THIS, IT SHOULD DECREASE - Note for very High Order: If way too many predictions fail, accuracy could increase (or even decrease) if only the end of the sequence is given      (data_test_transformed[x][-2:], algorithm='viterbi')
+    # Note 2: Using Parallelism with n_jobs at -1 gives big speed boost but reduces accuracy   
+    # Parameters: ..., ..., ..., ..., ..., targetnames, n_jobs, graph_print_enable, silent_enable, silent_enable_2, n_order
+    predicted_proba_1 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 1)
+    predicted_proba_2 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 2)
+    predicted_proba_3 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 3)
+    #predicted_proba_4 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 4)
+    #predicted_proba_5 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 5)
+    #predicted_proba_6 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 6)
+    #predicted_proba_7 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 7)
+    #predicted_proba_8 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 8)
+    #predicted_proba_9 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 9)
+    #predicted_proba_10 = HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, None, 1, 0, 1, 0, 10)
     ###
 
 

@@ -180,7 +180,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         for x in range(0, len(data_test_transformed)):
             if len(data_test_transformed[x]) > 0:
                 try:      
-                    temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x][-2:])
+                    temp = hmm_leanfrominput_supervised.predict_log_proba(data_test_transformed[x])
                     predict = temp[-1] # I only care about the last transition/prediction
                 except ValueError as err:  # Prediction failed, predict equal probabilities
                     print("Prediction Failed:", err)

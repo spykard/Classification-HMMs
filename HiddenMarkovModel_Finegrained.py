@@ -29,7 +29,7 @@ time_complexity_average = defaultdict(list)                   # {Name: [Avg(Trai
 def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
-    # 1. Load Dataset
+    # 1. Load the Dataset
     # data = [["" for j in range(3)] for i in range(294)]
     data = ["" for i in range(294)]
     sequences = [[] for i in range(294)]

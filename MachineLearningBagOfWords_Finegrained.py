@@ -265,7 +265,7 @@ stopwords_complete_lemmatized = set([wnl.lemmatize(word) for word in stopwords_c
 
 np.set_printoptions(precision=10)  # Numpy Precision when Printing
 
-df_dataset = Run_Preprocessing("Movie Review Polarity Dataset")
+df_dataset = Run_Preprocessing("Finegrained Sentiment Dataset")
 all_data = df_dataset.loc[:,'Data']
 all_labels = df_dataset.loc[:,'Labels']
 neg_feature = df_dataset.loc[:,'Neg_Feature']
@@ -712,4 +712,4 @@ Print_Result_CrossVal_Best(k)
 ###
 
 # Don't print, just plot the averages of all models
-Plot_Results(set_fold, "Movie Review Polarity Dataset")
+Plot_Results(set_fold, "Finegrained Sentiment Dataset")

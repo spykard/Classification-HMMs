@@ -48,14 +48,41 @@ def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
     # 1. Load the Dataset
-    dataset = load_files('./Datasets/Movie Review Polarity Dataset/Full Length Reviews version/txt_sentoken', shuffle=False)
+    # data = [["" for j in range(3)] for i in range(294)]
+    data = ["" for i in range(294)]
+    neg_count_feature = [0 for i in range(294)]  # 3 Extra columns, 3 Extra Features containing the counts (no sequential information)
+    neu_count_feature = [0 for i in range(294)]
+    pos_count_feature = [0 for i in range(294)]
+    labels = ["" for i in range(294)]
+    count = 0
+    with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
+        for line in file:
+            if len(line.split("_")) == 3:
+                labels[count] = line.split("_")[1]
+            elif len(line.strip()) == 0:
+                count += 1
+            else:
+                temp = [x.strip() for x in line.split("\t")]
+                if len(temp[1]) > 1:
+                    # "nr" label is ignored
+                    if temp[0] == "neg":
+                        neg_count_feature[count] += 1
+                    elif temp[0] == "neu":
+                        neu_count_feature[count] += 1
+                    elif temp[0] == "pos":
+                        pos_count_feature[count] += 1
+                    elif temp[0] == "mix":
+                        neg_count_feature[count] += 1
+                        pos_count_feature[count] += 1        
 
-    print("--Processed", len(dataset.data), "documents", "\n--Dataset Name:", dataset_name)
+                    data[count] += temp[1]
 
-    df_dataset = pd.DataFrame({'Labels': dataset.target, 'Data': dataset.data})
+    print("--Processed", count+1, "documents", "\n--Dataset Name:", dataset_name)
+
+    df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Neg_Feature': neg_count_feature, 'Neu_Feature': neu_count_feature, 'Pos_Feature': pos_count_feature})
 
     # 2. Remove empty instances from DataFrame, actually affects accuracy
-    emptyCells = df_dataset.loc[df_dataset.iloc[:,1] == ''].index.values
+    emptyCells = df_dataset.loc[df_dataset.loc[:,'Data'].map(len) < 1].index.values
     df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
 
     # 3. Balance the Dataset by Undersampling
@@ -241,12 +268,17 @@ np.set_printoptions(precision=10)  # Numpy Precision when Printing
 df_dataset = Run_Preprocessing("Movie Review Polarity Dataset")
 all_data = df_dataset.loc[:,'Data']
 all_labels = df_dataset.loc[:,'Labels']
+neg_feature = df_dataset.loc[:,'Neg_Feature']
+neu_feature = df_dataset.loc[:,'Neu_Feature']
+pos_feature = df_dataset.loc[:,'Pos_Feature']
+
+global_dataframe = df_dataset
 
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
 # Split using Cross Validation
 set_fold = 5
-cross_validation_enable = False  # Enable/Disable Flag; if disabled runs the evaluation just once
+cross_validation_enable = True  # Enable/Disable Flag; if disabled runs the evaluation just once
 k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
 
 
@@ -613,7 +645,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),  
-                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
+                        #('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         ('clf', SGDClassifier(loss='hinge', penalty='l2', max_iter=1000, alpha=0.001, tol=None, n_jobs=-1)),])  # Loss: Hinge means SVM, Log means Logistic Regression
 
     Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Stochastic Gradient Descent on SVM)')
@@ -666,7 +698,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
                                 'vect2': 1.0,},
                         )),
                         ('tfidf', TfidfTransformer(use_idf=True)),  
-                        ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
+                        #('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # Dimensionality Reduction             
                         #('clf', MLPClassifier(verbose=True, hidden_layer_sizes=(200,50), max_iter=400, solver='sgd', learning_rate='adaptive', learning_rate_init=0.60, momentum=0.50, alpha=1e-01)),])
                         ('clf', MLPClassifier(verbose=False, random_state=22, hidden_layer_sizes=(200,50), max_iter=400, solver='sgd', learning_rate='constant', learning_rate_init=0.07, momentum=0.90, alpha=0.001)),])  
 

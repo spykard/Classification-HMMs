@@ -30,7 +30,7 @@ def Run_Preprocessing(dataset_name):
     '''    Dataset Dependant Preprocessing    '''
 
     # 1. Load the Dataset
-    # data = [["" for j in range(3)] for i in range(294)]
+    # data = [["" for j in range(3)] for i in range(198)]
     data = ["" for i in range(198)]
     sequences = [[] for i in range(198)]
     labels = ["" for i in range(198)]

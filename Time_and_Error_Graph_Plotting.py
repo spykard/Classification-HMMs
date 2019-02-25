@@ -39,56 +39,112 @@ my_dictionary = {'HMM 1th Order Supervised': [2.2604572772979736, 1.030252933502
 #                 'HMM 8th Order Supervised': [21, 18, 12, 20, 18, ], 
 #                 'HMM 9th Order Supervised': [23, 16, 13, 21, 20, ], 
 #                 'HMM 10th Order Supervised': [18, 11, 12, 20, 19, ]}
+
+### SETTINGS ###
 my_average = defaultdict(list) 
 dataset_name = "Finegrained Sentiment Dataset"
 k = 5
+mode = "horiz"
 
-print(my_dictionary)
+if mode == "vert":
+    print(my_dictionary)
 
-for model in my_dictionary:
-    avg = np.mean(my_dictionary[model], axis=0)
-    print(model, ": Average is", avg)  # "{:0.4f}".format(avg))
-    my_average[model] = avg  # Save the average on a variable
+    for model in my_dictionary:
+        avg = np.mean(my_dictionary[model], axis=0)
+        print(model, ": Average is", avg)  # "{:0.4f}".format(avg))
+        my_average[model] = avg  # Save the average on a variable
 
+    print("Plotting AVERAGES of a List...")
+    indices = np.arange(len(my_average))
+    scores = []
+    model_names = []
+    for model in my_average:
+        scores.append(my_average[model]) 
+        model_names.append(model)
+                
+    # Reverse the items to appear in correct order
+    scores.reverse()
+    model_names.reverse()
 
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
+    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
 
-print("Plotting AVERAGES of a List...")
-indices = np.arange(len(my_average))
-scores = []
-model_names = []
-for model in my_average:
-    scores.append(my_average[model]) 
-    model_names.append(model)
-            
-# Reverse the items to appear in correct order
-scores.reverse()
-model_names.reverse()
+    #p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)    
+    p2 = ax1.barh(indices, scores, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
 
-fig, ax1 = plt.subplots(figsize=(15, 8))
-fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
-fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
+    ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
+    #ax1.set_xlim([0, 1])
+    ax1.xaxis.set_major_locator(MaxNLocator(11))
+    ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    #ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
 
-#p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)    
-p2 = ax1.barh(indices, scores, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
+    # Right-hand Y-axis
+    # indices_new = []
+    # for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
+    #     indices_new.append(indices[i])
+    #     indices_new.append(indices[i] + 0.35) 
 
-ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
-#ax1.set_xlim([0, 1])
-ax1.xaxis.set_major_locator(MaxNLocator(11))
-ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
-#ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
+    ax2 = ax1.twinx()
+    ax2.set_yticks(indices)
+    ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
+    #ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
+    ax2.set_yticklabels(scores)
+    ax2.set_ylabel("Time (sec)")
 
-# Right-hand Y-axis
-# indices_new = []
-# for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
-#     indices_new.append(indices[i])
-#     indices_new.append(indices[i] + 0.35) 
+    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
+    fig.tight_layout()
 
-ax2 = ax1.twinx()
-ax2.set_yticks(indices)
-ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
-#ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
-ax2.set_yticklabels(scores)
-ax2.set_ylabel("Time (sec)")
+    plt.show()
+    print()
 
-plt.show()
-print()
+else:
+    print(my_dictionary)
+
+    for model in my_dictionary:
+        avg = np.mean(my_dictionary[model], axis=0)
+        print(model, ": Average is", avg)  # "{:0.4f}".format(avg))
+        my_average[model] = avg  # Save the average on a variable
+
+    print("Plotting AVERAGES of a List...")
+    indices = np.arange(len(my_average))
+    scores = []
+    model_names = []
+    for model in my_average:
+        scores.append(my_average[model]) 
+        model_names.append(model)
+                
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
+    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
+
+    #p1 = ax1.barh(indices + 0.35, scores_acc, align="center", width=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)    
+    p2 = ax1.bar(indices, scores, align="center", width=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)
+
+    ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
+    #ax1.set_ylim([0, 1])
+    ax1.yaxis.set_major_locator(MaxNLocator(11))
+    ax1.yaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    ax1.set_ylabel("Time (sec)")
+    #ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
+
+    # Right-hand Y-axis
+    # indices_new = []
+    # for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
+    #     indices_new.append(indices[i])
+    #     indices_new.append(indices[i] + 0.35) 
+
+    # ax2 = ax1.twinx()
+    # ax2.set_yticks(indices)
+    # ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
+    # #ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
+    # ax2.set_yticklabels(scores)
+
+    # Rotates labels and aligns them horizontally to left 
+    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=-45, ha="left", rotation_mode="anchor")
+
+    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
+    fig.tight_layout()
+
+    plt.show()
+    print()

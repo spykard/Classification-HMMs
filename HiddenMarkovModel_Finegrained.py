@@ -172,7 +172,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         return None      
     else:
-        # Dataframe that will be used to the Ensemble
+        # Dataframe that will be used for the Ensemble
         predicted_proba = pd.DataFrame.from_dict({'Data': data_test})
         for i in range(0, len(documentSentiments)):
             predicted_proba.insert(loc=i, column=documentSentiments[i], value=np.nan)

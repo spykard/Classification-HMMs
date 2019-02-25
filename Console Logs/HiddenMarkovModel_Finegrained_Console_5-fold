@@ -1,0 +1,13 @@
+- - - - - - - - - - - - - - - - - -  AVERAGES - - - - - - - - - - - - - - - - - - 
+HMM 1th Order Supervised : Accuracy is 0.7124 F1-score is 0.7003
+HMM 2th Order Supervised : Accuracy is 0.7229 F1-score is 0.7103
+HMM 3th Order Supervised : Accuracy is 0.7370 F1-score is 0.7246
+HMM 4th Order Supervised : Accuracy is 0.6748 F1-score is 0.6369
+HMM 5th Order Supervised : Accuracy is 0.5951 F1-score is 0.5406
+HMM 6th Order Supervised : Accuracy is 0.5100 F1-score is 0.4321
+HMM 7th Order Supervised : Accuracy is 0.4691 F1-score is 0.3831
+HMM 8th Order Supervised : Accuracy is 0.4209 F1-score is 0.3168
+HMM 9th Order Supervised : Accuracy is 0.3762 F1-score is 0.2438
+HMM 10th Order Supervised : Accuracy is 0.3595 F1-score is 0.2183
+Ensemble of 1+2+3 Orders : Accuracy is 0.7401 F1-score is 0.7291
+Plotting AVERAGES of Cross Validation...

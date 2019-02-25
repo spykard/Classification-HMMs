@@ -42,5 +42,8 @@ def Plot_Results(k, dataset_name):
     ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
     ax2.set_ylabel("Performance")
 
+    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
+    fig.tight_layout()
+
     plt.show()
     print()

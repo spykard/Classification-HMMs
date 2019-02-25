@@ -366,7 +366,7 @@ all_labels = df_dataset.loc[:,"Labels"]
 print("\n--Dataset Info:\n", df_dataset.describe(include="all"), "\n\n", df_dataset.head(), "\n\n", df_dataset.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
 # Split using k-fold Cross Validation
-set_fold = 4
+set_fold = 5
 k_fold = RepeatedStratifiedKFold(set_fold, n_repeats=1, random_state=22)
 
 for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)

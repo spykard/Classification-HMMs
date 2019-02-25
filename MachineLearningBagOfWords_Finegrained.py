@@ -213,27 +213,25 @@ def Plot_Results(k, dataset_name):
     fig, ax1 = plt.subplots(figsize=(15, 8))
     fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
     fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
-    
-    p1 = ax1.barh(indices + 0.35, scores_acc, align="center", height=0.35, label="Accuracy (%)", color="navy", tick_label=model_names)    
-    p2 = ax1.barh(indices, scores_f1, align="center", height=0.35, label="Accuracy (%)", color="cornflowerblue", tick_label=model_names)
-   
+
+    p1 = ax1.bar(indices + 0.35, scores_acc, align="center", width=0.35, label="Accuracy (%)", color="navy")    
+    p2 = ax1.bar(indices, scores_f1, align="center", width=0.35, label="Accuracy (%)", color="cornflowerblue")
+
     ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
-    ax1.set_xlim([0, 1])
-    ax1.xaxis.set_major_locator(MaxNLocator(11))
-    ax1.xaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    ax1.set_ylim([0, 1])
+    ax1.yaxis.set_major_locator(MaxNLocator(11))
+    ax1.yaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+    ax1.set_ylabel("Performance")    
     ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
 
-    # Right-hand Y-axis
-    indices_new = []
-    for i in range(0, len(model_names)):  # Trick to print text on the y axis for both bars
-        indices_new.append(indices[i])
-        indices_new.append(indices[i] + 0.35) 
+    ax1.set_xticks(indices + 0.35 / 2)
+    ax1.set_xticklabels(model_names)
 
-    ax2 = ax1.twinx()
-    ax2.set_yticks(indices_new)
-    ax2.set_ylim(ax1.get_ylim())  # Make sure that the limits are set equally on both yaxis so the ticks line up
-    ax2.set_yticklabels(x for x in itertools.chain.from_iterable(itertools.zip_longest(scores_f1,scores_acc)) if x)  # Combine two lists in an alternating fashion
-    ax2.set_ylabel("Performance")
+    # Rotates labels and aligns them horizontally to left 
+    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=-45, ha="left", rotation_mode="anchor")
+
+    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
+    fig.tight_layout()
 
     plt.show()
     print()

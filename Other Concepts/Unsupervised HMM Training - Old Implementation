@@ -1,9 +1,0 @@
-    ### (Unsupervised) Train - Old Implementation
-    # hmm_leanfrominput = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
-    #
-    # # Find out which which State number corresponds to which documentSentiment respectively
-    # ...
-    # ### (Unsupervised) Predict
-    # ...  
-    # #Print_Result_Metrics(labels_test.tolist(), predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n)+"th Order Supervised")
-    # ###

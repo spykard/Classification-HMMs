@@ -106,7 +106,7 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
-    # 4. Shuffle the Datasets, it seems to be too perfeclty ordered
+    # 4. Shuffle the Datasets, it seems to be too perfectly ordered
     df_dataset = df_dataset.sample(frac=1).reset_index(drop=True)
 
     return df_dataset

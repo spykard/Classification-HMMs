@@ -84,73 +84,12 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
-    pickle_load = 1    
-
-    if pickle_load == 0:
-        # STEP 1 RUN NAIVE BAYES
-        pipeline = Pipeline([ # Optimal
-                            ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
-
-                            ('tfidf', TfidfTransformer(use_idf=True)),
-                            ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
-                            ('clf', ComplementNB()),])  
-        
-        pipeline.fit(data_train, labels_train)
-        predicted = pipeline.predict(data_test)
-
-        # (3) PREDICT
-        predicted = pipeline.predict(data_test)
-
-        accuracy = metrics.accuracy_score(labels_test, predicted)
-        other_metrics_to_print = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=False)
-        confusion_matrix = metrics.confusion_matrix(labels_test, predicted)
-        print('Exact Accuracy: ', accuracy)
-        print(other_metrics_to_print)
-        print(confusion_matrix)
-
-        vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
-        selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
-        vocab = [vocab[i] for i in selected_indices]
-
-        artifically_labeled_data = []
-        instance_count = len(data_train)
-        # fuck spacy
-        nlp = spacy.load('en_core_web_sm')
-
-        for i in range(instance_count):
-            # some retarded bug
-            data_train_new = data_train.tolist()
-            #print(data_train_new[0], "\n", data_train_new[1])
-            tokenize_it = nlp(data_train_new[i])
-            to_append = []
-            for i in tokenize_it:
-                #print(i)
-                token_to_string = str(i)
-                if token_to_string in vocab:
-                    # we can simply directly append the artificial label itself
-                    prediction_bayes = pipeline.predict([token_to_string])[0]
-                    to_append.append(prediction_bayes)
-            
-            artifically_labeled_data.append(to_append)
-
-        with open('./Pickled Objects/Artificial_Labels_from_Bayes', 'wb') as f:
-            pickle.dump(artifically_labeled_data, f)
-
-        print(artifically_labeled_data)
-
-    elif pickle_load == 1:
-
-        artifically_labeled_data = pickle.load(open('./Pickled Objects/Artificial_Labels_from_Bayes', 'rb'))
-
-    quit()
-
-
     # OPTION 1 WOULD BE TO USE TFIDF, 
     # OPTION 2 TO USE ONE-HOT ENCODING WITH DISCRETE
     # OPTION 3 WOULD BE TO USE NAIVE BAYES PREDICTION TO CREATE ARTIFICAL LABELS
     # WHATEVER
 
-    # IT IS WORTH NOTING THAT TFIDF EACH SAMPLE ON EACH ROW ALREADY
+    # IT IS WORTH NOTING THAT TFIDF HAS EACH SAMPLE ON EACH ROW ALREADY
     vectorizer = TfidfVectorizer(max_features = 200)
     x_train = vectorizer.fit_transform(data_train)
     x_test = vectorizer.transform(data_test)

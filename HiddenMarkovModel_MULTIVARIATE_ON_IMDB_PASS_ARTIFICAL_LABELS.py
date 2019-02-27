@@ -10,6 +10,7 @@ from sklearn.externals import joblib
 import spacy
 from nltk.tokenize import word_tokenize
 import pickle
+from random import randint
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -243,8 +244,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # Testing
     #print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
     print(hmm_supervised_pos)
-    test_observ = ["realise", "pure"]
-    test_labels = ["neg", "pos"]
+    #test_observ = ["realise", "pure"]
+    #test_states = ["neg", "neg"]
 
     transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
@@ -260,39 +261,69 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # none-start [2]
     # none-end  [3]
     mapping = ["neg", "pos", "start", "end"]
-    unseen_factor = 0.0  # Probability if we stumble upon new unseen one observation 
+    unseen_factor = 0.0  # Probability if we stumble upon new unseen observation 
     predicted = []
+    test_data_size = len(data_corresponding_to_labels_test)
 
     #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
 
     # MATH: score = π(state1) * EmmisionProb(o1|state1) * P(o2|o1) * EmmisionProb(o2|state2) * P(o3|o2) * ...  / SequenceLength
 
-    sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(test_labels[0])]  # Transition from start to first state
-    sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(test_labels[0])]  # Transition from start to first state
 
-    for i in range(len(test_observ)-1):
-        current_state_ind = mapping.index(test_labels[i])
-        next_state_ind = mapping.index(test_labels[i+1])
-        emissionprob_pos = hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][test_observ[i]]
-        emissionprob_neg = hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][test_observ[i]]
-        trans_prob_pos = transition_proba_matrix_pos[current_state_ind, next_state_ind]
-        trans_prob_neg = transition_proba_matrix_neg[current_state_ind, next_state_ind]
+    for k in range(test_data_size):
+        current_observations = data_corresponding_to_labels_test[k]
+        current_states = artifically_labeled_data_test[k]
+        # Debug
+        # print(k, len(current_observations))
 
-        sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
-        sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
-    # last state with no transition
-    current_state_ind = mapping.index(test_labels[-1])
-    sentiment_score_pos *= hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][test_observ[-1]]
-    sentiment_score_neg *= hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][test_observ[-1]]
+        if len(current_observations) > 0:         
+            sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
+            sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
 
-    if sentiment_score_pos > sentiment_score_neg:
-        predicted.append("pos")
-    elif sentiment_score_pos < sentiment_score_neg:
-        predicted.append("neg")
-    else:
-        print("NEVER GONNA HAPPEN")
-    
-    print(predicted)
+            for i in range(len(current_observations)-1):
+        
+                current_state_ind = mapping.index(current_states[i])
+                next_state_ind = mapping.index(current_states[i+1])
+
+                try:        
+                    emissionprob_pos = hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[i]]
+                except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    print("Prediction Failed, new unseen observation:", err)
+                    emissionprob_pos = unseen_factor
+
+                try:        
+                    emissionprob_neg = hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[i]]
+                except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    print("Prediction Failed, new unseen observation:", err)
+                    emissionprob_neg = unseen_factor
+
+                trans_prob_pos = transition_proba_matrix_pos[current_state_ind, next_state_ind]
+                trans_prob_neg = transition_proba_matrix_neg[current_state_ind, next_state_ind]
+
+                sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
+                sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
+            # last state with no transition          
+            current_state_ind = mapping.index(current_states[-1])
+            try:  
+                sentiment_score_pos *= hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
+            except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                print("Prediction Failed, new unseen observation:", err)
+                sentiment_score_pos *= unseen_factor
+            try:  
+                sentiment_score_neg *= hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
+            except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                print("Prediction Failed, new unseen observation:", err)
+                sentiment_score_neg *= unseen_factor
+
+            # Comparison
+            if sentiment_score_pos > sentiment_score_neg:
+                predicted.append("pos")
+            elif sentiment_score_pos < sentiment_score_neg:
+                predicted.append("neg")
+            else:
+                print("NOT ENOUGH TRAINING DATA OR SOMETHING")
+                predict = [randint(0, len(documentSentiments)-1)]
+
     quit()
 
     # Testing

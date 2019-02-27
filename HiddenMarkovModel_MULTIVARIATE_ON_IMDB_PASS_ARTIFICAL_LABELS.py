@@ -64,6 +64,96 @@ def Run_Preprocessing(dataset_name):
     return df_dataset
 
 
+def Create_Artificial_Labels_to_File(data_train, labels_train, vocab, pipeline):
+    # Training Data Transform
+    pos_artifically_labeled_data = []
+    pos_data_corresponding_to_labels = []
+    neg_artifically_labeled_data = []
+    neg_data_corresponding_to_labels = []
+    golden_truth = []
+    instance_count = len(data_train)
+    nlp = spacy.load('en_core_web_sm')
+
+    for i in range(instance_count):
+        print("Currently in instance:", i, "of Train set")
+        # some retarded bug
+        data_train_new = data_train.tolist()
+        labels_train_new = labels_train.tolist()
+        #print(data_train_new[0], "\n", data_train_new[1])
+        tokenize_it = word_tokenize(data_train_new[i])
+        to_append_labels = []
+        to_append_data = []
+        for j in tokenize_it:
+            #print(i)
+            token_to_string = str(j)
+            if token_to_string in vocab:
+                to_append_data.append(token_to_string)
+                # we can simply directly append the artificial label itself
+                prediction_bayes = pipeline.predict([token_to_string])[0]
+                to_append_labels.append(prediction_bayes)
+        
+        if labels_train_new[i] == "pos":
+            pos_artifically_labeled_data.append(to_append_labels)
+            pos_data_corresponding_to_labels.append(to_append_data)
+        elif labels_train_new[i] == "neg":
+            neg_artifically_labeled_data.append(to_append_labels)
+            neg_data_corresponding_to_labels.append(to_append_data)
+
+        golden_truth.append(labels_train_new[i])
+
+    # Pos
+    with open('./Pickled Objects/To Train Pos HMM/Artificial_Labels_from_Bayes', 'wb') as f:
+        pickle.dump(pos_artifically_labeled_data, f)
+    with open('./Pickled Objects/To Train Pos HMM/Data_corresponding_to_Labels_from_Bayes', 'wb') as f:
+        pickle.dump(pos_data_corresponding_to_labels, f)
+    # Neg
+    with open('./Pickled Objects/To Train Neg HMM/Artificial_Labels_from_Bayes', 'wb') as f:
+        pickle.dump(neg_artifically_labeled_data, f)
+    with open('./Pickled Objects/To Train Neg HMM/Data_corresponding_to_Labels_from_Bayes', 'wb') as f:
+        pickle.dump(neg_data_corresponding_to_labels, f)
+    #        
+    #with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
+    #    pickle.dump(golden_truth, f)
+
+
+def Create_Artificial_Labels_to_File_Test(data_test, labels_test, vocab, pipeline):
+    # Test Data Transform
+    artifically_labeled_data_test = []
+    data_corresponding_to_labels_test = []
+    golden_truth = []
+    instance_count = len(data_test)
+    nlp = spacy.load('en_core_web_sm')
+
+    for i in range(instance_count):
+        print("Currently in instance:", i, "of Test set")
+        # some retarded bug
+        data_test_new = data_test.tolist()
+        labels_test_new = labels_test.tolist()
+        #print(data_train_new[0], "\n", data_train_new[1])
+        tokenize_it = word_tokenize(data_test_new[i])
+        to_append_labels = []
+        to_append_data = []
+        for j in tokenize_it:
+            #print(i)
+            token_to_string = str(j)
+            if token_to_string in vocab:
+                to_append_data.append(token_to_string)
+                # we can simply directly append the artificial label itself
+                prediction_bayes = pipeline.predict([token_to_string])[0]
+                to_append_labels.append(prediction_bayes)
+        
+        artifically_labeled_data_test.append(to_append_labels)
+        data_corresponding_to_labels_test.append(to_append_data)
+        golden_truth.append(labels_test_new[i])
+
+    with open('./Pickled Objects/Artificial_Labels_from_Bayes_Test_Set', 'wb') as f:
+        pickle.dump(artifically_labeled_data_test, f)
+    with open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes_Test_Set', 'wb') as f:
+        pickle.dump(data_corresponding_to_labels_test, f)
+    with open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'wb') as f:
+        pickle.dump(golden_truth, f)
+
+
 def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order):
     '''    Create a Hidden Markov Model of n-th Order, trained in a Supervised manner    '''
     '''    Input:     
@@ -86,6 +176,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
+
     pickle_load = 0    
 
     if pickle_load == 0:
@@ -98,7 +189,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                             ('clf', ComplementNB()),])  
         
         pipeline.fit(data_train, labels_train)
-        predicted = pipeline.predict(data_test)
 
         # (3) PREDICT
         predicted = pipeline.predict(data_test)
@@ -114,97 +204,11 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
         vocab = [vocab[i] for i in selected_indices]
 
-        # Training Data Transform
-        pos_artifically_labeled_data = []
-        pos_data_corresponding_to_labels = []
-        neg_artifically_labeled_data = []
-        neg_data_corresponding_to_labels = []
-        golden_truth = []
-        instance_count = len(data_train)
-        nlp = spacy.load('en_core_web_sm')
-
-        for i in range(instance_count):
-            print("Currently in instance:", i, "of Train set")
-            # some retarded bug
-            data_train_new = data_train.tolist()
-            labels_train_new = labels_train.tolist()
-            #print(data_train_new[0], "\n", data_train_new[1])
-            tokenize_it = word_tokenize(data_train_new[i])
-            to_append_labels = []
-            to_append_data = []
-            for j in tokenize_it:
-                #print(i)
-                token_to_string = str(j)
-                if token_to_string in vocab:
-                    to_append_data.append(token_to_string)
-                    # we can simply directly append the artificial label itself
-                    prediction_bayes = pipeline.predict([token_to_string])[0]
-                    to_append_labels.append(prediction_bayes)
-            
-            if labels_train_new[i] == "pos":
-                pos_artifically_labeled_data.append(to_append_labels)
-                pos_data_corresponding_to_labels.append(to_append_data)
-            elif labels_train_new[i] == "neg":
-                neg_artifically_labeled_data.append(to_append_labels)
-                neg_data_corresponding_to_labels.append(to_append_data)
-
-            golden_truth.append(labels_train_new[i])
-
-        # Pos
-        with open('./Pickled Objects/To Train Pos HMM/Artificial_Labels_from_Bayes', 'wb') as f:
-            pickle.dump(pos_artifically_labeled_data, f)
-        with open('./Pickled Objects/To Train Pos HMM/Data_corresponding_to_Labels_from_Bayes', 'wb') as f:
-            pickle.dump(pos_data_corresponding_to_labels, f)
-        # Neg
-        with open('./Pickled Objects/To Train Neg HMM/Artificial_Labels_from_Bayes', 'wb') as f:
-            pickle.dump(neg_artifically_labeled_data, f)
-        with open('./Pickled Objects/To Train Neg HMM/Data_corresponding_to_Labels_from_Bayes', 'wb') as f:
-            pickle.dump(neg_data_corresponding_to_labels, f)
-        #        
-        #with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
-        #    pickle.dump(golden_truth, f)
-
-        artifically_labeled_data = 0
-        data_corresponding_to_labels = 0
-        golden_truth = 0
-
-        # Test Data Transform
-        artifically_labeled_data_test = []
-        data_corresponding_to_labels_test = []
-        golden_truth = []
-        instance_count = len(data_test)
-        nlp = spacy.load('en_core_web_sm')
-
-        for i in range(instance_count):
-            print("Currently in instance:", i, "of Test set")
-            # some retarded bug
-            data_test_new = data_test.tolist()
-            labels_test_new = labels_test.tolist()
-            #print(data_train_new[0], "\n", data_train_new[1])
-            tokenize_it = word_tokenize(data_test_new[i])
-            to_append_labels = []
-            to_append_data = []
-            for j in tokenize_it:
-                #print(i)
-                token_to_string = str(j)
-                if token_to_string in vocab:
-                    to_append_data.append(token_to_string)
-                    # we can simply directly append the artificial label itself
-                    prediction_bayes = pipeline.predict([token_to_string])[0]
-                    to_append_labels.append(prediction_bayes)
-            
-            artifically_labeled_data_test.append(to_append_labels)
-            data_corresponding_to_labels_test.append(to_append_data)
-            golden_truth.append(labels_test_new[i])
-
-        with open('./Pickled Objects/Artificial_Labels_from_Bayes_Test_Set', 'wb') as f:
-            pickle.dump(artifically_labeled_data_test, f)
-        with open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes_Test_Set', 'wb') as f:
-            pickle.dump(data_corresponding_to_labels_test, f)
-        with open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'wb') as f:
-            pickle.dump(golden_truth, f)
-
-        print(data_corresponding_to_labels_test)
+        p1 = multiprocessing.Process(target=Create_Artificial_Labels_to_File, args=(data_train, labels_train, vocab, pipeline))
+        p2 = multiprocessing.Process(target=Create_Artificial_Labels_to_File_Test, args=(data_test, labels_test, vocab, pipeline))
+        p1.start()
+        p2.start()
+        quit()
 
     elif pickle_load == 1:
 

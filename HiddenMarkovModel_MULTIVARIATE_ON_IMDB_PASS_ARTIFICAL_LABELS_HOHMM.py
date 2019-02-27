@@ -347,16 +347,21 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # Compare proba matrix to HOHMM
 
-    set_pickle_load_2 = 0
+    set_pickle_load_2 = 1
 
     if set_pickle_load_2 == 0:
 
         # Try HOHMM
         builder = Builder()
-        builder.add_batch_training_examples(pos_data_corresponding_to_labels[0:500], pos_artifically_labeled_data[0:500])
+        builder.add_batch_training_examples(pos_data_corresponding_to_labels, pos_artifically_labeled_data)
         hmm_pos = builder.build(highest_order = 1)
-        builder.add_batch_training_examples(neg_data_corresponding_to_labels[0:500], neg_artifically_labeled_data[0:500])
+        builder.add_batch_training_examples(neg_data_corresponding_to_labels, neg_artifically_labeled_data)
         hmm_neg = builder.build(highest_order = 1)
+
+        with open('./Pickled Objects/HOHMM_HMM_POS', 'wb') as f:
+            pickle.dump(hmm_pos, f)
+        with open('./Pickled Objects/HOHMM_HMM_NEG', 'wb') as f:
+            pickle.dump(hmm_neg, f)           
 
     else:
         hmm_pos = pickle.load(open('./Pickled Objects/HOHMM_HMM_POS', 'rb'))
@@ -404,8 +409,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # pos  [1]
     # none-start [2]
     # none-end  [3]
-    data_corresponding_to_labels_test = data_corresponding_to_labels_test[0:500]
-    artifically_labeled_data_test = artifically_labeled_data_test[0:500]
+    #data_corresponding_to_labels_test = data_corresponding_to_labels_test[0:500]
+    #artifically_labeled_data_test = artifically_labeled_data_test[0:500]
 
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
     unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
@@ -468,7 +473,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_pos *= unseen_factor_smoothing
             try:  
-                emission_temp_ind = observation_mapping_pos.index(current_observations[-1])  
+                emission_temp_ind = observation_mapping_neg.index(current_observations[-1])  
                 sentiment_score_neg *= hmm_n["B"][current_state_ind_neg][emission_temp_ind]
             except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                 count_newunseen += 1  
@@ -500,7 +505,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #seq_count2 = x_test.shape[0]
     #multivariate_3d_test_matrix = np.empty([seq_count2, 1, feature_count])  # Feature Count Remains the same when we vectorize the test set
 
-    Print_Result_Metrics(golden_truth_test[0:500], predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
+    Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     print("New unseen observations:", count_newunseen, "Empty Sequences:", count_problematic)
 

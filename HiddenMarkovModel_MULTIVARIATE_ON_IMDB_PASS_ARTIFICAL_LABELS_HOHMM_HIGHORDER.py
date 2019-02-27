@@ -249,41 +249,41 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # second-order HMM
     # for second-order we add 1 dummy state
-    enable_highorder = 0
-    enable_pickle_load = 0
+    enable_highorder = 1
+    enable_pickle_load = 1
 
     if enable_highorder == 1 and enable_pickle_load == 0:
         set_order = 2
 
-        # Pos    
-        second_order_labels = []    
-        for seq in pos_artifically_labeled_data:
-            tempp = []
+        # # Pos    
+        # second_order_labels = []    
+        # for seq in pos_artifically_labeled_data:
+        #     tempp = []
 
-            if len(seq) > 0:  # else remains empty
-                # first            
-                tempp.append("dummy" + seq[0])
-                for i in range(set_order-1, len(seq)):
-                    # concatenate the names of 2 states
-                    tempp.append(seq[i-1] + seq[i])
+        #     if len(seq) > 0:  # else remains empty
+        #         # first            
+        #         tempp.append("dummy" + seq[0])
+        #         for i in range(set_order-1, len(seq)):
+        #             # concatenate the names of 2 states
+        #             tempp.append(seq[i-1] + seq[i])
 
-            second_order_labels.append(tempp)
-        pos_artifically_labeled_data = second_order_labels  # Convert the name
+        #     second_order_labels.append(tempp)
+        # pos_artifically_labeled_data = second_order_labels  # Convert the name
 
-        # Neg    
-        second_order_labels = []    
-        for seq in neg_artifically_labeled_data:
-            tempp = []
+        # # Neg    
+        # second_order_labels = []    
+        # for seq in neg_artifically_labeled_data:
+        #     tempp = []
 
-            if len(seq) > 0:  # else remains empty
-                # first            
-                tempp.append("dummy" + seq[0])
-                for i in range(set_order-1, len(seq)):
-                    # concatenate the names of 2 states
-                    tempp.append(seq[i-1] + seq[i])
+        #     if len(seq) > 0:  # else remains empty
+        #         # first            
+        #         tempp.append("dummy" + seq[0])
+        #         for i in range(set_order-1, len(seq)):
+        #             # concatenate the names of 2 states
+        #             tempp.append(seq[i-1] + seq[i])
 
-            second_order_labels.append(tempp)
-        neg_artifically_labeled_data = second_order_labels  # Convert the name
+        #     second_order_labels.append(tempp)
+        # neg_artifically_labeled_data = second_order_labels  # Convert the name
 
         # Test    
         second_order_labels = []    
@@ -291,11 +291,11 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             tempp = []
 
             if len(seq) > 0:  # else remains empty
-                # first            
-                tempp.append("dummy" + seq[0])
+                # first  
+                tempp.append(seq[0])     
                 for i in range(set_order-1, len(seq)):
                     # concatenate the names of 2 states
-                    tempp.append(seq[i-1] + seq[i])
+                    tempp.append(seq[i-1] + "-" + seq[i])
 
             second_order_labels.append(tempp)
         artifically_labeled_data_test = second_order_labels  # Convert the name
@@ -309,22 +309,22 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         # print(neg_artifically_labeled_data[-1])
 
         # Build Pos Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True)
-        print("NEXT HMM")
+        #hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True)
+        #print("NEXT HMM")
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=2, verbose=True, max_iterations = 100)
+        #hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=2, verbose=True, max_iterations = 100)
     
-        with open('./Pickled Objects/High_Order_HMM_POS', 'wb') as f:
-            pickle.dump(hmm_supervised_pos, f)
-        with open('./Pickled Objects/High_Order_HMM_NEG', 'wb') as f:
-            pickle.dump(hmm_supervised_neg, f)
-        with open('./Pickled Objects/High_Order_Test_Set', 'wb') as f:
+        # with open('./Pickled Objects/High_Order_HMM_POS', 'wb') as f:
+        #     pickle.dump(hmm_supervised_pos, f)
+        # with open('./Pickled Objects/High_Order_HMM_NEG', 'wb') as f:
+        #     pickle.dump(hmm_supervised_neg, f)
+        with open('./Pickled Objects/To Test HOHMM/High_Order_Test_Set', 'wb') as f:
             pickle.dump(artifically_labeled_data_test, f)
 
     elif enable_highorder == 1 and enable_pickle_load == 1:
-        hmm_supervised_pos = pickle.load(open('./Pickled Objects/High_Order_HMM_POS', 'rb'))
-        hmm_supervised_neg = pickle.load(open('./Pickled Objects/High_Order_HMM_NEG', 'rb'))   
-        artifically_labeled_data_test = pickle.load(open('./Pickled Objects/High_Order_Test_Set', 'rb')) 
+        # hmm_supervised_pos = pickle.load(open('./Pickled Objects/High_Order_HMM_POS', 'rb'))
+        # hmm_supervised_neg = pickle.load(open('./Pickled Objects/High_Order_HMM_NEG', 'rb'))   
+        artifically_labeled_data_test = pickle.load(open('./Pickled Objects/To Test HOHMM/High_Order_Test_Set', 'rb')) 
 
     else:
         # Training
@@ -342,30 +342,31 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #test_observ = ["realise", "pure"]
     #test_states = ["neg", "neg"]
 
-    transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
-    transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
+    #transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
+    #transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
 
     # Compare proba matrix to HOHMM
 
     set_pickle_load_2 = 1
 
-    if set_pickle_load_2 == 0:
+    if set_pickle_load_2 == 1:
 
         # Try HOHMM
         builder = Builder()
         builder.add_batch_training_examples(pos_data_corresponding_to_labels, pos_artifically_labeled_data)
-        hmm_pos = builder.build(highest_order = 1)
+        # The smoothing factor number needs to be very specific and is found by looking at the values themselves e.g. through pomegranate
+        hmm_pos = builder.build(highest_order = 2, k_smoothing=0.5e-05)
         builder.add_batch_training_examples(neg_data_corresponding_to_labels, neg_artifically_labeled_data)
-        hmm_neg = builder.build(highest_order = 1)
+        hmm_neg = builder.build(highest_order = 2, k_smoothing=0.5e-05)
 
-        with open('./Pickled Objects/HOHMM_HMM_POS', 'wb') as f:
+        with open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'wb') as f:
             pickle.dump(hmm_pos, f)
-        with open('./Pickled Objects/HOHMM_HMM_NEG', 'wb') as f:
+        with open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'wb') as f:
             pickle.dump(hmm_neg, f)           
 
     else:
-        hmm_pos = pickle.load(open('./Pickled Objects/HOHMM_HMM_POS', 'rb'))
-        hmm_neg = pickle.load(open('./Pickled Objects/HOHMM_HMM_NEG', 'rb'))
+        hmm_pos = pickle.load(open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'rb'))
+        hmm_neg = pickle.load(open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'rb'))
     # # Mapping the way he does
     # observation_mapping = set()
     # for obs_lst in pos_data_corresponding_to_labels:
@@ -386,14 +387,15 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # observation_mapping_neg = list(hmm_neg._all_obs)
     # state_mapping_neg = list(hmm_neg._all_states)
   
-    # A always includes all previous orders
+    # pi always includes all previous orders
     # B always hard stuck on [features x 2] refering only to the 2 states regardless of order
 
     if False:
         # Debugging
         print(hmm_p["pi"])
         print(hmm_p["A"])
-        quit()
+
+        print(len(hmm_p["B"]))
         print(len(hmm_p["B"][0]), len(hmm_p["B"][1]))
         quit()
 
@@ -425,15 +427,21 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     for k in range(test_data_size):
         current_observations = data_corresponding_to_labels_test[k]
-        current_states = artifically_labeled_data_test[k]
+        current_states = artifically_labeled_data_test[k][1:]
         # Debug
         # print(k, len(current_observations))
 
-        if len(current_observations) > 0:         
-            sentiment_score_pos = hmm_p["pi"][0][current_states[0]]  # Transition from start to first state
-            sentiment_score_neg = hmm_n["pi"][0][current_states[0]]  # Transition from start to first state
+        # CHANGE PERFORMED COMPARED TO SINGLE-ORDER ON FOLLOWING LINE
+        if len(current_observations) > 0 and len(current_states) > 1:     
+            # CHANGE PERFORMED COMPARED TO SINGLE-ORDER ON FOLLOWING LINE  
+            sentiment_score_pos = hmm_p["pi"][0][artifically_labeled_data_test[k][0]]  # Transition from start to first state
+            sentiment_score_neg = hmm_n["pi"][0][artifically_labeled_data_test[k][0]]  # Transition from start to first state
 
-            for i in range(len(current_observations)-1):
+            for i in range(len(current_observations) - 2):  # !!! CHANGED TO -2 FROM -1 might be missing a single emission because of this
+                #print(i, len(current_states))
+                #print(current_states)
+                #print(current_states[i-3:i+3])
+                #print(len(current_observations), len(current_states))
 
                 current_state_ind_pos = state_mapping_pos.index(current_states[i])
                 next_state_ind_pos = state_mapping_pos.index(current_states[i+1])
@@ -441,9 +449,13 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 current_state_ind_neg = state_mapping_neg.index(current_states[i])
                 next_state_ind_neg = state_mapping_neg.index(current_states[i+1])                
 
+                # CHANGE PERFORMED - I CHOOSE THE "pos" out of "pos-neg" on every iteration
+                manual_map = ["pos", "neg"]
+                pick_first = manual_map.index(current_states[i][0:3])
+
                 try:
                     emission_temp_ind = observation_mapping_pos.index(current_observations[i])       
-                    emissionprob_pos = hmm_p["B"][current_state_ind_pos][emission_temp_ind]
+                    emissionprob_pos = hmm_p["B"][pick_first][emission_temp_ind]
                 except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                     count_newunseen += 1        
                     print("Prediction Failed, new unseen observation:", err)
@@ -451,7 +463,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
                 try:        
                     emission_temp_ind = observation_mapping_neg.index(current_observations[i])       
-                    emissionprob_neg = hmm_n["B"][current_state_ind_neg][emission_temp_ind]
+                    emissionprob_neg = hmm_n["B"][pick_first][emission_temp_ind]
                 except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                     print("Prediction Failed, new unseen observation:", err)
                     count_newunseen += 1  
@@ -463,22 +475,26 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
                 sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
             # last state with no transition          
-            current_state_ind_pos = state_mapping_pos.index(current_states[-1])
-            current_state_ind_neg = state_mapping_neg.index(current_states[-1])
+            #current_state_ind_pos = state_mapping_pos.index(current_states[-1])
+            #current_state_ind_neg = state_mapping_neg.index(current_states[-1])
+
+            # CHANGE PERFORMED - I CHOOSE THE "pos" out of "pos-neg" on every iteration
+            pick_first = manual_map.index(current_states[-1][0:3])
             try:  
                 emission_temp_ind = observation_mapping_pos.index(current_observations[-1])
-                sentiment_score_pos *= hmm_p["B"][current_state_ind_pos][emission_temp_ind]
+                sentiment_score_pos *= hmm_p["B"][pick_first][emission_temp_ind]
             except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                 count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_pos *= unseen_factor_smoothing
             try:  
                 emission_temp_ind = observation_mapping_neg.index(current_observations[-1])  
-                sentiment_score_neg *= hmm_n["B"][current_state_ind_neg][emission_temp_ind]
+                sentiment_score_neg *= hmm_n["B"][pick_first][emission_temp_ind]
             except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                 count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_neg *= unseen_factor_smoothing
+
 
             # Comparison
             if sentiment_score_pos > sentiment_score_neg:
@@ -508,8 +524,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     print("New unseen observations:", count_newunseen, "Problematic Sequences:", count_problematic)
-
-    return None
 
     # ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
     # print()

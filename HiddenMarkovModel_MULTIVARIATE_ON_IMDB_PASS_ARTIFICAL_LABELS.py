@@ -381,7 +381,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
 
             for i in range(len(current_observations)-1):
-        
+
                 current_state_ind = mapping.index(current_states[i])
                 next_state_ind = mapping.index(current_states[i+1])
 

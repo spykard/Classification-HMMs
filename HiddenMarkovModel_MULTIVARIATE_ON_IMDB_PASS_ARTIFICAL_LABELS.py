@@ -177,7 +177,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     time_counter = my_time.time()
 
 
-    pickle_load = 0    
+    pickle_load = 1    
 
     if pickle_load == 0:
         # STEP 1 RUN NAIVE BAYES
@@ -258,9 +258,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
     
     # !!! Debug the matrix to find which one is which
-    # print(transition_proba_matrix_neg)
+    # print(transition_proba_matrix_pos)
     # fig, ax1 = plt.subplots()
-    # hmm_supervised_neg.plot()
+    # hmm_supervised_pos.plot()
     # plt.show() 
     # # Result :  
     # neg  [0]
@@ -271,6 +271,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     unseen_factor = 0.0  # Probability if we stumble upon new unseen observation 
     predicted = []
     test_data_size = len(data_corresponding_to_labels_test)
+    count_newunseen = 0
+    count_problematic = 0
 
     #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
 
@@ -294,6 +296,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 try:        
                     emissionprob_pos = hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[i]]
                 except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    count_newunseen += 1        
                     print("Prediction Failed, new unseen observation:", err)
                     emissionprob_pos = unseen_factor
 
@@ -301,6 +304,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                     emissionprob_neg = hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[i]]
                 except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                     print("Prediction Failed, new unseen observation:", err)
+                    count_newunseen += 1  
                     emissionprob_neg = unseen_factor
 
                 trans_prob_pos = transition_proba_matrix_pos[current_state_ind, next_state_ind]
@@ -313,11 +317,13 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             try:  
                 sentiment_score_pos *= hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
             except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_pos *= unseen_factor
             try:  
                 sentiment_score_neg *= hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
             except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_neg *= unseen_factor
 
@@ -328,6 +334,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 predicted.append("neg")
             else:
                 print("NOT ENOUGH TRAINING DATA OR SOMETHING, performing random guessing")
+                count_problematic += 1     
                 rng = randint(0, 1)
                 if rng == 0:
                     predicted.append("pos")
@@ -347,24 +354,26 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
+    print("New unseen observations:", count_newunseen, "Empty Sequences:", count_problematic)
+
     return None
 
-    ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
-    print()
-    if silent_enable != 1:
-        for x in range(0, len(documentSentiments)):
-            print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
-    print("Indexes:", tuple(zip(documentSentiments, state_names)))
-    ###
+    # ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
+    # print()
+    # if silent_enable != 1:
+    #     for x in range(0, len(documentSentiments)):
+    #         print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
+    # print("Indexes:", tuple(zip(documentSentiments, state_names)))
+    # ###
 
-    ### Plot the Hidden Markov Model Graph
-    if graph_print_enable == 1:
-        fig, ax1 = plt.subplots()
-        fig.canvas.set_window_title("Hidden Markov Model Graph")
-        ax1.set_title(str(n_order) + "-th Order")
-        hmm_leanfrominput_supervised.plot()
-        plt.show()
-    ### 
+    # ### Plot the Hidden Markov Model Graph
+    # if graph_print_enable == 1:
+    #     fig, ax1 = plt.subplots()
+    #     fig.canvas.set_window_title("Hidden Markov Model Graph")
+    #     ax1.set_title(str(n_order) + "-th Order")
+    #     hmm_leanfrominput_supervised.plot()
+    #     plt.show()
+    # ### 
 
     return None
     ###

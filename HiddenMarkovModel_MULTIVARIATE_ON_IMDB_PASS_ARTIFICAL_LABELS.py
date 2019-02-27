@@ -58,7 +58,7 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     # 4. Shuffle the Datasets, it seems to be too perfectly ordered
-    df_dataset = df_dataset.sample(frac=0.03).reset_index(drop=True)
+    df_dataset = df_dataset.sample(frac=1.00).reset_index(drop=True)
 
     return df_dataset
 
@@ -85,7 +85,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
-    pickle_load = 1    
+    pickle_load = 0    
 
     if pickle_load == 0:
         # STEP 1 RUN NAIVE BAYES
@@ -93,7 +93,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                             ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
 
                             ('tfidf', TfidfTransformer(use_idf=True)),
-                            ('feature_selection', SelectKBest(score_func=chi2, k=1000)),  # Dimensionality Reduction                  
+                            ('feature_selection', SelectKBest(score_func=chi2, k=2000)),  # Dimensionality Reduction                  
                             ('clf', ComplementNB()),])  
         
         pipeline.fit(data_train, labels_train)
@@ -269,7 +269,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # MATH: score = π(state1) * EmmisionProb(o1|state1) * P(o2|o1) * EmmisionProb(o2|state2) * P(o3|o2) * ...  / SequenceLength
 
-
     for k in range(test_data_size):
         current_observations = data_corresponding_to_labels_test[k]
         current_states = artifically_labeled_data_test[k]
@@ -321,15 +320,24 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             elif sentiment_score_pos < sentiment_score_neg:
                 predicted.append("neg")
             else:
-                print("NOT ENOUGH TRAINING DATA OR SOMETHING")
-                predict = [randint(0, len(documentSentiments)-1)]
+                print("NOT ENOUGH TRAINING DATA OR SOMETHING, performing random guessing")
+                rng = randint(0, 1)
+                if rng == 0:
+                    predicted.append("pos")
+                else:
+                    predicted.append("neg")
+        
+        else:  # Empty Sequence
+            print("EMPTY SEQUENCE, performing random guessing")
+            rng = randint(0, 1)
+            if rng == 0:
+                predicted.append("pos")
+            else:
+                predicted.append("neg")
 
-    quit()
-
-    # Testing
     #seq_count2 = x_test.shape[0]
     #multivariate_3d_test_matrix = np.empty([seq_count2, 1, feature_count])  # Feature Count Remains the same when we vectorize the test set
-    
+
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     return None

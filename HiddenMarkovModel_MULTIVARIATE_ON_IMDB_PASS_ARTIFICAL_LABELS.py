@@ -240,22 +240,103 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #multivariate_3d_train_matrix = multivariate_3d_train_matrix.astype("complex128")
     #quit()
 
+
     # LET'S BUILD: High-order HMM by converting representation to 1st order
+    # creates dummy states. For a third-order model, we would need to add two dummy start states in high-order space
+    # the prior probabilities of every state pair are set to zero except for more info see -> MINIHMM represent.py
 
+    # second-order HMM
+    # for second-order we add 1 dummy state
+    enable_highorder = 1
+    enable_pickle_load = 0
+
+    if enable_highorder == 1 and enable_pickle_load == 0:
+        set_order = 2
+
+        # Pos    
+        second_order_labels = []    
+        for seq in pos_artifically_labeled_data:
+            tempp = []
+
+            if len(seq) > 0:  # else remains empty
+                # first            
+                tempp.append("dummy" + seq[0])
+                for i in range(set_order-1, len(seq)):
+                    # concatenate the names of 2 states
+                    tempp.append(seq[i-1] + seq[i])
+
+            second_order_labels.append(tempp)
+        pos_artifically_labeled_data = second_order_labels  # Convert the name
+
+        # Neg    
+        second_order_labels = []    
+        for seq in neg_artifically_labeled_data:
+            tempp = []
+
+            if len(seq) > 0:  # else remains empty
+                # first            
+                tempp.append("dummy" + seq[0])
+                for i in range(set_order-1, len(seq)):
+                    # concatenate the names of 2 states
+                    tempp.append(seq[i-1] + seq[i])
+
+            second_order_labels.append(tempp)
+        neg_artifically_labeled_data = second_order_labels  # Convert the name
+
+        # Test    
+        second_order_labels = []    
+        for seq in artifically_labeled_data_test:
+            tempp = []
+
+            if len(seq) > 0:  # else remains empty
+                # first            
+                tempp.append("dummy" + seq[0])
+                for i in range(set_order-1, len(seq)):
+                    # concatenate the names of 2 states
+                    tempp.append(seq[i-1] + seq[i])
+
+            second_order_labels.append(tempp)
+        artifically_labeled_data_test = second_order_labels  # Convert the name
+
+        # HIGH-ORDER
+        # print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
+        # print(pos_artifically_labeled_data[1])
+        # print(pos_artifically_labeled_data[-1])
+        # print("NOW NEG")
+        # print(neg_artifically_labeled_data[1])
+        # print(neg_artifically_labeled_data[-1])
+
+        # Build Pos Class HMM - !!! state_names should be in alphabetical order
+        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True)
+        print("NEXT HMM")
+        # Build Neg Class HMM - !!! state_names should be in alphabetical order
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=2, verbose=True, max_iterations = 100)
     
+        with open('./Pickled Objects/High_Order_HMM_POS', 'wb') as f:
+            pickle.dump(hmm_supervised_pos, f)
+        with open('./Pickled Objects/High_Order_HMM_NEG', 'wb') as f:
+            pickle.dump(hmm_supervised_neg, f)
+        with open('./Pickled Objects/High_Order_Test_Set', 'wb') as f:
+            pickle.dump(artifically_labeled_data_test, f)
 
+    elif enable_highorder == 0 and enable_pickle_load == 0:
+        # Training
+        # Build Pos Class HMM - !!! state_names should be in alphabetical order
+        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
+        # Build Neg Class HMM - !!! state_names should be in alphabetical order
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
+        # Note: Algorithm used is Baum-Welch
 
+    else:
+        hmm_supervised_pos = pickle.load(open('./Pickled Objects/High_Order_HMM_POS', 'rb'))
+        hmm_supervised_neg = pickle.load(open('./Pickled Objects/High_Order_HMM_NEG', 'rb'))   
+        artifically_labeled_data_test = pickle.load(open('./Pickled Objects/High_Order_Test_Set', 'rb'))   
 
-    # Training
-    # Build Pos Class HMM - !!! state_names=["neg", "pos"] MATTER SO I CAN MAKE SENSE OF THE MAPPING LIST
-    hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
-    # Build Neg Class HMM - !!! state_names=["neg", "pos"] MATTER SO I CAN MAKE SENSE OF THE MAPPING LIST
-    hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
-    # Note: Algorithm used is Baum-Welch
+    #print(neg_artifically_labeled_data[0])
 
     # Testing
     #print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
-    print(hmm_supervised_pos)
+    #print(hmm_supervised_pos)
     #test_observ = ["realise", "pure"]
     #test_states = ["neg", "neg"]
 
@@ -263,16 +344,18 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
   
     # !!! Debug the matrix to find which one is which
-    # print(transition_proba_matrix_pos)
+    # print(transition_proba_matrix_neg)
     # fig, ax1 = plt.subplots()
-    # hmm_supervised_pos.plot()
+    # hmm_supervised_neg.plot()
     # plt.show() 
+    # quit()
     # # Result :  
     # neg  [0]
     # pos  [1]
     # none-start [2]
     # none-end  [3]
-    mapping = ["neg", "pos", "start", "end"]
+    #mapping = ["neg", "pos", "start", "end"]
+    mapping = ["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos", "start", "end"]
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
     unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
     predicted = []

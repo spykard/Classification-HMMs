@@ -10,3 +10,7 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
+<br><br/>
+## TODO
+
+* Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order

@@ -84,7 +84,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
-    pickle_load = 0    
+    pickle_load = 1    
 
     if pickle_load == 0:
         # STEP 1 RUN NAIVE BAYES
@@ -158,8 +158,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         with open('./Pickled Objects/To Train Neg HMM/Data_corresponding_to_Labels_from_Bayes', 'wb') as f:
             pickle.dump(neg_data_corresponding_to_labels, f)
         #        
-        with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
-            pickle.dump(golden_truth, f)
+        #with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
+        #    pickle.dump(golden_truth, f)
 
         artifically_labeled_data = 0
         data_corresponding_to_labels = 0
@@ -204,15 +204,17 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     elif pickle_load == 1:
 
-        artifically_labeled_data = pickle.load(open('./Pickled Objects/Artificial_Labels_from_Bayes', 'rb'))
-        data_corresponding_to_labels = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes', 'rb'))
+        pos_artifically_labeled_data = pickle.load(open('./Pickled Objects/To Train Pos HMM/Artificial_Labels_from_Bayes', 'rb'))
+        pos_data_corresponding_to_labels = pickle.load(open('./Pickled Objects/To Train Pos HMM/Data_corresponding_to_Labels_from_Bayes', 'rb'))
+        neg_artifically_labeled_data = pickle.load(open('./Pickled Objects/To Train Neg HMM/Artificial_Labels_from_Bayes', 'rb'))
+        neg_data_corresponding_to_labels = pickle.load(open('./Pickled Objects/To Train Neg HMM/Data_corresponding_to_Labels_from_Bayes', 'rb'))
+
         artifically_labeled_data_test = pickle.load(open('./Pickled Objects/Artificial_Labels_from_Bayes_Test_Set', 'rb'))
         data_corresponding_to_labels_test = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes_Test_Set', 'rb'))
-        golden_truth = pickle.load(open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'rb'))
         golden_truth_test = pickle.load(open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'rb'))
 
     #print(len(data_corresponding_to_labels), len(data_corresponding_to_labels_test))
-    quit()
+
     # OPTION 1 WOULD BE TO USE TFIDF, 
     # OPTION 2 TO USE ONE-HOT ENCODING WITH DISCRETE
     # OPTION 3 WOULD BE TO USE NAIVE BAYES PREDICTION TO CREATE ARTIFICAL LABELS
@@ -232,34 +234,71 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
 
     # Training
-    hmm_leanfrominput_supervised = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=data_corresponding_to_labels, labels=artifically_labeled_data, n_jobs=-1, state_names=["pos", "neg"])
+    # Build Pos Class HMM - !!! state_names=["neg", "pos"] MATTER SO I CAN MAKE SENSE OF THE MAPPING LIST
+    hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, state_names=["neg", "pos"])
+    # Build Neg Class HMM - !!! state_names=["neg", "pos"] MATTER SO I CAN MAKE SENSE OF THE MAPPING LIST
+    hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=1, state_names=["neg", "pos"])
     # Note: Algorithm used is Baum-Welch
 
-    print(len(artifically_labeled_data), len(artifically_labeled_data_test))
+    # Testing
+    #print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
+    print(hmm_supervised_pos)
+    test_observ = ["realise", "pure"]
+    test_labels = ["neg", "pos"]
+
+    transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
+    transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
+    
+    # !!! Debug the matrix to find which one is which
+    # print(transition_proba_matrix_neg)
+    # fig, ax1 = plt.subplots()
+    # hmm_supervised_neg.plot()
+    # plt.show() 
+    # # Result :  
+    # neg  [0]
+    # pos  [1]
+    # none-start [2]
+    # none-end  [3]
+    mapping = ["neg", "pos", "start", "end"]
+    unseen_factor = 0.0  # Probability if we stumble upon new unseen one observation 
+    predicted = []
+
+    #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
+
+    # MATH: score = π(state1) * EmmisionProb(o1|state1) * P(o2|o1) * EmmisionProb(o2|state2) * P(o3|o2) * ...  / SequenceLength
+
+    sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(test_labels[0])]  # Transition from start to first state
+    sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(test_labels[0])]  # Transition from start to first state
+
+    for i in range(len(test_observ)-1):
+        current_state_ind = mapping.index(test_labels[i])
+        next_state_ind = mapping.index(test_labels[i+1])
+        emissionprob_pos = hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][test_observ[i]]
+        emissionprob_neg = hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][test_observ[i]]
+        trans_prob_pos = transition_proba_matrix_pos[current_state_ind, next_state_ind]
+        trans_prob_neg = transition_proba_matrix_neg[current_state_ind, next_state_ind]
+
+        sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
+        sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
+    # last state with no transition
+    current_state_ind = mapping.index(test_labels[-1])
+    sentiment_score_pos *= hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][test_observ[-1]]
+    sentiment_score_neg *= hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][test_observ[-1]]
+
+    if sentiment_score_pos > sentiment_score_neg:
+        predicted.append("pos")
+    elif sentiment_score_pos < sentiment_score_neg:
+        predicted.append("neg")
+    else:
+        print("NEVER GONNA HAPPEN")
+    
+    print(predicted)
+    quit()
 
     # Testing
     #seq_count2 = x_test.shape[0]
     #multivariate_3d_test_matrix = np.empty([seq_count2, 1, feature_count])  # Feature Count Remains the same when we vectorize the test set
     
-    predicted = []
-    for x in range(len(artifically_labeled_data_test)):
-        #if len(x_test[x]) > 0:   
-        #print(multivariate_3d_test_matrix[x])
-        #multivariate_3d_test_matrix[x, 0, 1] = 0.01 
-        #print(multivariate_3d_test_matrix[x])
-
-        if len(data_corresponding_to_labels_test[x]) > 0:        
-            try:        
-                predict = hmm_leanfrominput_supervised.predict(data_corresponding_to_labels_test[x])
-            except ValueError as err:  # Prediction failed, predict randomly
-                print("Prediction Failed:", err)
-                predict = [randint(0, len(documentSentiments)-1)] 
-        else:  #  Prediction would be stuck at Starting State
-            predict = [randint(0, len(documentSentiments)-1)] 
-
-        predicted.append(documentSentiments[predict[-1]])
-
-
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     return None

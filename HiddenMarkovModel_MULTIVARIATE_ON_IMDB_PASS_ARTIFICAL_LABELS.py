@@ -240,6 +240,11 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #multivariate_3d_train_matrix = multivariate_3d_train_matrix.astype("complex128")
     #quit()
 
+    # LET'S BUILD: High-order HMM by converting representation to 1st order
+
+    
+
+
 
     # Training
     # Build Pos Class HMM - !!! state_names=["neg", "pos"] MATTER SO I CAN MAKE SENSE OF THE MAPPING LIST

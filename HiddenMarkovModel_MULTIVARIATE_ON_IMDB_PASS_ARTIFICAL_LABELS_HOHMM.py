@@ -250,7 +250,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # second-order HMM
     # for second-order we add 1 dummy state
     enable_highorder = 0
-    enable_pickle_load = 1
+    enable_pickle_load = 0
 
     if enable_highorder == 1 and enable_pickle_load == 0:
         set_order = 2
@@ -332,8 +332,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
         hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
-        # Note: Algorithm used is Baum-Welch
-
+        # Note: Algorithm used is Baum-Welch 
 
     #print(neg_artifically_labeled_data[0])
 
@@ -345,7 +344,55 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
+
+    # Compare proba matrix to HOHMM
+
+    set_pickle_load_2 = 0
+
+    if set_pickle_load_2 == 0:
+
+        # Try HOHMM
+        builder = Builder()
+        builder.add_batch_training_examples(pos_data_corresponding_to_labels[0:500], pos_artifically_labeled_data[0:500])
+        hmm_pos = builder.build(highest_order = 1)
+        builder.add_batch_training_examples(neg_data_corresponding_to_labels[0:500], neg_artifically_labeled_data[0:500])
+        hmm_neg = builder.build(highest_order = 1)
+
+    else:
+        hmm_pos = pickle.load(open('./Pickled Objects/HOHMM_HMM_POS', 'rb'))
+        hmm_neg = pickle.load(open('./Pickled Objects/HOHMM_HMM_NEG', 'rb'))
+    # # Mapping the way he does
+    # observation_mapping = set()
+    # for obs_lst in pos_data_corresponding_to_labels:
+    #     observation_mapping.update(set(obs_lst))
+
+    # # State mapping is whichever he sees first
+
+    hmm_p = hmm_pos.get_parameters()
+
+    observation_mapping_pos = list(hmm_p["all_obs"])
+    state_mapping_pos = list(hmm_p["all_states"])
+
+    hmm_n = hmm_neg.get_parameters()
+
+    observation_mapping_neg = list(hmm_n["all_obs"])
+    state_mapping_neg = list(hmm_n["all_states"])
+
+    # observation_mapping_neg = list(hmm_neg._all_obs)
+    # state_mapping_neg = list(hmm_neg._all_states)
   
+    # A always includes all previous orders
+    # B always hard stuck on [features x 2] refering only to the 2 states regardless of order
+
+    if False:
+        # Debugging
+        print(hmm_p["pi"])
+        print(hmm_p["A"])
+        quit()
+        print(len(hmm_p["B"][0]), len(hmm_p["B"][1]))
+        quit()
+
+ 
     # !!! Debug the matrix to find which one is which
     # print(transition_proba_matrix_neg)
     # fig, ax1 = plt.subplots()
@@ -357,8 +404,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # pos  [1]
     # none-start [2]
     # none-end  [3]
-    mapping = ["neg", "pos", "start", "end"]
-    #mapping = ["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos", "start", "end"]
+    data_corresponding_to_labels_test = data_corresponding_to_labels_test[0:500]
+    artifically_labeled_data_test = artifically_labeled_data_test[0:500]
+
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
     unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
     predicted = []
@@ -377,44 +425,52 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         # print(k, len(current_observations))
 
         if len(current_observations) > 0:         
-            sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
-            sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
+            sentiment_score_pos = hmm_p["pi"][0][current_states[0]]  # Transition from start to first state
+            sentiment_score_neg = hmm_n["pi"][0][current_states[0]]  # Transition from start to first state
 
             for i in range(len(current_observations)-1):
         
-                current_state_ind = mapping.index(current_states[i])
-                next_state_ind = mapping.index(current_states[i+1])
+                current_state_ind_pos = state_mapping_pos.index(current_states[i])
+                next_state_ind_pos = state_mapping_pos.index(current_states[i+1])
 
-                try:        
-                    emissionprob_pos = hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[i]]
-                except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                current_state_ind_neg = state_mapping_neg.index(current_states[i])
+                next_state_ind_neg = state_mapping_neg.index(current_states[i+1])                
+
+                try:
+                    emission_temp_ind = observation_mapping_pos.index(current_observations[i])       
+                    emissionprob_pos = hmm_p["B"][current_state_ind_pos][emission_temp_ind]
+                except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                     count_newunseen += 1        
                     print("Prediction Failed, new unseen observation:", err)
                     emissionprob_pos = unseen_factor_smoothing
 
                 try:        
-                    emissionprob_neg = hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[i]]
-                except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    emission_temp_ind = observation_mapping_neg.index(current_observations[i])       
+                    emissionprob_neg = hmm_n["B"][current_state_ind_neg][emission_temp_ind]
+                except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                     print("Prediction Failed, new unseen observation:", err)
                     count_newunseen += 1  
                     emissionprob_neg = unseen_factor_smoothing
 
-                trans_prob_pos = transition_proba_matrix_pos[current_state_ind, next_state_ind]
-                trans_prob_neg = transition_proba_matrix_neg[current_state_ind, next_state_ind]
+                trans_prob_pos = hmm_p["A"][current_state_ind_pos][next_state_ind_pos]
+                trans_prob_neg = hmm_n["A"][current_state_ind_neg][next_state_ind_neg]
 
                 sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
                 sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
             # last state with no transition          
-            current_state_ind = mapping.index(current_states[-1])
+            current_state_ind_pos = state_mapping_pos.index(current_states[-1])
+            current_state_ind_neg = state_mapping_neg.index(current_states[-1])
             try:  
-                sentiment_score_pos *= hmm_supervised_pos.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
-            except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                emission_temp_ind = observation_mapping_pos.index(current_observations[-1])
+                sentiment_score_pos *= hmm_p["B"][current_state_ind_pos][emission_temp_ind]
+            except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                 count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_pos *= unseen_factor_smoothing
             try:  
-                sentiment_score_neg *= hmm_supervised_neg.states[current_state_ind].distribution.parameters[0][current_observations[-1]]
-            except KeyError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                emission_temp_ind = observation_mapping_pos.index(current_observations[-1])  
+                sentiment_score_neg *= hmm_n["B"][current_state_ind_neg][emission_temp_ind]
+            except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
                 count_newunseen += 1  
                 print("Prediction Failed, new unseen observation:", err)
                 sentiment_score_neg *= unseen_factor_smoothing
@@ -444,7 +500,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #seq_count2 = x_test.shape[0]
     #multivariate_3d_test_matrix = np.empty([seq_count2, 1, feature_count])  # Feature Count Remains the same when we vectorize the test set
 
-    Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
+    Print_Result_Metrics(golden_truth_test[0:500], predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     print("New unseen observations:", count_newunseen, "Empty Sequences:", count_problematic)
 

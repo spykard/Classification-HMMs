@@ -16,12 +16,12 @@
 ## Method A
 
 Not really a classification Method
-![alt text](Documentation%20Images/General%20HMM%20Method%201.png)
+![alt text](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
 ## Method B
 
 Pure classification
-![alt text](Documentation%20Images/General%20HMM%20Method%202.png)
+![alt text](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
 
 <br><br/>
 

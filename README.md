@@ -60,7 +60,7 @@ Pure classification
 
 # To Do
 
-* Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order
+* Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order. However, I already have a smart implementation on Finegrained.py by using state names as labels instead of "pos"/"neg"/"neu".
 
 ## Counting
 

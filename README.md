@@ -10,7 +10,7 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
-## List of Models with emphasis on Natural Language Processing
+## List of Models with emphasis on Text Classification
 
 (number) [on what type of sequential data it works on] [difficulty] [is it more or less ready] [references relevant to NLP]
 
@@ -18,15 +18,23 @@
 
 (2) [any-based] [★] [yes]  **Classic HMM**: The well-known sequential model used for Part-of-Speech tagging, Biology-related tasks, Image recognition (pixels as a sequence) etc.
 
+(3) [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] **Multivariate HMM**: Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
+
+* Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features such as tfidf etc.
 
 (4) [any-based] [★★★★★] [yes] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] **High-order HMM**: Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one.
 
+* Quan et al. (+ Multivariate) - states: emotions, observations: custom encoding with 150 possible observations per state
+
 (5) [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]    Clustering then HMM
 
+* Kang et al. - states: clusters, obervations: words
 
 (5) [any-based] **Bidirectional HMM**
 
 (6) [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)] **Hierarchical HMM** 
+
+(7) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 
@@ -44,3 +52,10 @@
 ## Conclusions
 
 * A HMM can increase the performance of any ... by utilizing the sequential information of text
+<br><br/>
+
+## List of other people's Implementations
+
+* Uses Naive Bayes since they only have sentence sentiment to classify each word and that is the state - https://github.com/saumyakb/CS4740-NLP-Sentiment-Analysis-using-HMM - states: naive bayes artificial labels, observations: words
+
+* Each word is one-hot encoded and used as observations; since it is built like a classifier, clueless people run it with (n_sequences, seq_length=1) by throwing a tfidf matrix as the sequence of length 1 and it kind of works - https://github.com/larsmans/seqlearn/blob/master/seqlearn/hmm.py - states: Part-of-Speech tags, observations: one-hot encoded words

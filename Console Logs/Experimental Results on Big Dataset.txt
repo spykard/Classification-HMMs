@@ -1,3 +1,5 @@
+Dataset: IMDb
+
 1. NAIVE BAYES:
 
 Exact Accuracy:  0.8414849262347659

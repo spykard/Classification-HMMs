@@ -249,8 +249,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # second-order HMM
     # for second-order we add 1 dummy state
-    enable_highorder = 1
-    enable_pickle_load = 1
+    enable_highorder = 0
+    enable_pickle_load = 0
 
     if enable_highorder == 1 and enable_pickle_load == 0:
         set_order = 2
@@ -312,19 +312,24 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         count_pos = 0
         count_neg = 0
 
-        # Shorten the "neg" else it trains for long time compared to "pos"
-        for i in range(6000):
+        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount
+        for i in range(6000):  # Arbitary number, ~6000+ would include all instances
             #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
-            neg_artifically_labeled_data[i] = neg_artifically_labeled_data[i][:-3]
-            neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-3]
+            neg_artifically_labeled_data[i] = neg_artifically_labeled_data[i][:-1]
+            neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-1]           
             #print(pos_artifically_labeled_data[i][0:2])
             count_pos += len(pos_artifically_labeled_data[i])
             count_neg += len(neg_artifically_labeled_data[i])
+        print(count_pos/6000.0, count_neg/6000.0)
+
         # Build Pos Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
+        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, emission_pseudocount=0.5e-05, verbose=True, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
         print("NEXT HMM")
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=1, verbose=True, max_iterations = 100, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=1, emission_pseudocount=0.5e-05, verbose=True, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
+
+        #print(hmm_supervised_pos)
+        #quit()
 
         with open('./Pickled Objects/High_Order_HMM_POS', 'wb') as f:
             pickle.dump(hmm_supervised_pos, f)
@@ -339,11 +344,24 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         artifically_labeled_data_test = pickle.load(open('./Pickled Objects/High_Order_Test_Set', 'rb')) 
 
     else:
+        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount
+        count_pos = 0
+        count_neg = 0
+        for i in range(6000):  # Arbitary number, ~6000+ would include all instances
+            #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
+            neg_artifically_labeled_data[i] = neg_artifically_labeled_data[i][:-1]
+            neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-1]           
+            #print(pos_artifically_labeled_data[i][0:2])
+            count_pos += len(pos_artifically_labeled_data[i])
+            count_neg += len(neg_artifically_labeled_data[i])
+        print(count_pos/6000.0, count_neg/6000.0)
+
         # Training
         # Build Pos Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
+        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1, state_names=["neg", "pos"])
+        print("NEXT HMM")
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0, n_jobs=1, state_names=["neg", "pos"])
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1, state_names=["neg", "pos"])
         # Note: Algorithm used is Baum-Welch
 
 
@@ -380,6 +398,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     test_data_size = len(data_corresponding_to_labels_test)
     count_newunseen = 0
     count_problematic = 0
+    empty_sequences = 0
 
     #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
 
@@ -450,6 +469,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         
         else:  # Empty Sequence
             print("EMPTY SEQUENCE, performing random guessing")
+            empty_sequences += 1
             rng = randint(0, 1)
             if rng == 0:
                 predicted.append("pos")
@@ -461,7 +481,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
-    print("New unseen observations:", count_newunseen, "Empty Sequences:", count_problematic)
+    print("New unseen observations:", count_newunseen, "Problematic Sequences:", count_problematic, "Empty Sequences:", empty_sequences)
 
     return None
 

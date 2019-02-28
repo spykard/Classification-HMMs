@@ -19,4 +19,6 @@
 * Showcase how as the order increases we have transitions that are too low probability; the problematic count will help with this.
 * Showcase how as the order increases we have more empty sequences; `['neg', 'neg-pos', 'neg-pos-pos']` is an empty sequence since HOHMM doesn't use dummy states.
 * Note the new unseen observation count which stays constant; the unseen count will help with this.
-
+<br><br/>
+## Conclusions
+* A HMM can increase the performance of any ... by utilizing the sequential information of text

@@ -2,7 +2,7 @@
 
 ## Notes on Pomegranate
 
-* The states represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. [_'bbb', 'aaa', 'ccc'_] means _s<sub>0</sub> = "aaa"_
+* The states represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `[_'bbb', 'aaa', 'ccc'_]` means `_s<sub>0</sub> = 'aaa', s<sub>1</sub> = 'bbb', s<sub>2</sub> = 'ccc'_`
 
 ```python
   ...

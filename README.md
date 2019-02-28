@@ -10,6 +10,11 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
+
+![alt text](http://url/to/img.png)
+
+
+
 ## List of Models with emphasis on Text Classification
 
 (number) [on what type of sequential data it works on] [difficulty] [is it more or less ready] [references relevant to NLP]
@@ -18,7 +23,7 @@
 
 (2) [any-based] [★] [yes]  **Classic HMM**: The well-known sequential model used for Part-of-Speech tagging, Biology-related tasks, Image recognition (pixels as a sequence) etc.
 
-(3) [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] **Multivariate HMM**: Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
+(3) [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Tune et al.](https://arxiv.org/pdf/1305.0321.pdf)] [[Li et al.](http://vision.gel.ulaval.ca/~parizeau/Publications/P971225.pdf)] **Multivariate HMM**: Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
 
 * Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features such as tfidf etc.
 
@@ -30,11 +35,11 @@
 
 * Kang et al. - states: clusters, obervations: words
 
-(5) [any-based] **Bidirectional HMM**
+(6) [any-based] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)] **Bidirectional HMM**
 
-(6) [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)] **Hierarchical HMM** 
+(7) [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)] **Hierarchical HMM** 
 
-(7) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
+(8) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 

@@ -312,6 +312,20 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         count_pos = 0
         count_neg = 0
 
+        # # Check lengths to make sure semi-supervised learning doesn't get enabled (rip it gets enabled anyway)
+        # print(len(pos_data_corresponding_to_labels), len(pos_artifically_labeled_data), len(neg_data_corresponding_to_labels), len(neg_artifically_labeled_data))
+        # for i in range(len(pos_data_corresponding_to_labels)):
+        #     if len(pos_data_corresponding_to_labels[i]) != len(pos_artifically_labeled_data[i]):
+        #         print("1")
+        #     if None in pos_data_corresponding_to_labels[i] or None in pos_artifically_labeled_data[i]:
+        #         print("2")
+        # for i in range(len(neg_data_corresponding_to_labels)):
+        #     if len(neg_data_corresponding_to_labels[i]) != len(neg_artifically_labeled_data[i]):
+        #         print("1")
+        #     if None in neg_data_corresponding_to_labels[i] or None in neg_artifically_labeled_data[i]:
+        #         print("2")       
+        # quit()
+
         # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount
         for i in range(6000):  # Arbitary number, ~6000+ would include all instances
             #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
@@ -361,7 +375,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1, state_names=["neg", "pos"])
         print("NEXT HMM")
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1, state_names=["neg", "pos"])
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=2, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1, state_names=["neg", "pos"])       
         # Note: Algorithm used is Baum-Welch
 
 

@@ -326,7 +326,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #         print("2")       
         # quit()
 
-        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount
+        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount OR when setting second-order
         for i in range(6000):  # Arbitary number, ~6000+ would include all instances
             #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
             neg_artifically_labeled_data[i] = neg_artifically_labeled_data[i][:-1]
@@ -358,7 +358,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         artifically_labeled_data_test = pickle.load(open('./Pickled Objects/High_Order_Test_Set', 'rb')) 
 
     else:
-        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount
+        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount OR when setting second-order
         count_pos = 0
         count_neg = 0
         for i in range(6000):  # Arbitary number, ~6000+ would include all instances

@@ -155,13 +155,15 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
         # no bug here
 
         if len(current_seq) > 0:  # else remains empty
-            for i in range(set_order-1, len(current_seq)):
+            for i in range(set_order-1, len(seq)):
                 # concatenate the names of 2 states
-                tempp.append(current_seq[i-1] + current_seq[i])
+                tempp.append(seq[i-1] + seq[i])
 
         second_order_labels.append(tempp)
     test_data = second_order_labels  # Convert the name
 
+    # print(test_data)
+    # quit()
 
     # ### Supervised Training
     # # In this case we need to find out which State corresponds to each label (pos/neg/neu) before training  
@@ -204,7 +206,7 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
     mapping = ['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos','start','end']
 
 
-    unseen_factor_smoothing = 0.0
+    unseen_factor_smoothing = 0.0001
     predicted = []
     test_data_size = len(test_data)
     count_newunseen = 0
@@ -214,6 +216,8 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
     #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
 
     # MATH: score = π(state1) * EmmisionProb(o1|state1) * P(o2|o1) * EmmisionProb(o2|state2) * P(o3|o2) * ...  / SequenceLength
+
+    # NO DUMMY STATES, SIMPLER CODE
 
     for k in range(test_data_size):
         current_observations = test_data[k]
@@ -282,6 +286,7 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
                 sentiment_score_neu *= unseen_factor_smoothing                
 
             max_winner = max(sentiment_score_pos, sentiment_score_neg, sentiment_score_neu)
+            print("Scores are:", (sentiment_score_pos, sentiment_score_neg, sentiment_score_neu), "for:", current_observations)
             # Comparison
             if sentiment_score_pos == max_winner:
                 predicted.append("pos")
@@ -499,5 +504,5 @@ if set_algorithm == 'viterbi':
     print("\nWarning: Ensemble will not be performed on Viterbi, select Maximum a posteriori instead...\n")
 
 Print_Result_CrossVal_Final(set_fold)
-Plot_Results(set_fold, "Finegrained Sentiment Dataset")
+#Plot_Results(set_fold, "Finegrained Sentiment Dataset")
 #print(time_complexity_average)

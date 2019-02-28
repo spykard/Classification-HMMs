@@ -2,7 +2,7 @@
 
 ## Coding Notes
 
-* The states on pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc'_
+* The states on Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc'_
 
 ```python
   ...
@@ -36,6 +36,7 @@ Pure classification
 (3) **Multivariate HMM** [any-based] [TO ADD] [ ] [ ] [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Tune et al.](https://arxiv.org/pdf/1305.0321.pdf)] [[Li et al.](http://vision.gel.ulaval.ca/~parizeau/Publications/P971225.pdf)] : Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
 
 * Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features such as tfidf etc.
+* Other ideas - states: polarity, observations: multiple tfidf values
 
 (4) **High-order HMM** [any-based] [★★★★★] [yes] [A&B] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] [[Ching et al.](https://link.springer.com/chapter/10.1007/978-3-540-45080-1_73)] [[Lee et al.](http://link-springer-com-s.vpn.whu.edu.cn:9440/content/pdf/10.1007%2F11779568_74.pdf)] : Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one.
 
@@ -45,11 +46,15 @@ Pure classification
 
 * Kang et al. - states: clusters, obervations: words
 
-(6) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
+(6) **Spyros HMM** [any-based] [★★★★] [yes] [B] [My Mind] We want to perform classification but in text-related tasks we have a single label instead of a sequence of labels. In order to tackle this, take any Machine Learning classifier or tool, train it on the data and then have it predict the class label of every single word - we create artificial labels. Even though we are performing predictions on the data it was trained on, the resulting labels are VERY noisy since we are doing it on a single-word basis (e.g. get me the sentiment label of "movie" and get me the label of "review"). Then, the proposed HMM is trained on the artificial data and actually performs better than the original classifiers. For even higher performance, have 10 state-of-the-art classifiers and tools predict the (artificial) label of each word and perform a majority vote.
 
-(7) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
+* Kang et al. - states: clusters, obervations: words
 
-(8) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
+(7) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
+
+(8) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
+
+(9) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 
@@ -65,7 +70,7 @@ Pure classification
 
 ## Known Issues
 
-* Training on the "neg" subset of the IMDb dataset on pomegranate completely bugs when using emission_pseudocount; possibly semi-supervised learning gets enabled; sequence are slightly longer than "pos" ones. Temporary fix is to shorten the "neg" sequences by 1.
+* Training on the "neg" subset of the IMDb dataset on Pomegranate completely bugs when using emission_pseudocount or higher-order represented as first-order; possibly semi-supervised learning gets enabled; sequence are slightly longer than "pos" ones. Temporary fix is to shorten the "neg" sequences by 1.
 
 <br><br/>
 
@@ -73,8 +78,9 @@ Pure classification
 
 ## Conclusions
 
-* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or framework by utilizing the sequential information of text. This is done by producing artificial labels.
+* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels.
 * Utilizing n-grams on the observations increases accuracy heavily.
+* Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.
 
 <br><br/>
 

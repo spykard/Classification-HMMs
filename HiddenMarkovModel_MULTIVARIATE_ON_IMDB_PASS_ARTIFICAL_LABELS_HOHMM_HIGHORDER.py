@@ -440,7 +440,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             sentiment_score_pos = hmm_p["pi"][0][artifically_labeled_data_test[k][0]]  # Transition from start to first state
             sentiment_score_neg = hmm_n["pi"][0][artifically_labeled_data_test[k][0]]  # Transition from start to first state
 
-            for i in range(len(current_observations) - 2):  # !!! CHANGED TO -2 FROM -1 might be missing a single emission because of this
+            for i in range(len(current_observations) - 2):  # !!! CHANGED TO -2 FROM -1 might be missing a single emission because of this so later I do last 2 states
                 #print(i, len(current_states))
                 #print(current_states)
                 #print(current_states[i-3:i+3])
@@ -478,26 +478,26 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
                 sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
             # CHANGE PERFORMED ON FOLLOWING LINE    
-            # last 2 state with no transition          
-            #current_state_ind_pos = state_mapping_pos.index(current_states[-1])
-            #current_state_ind_neg = state_mapping_neg.index(current_states[-1])
+            # last 2 states with no transition          
 
-            # CHANGE PERFORMED - I CHOOSE THE "pos" out of "pos-neg" on every iteration
-            pick_first = manual_map.index(current_states[-1][0:3])
-            try:  
-                emission_temp_ind = observation_mapping_pos.index(current_observations[-1])
-                sentiment_score_pos *= hmm_p["B"][pick_first][emission_temp_ind]
-            except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
-                count_newunseen += 1  
-                print("Prediction Failed, new unseen observation:", err)
-                sentiment_score_pos *= unseen_factor_smoothing
-            try:  
-                emission_temp_ind = observation_mapping_neg.index(current_observations[-1])  
-                sentiment_score_neg *= hmm_n["B"][pick_first][emission_temp_ind]
-            except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
-                count_newunseen += 1  
-                print("Prediction Failed, new unseen observation:", err)
-                sentiment_score_neg *= unseen_factor_smoothing
+            for last2 in [-2, -1]:
+
+                # CHANGE PERFORMED - I CHOOSE THE "pos" out of "pos-neg" on every iteration
+                pick_first = manual_map.index(current_states[last2][0:3])
+                try:  
+                    emission_temp_ind = observation_mapping_pos.index(current_observations[last2])
+                    sentiment_score_pos *= hmm_p["B"][pick_first][emission_temp_ind]
+                except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    count_newunseen += 1  
+                    print("Prediction Failed, new unseen observation:", err)
+                    sentiment_score_pos *= unseen_factor_smoothing
+                try:  
+                    emission_temp_ind = observation_mapping_neg.index(current_observations[last2])  
+                    sentiment_score_neg *= hmm_n["B"][pick_first][emission_temp_ind]
+                except ValueError as err:  # Prediction failed, we stumbled upon new unseen observation, set a manual probability
+                    count_newunseen += 1  
+                    print("Prediction Failed, new unseen observation:", err)
+                    sentiment_score_neg *= unseen_factor_smoothing
 
 
             # Comparison

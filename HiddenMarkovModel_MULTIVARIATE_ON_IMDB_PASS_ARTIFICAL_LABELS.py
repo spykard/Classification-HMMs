@@ -249,7 +249,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # second-order HMM
     # for second-order we add 1 dummy state
-    enable_highorder = 0
+    enable_highorder = 1
     enable_pickle_load = 1
 
     if enable_highorder == 1 and enable_pickle_load == 0:
@@ -302,18 +302,30 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         # HIGH-ORDER
         # print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
-        # print(pos_artifically_labeled_data[1])
-        # print(pos_artifically_labeled_data[-1])
-        # print("NOW NEG")
-        # print(neg_artifically_labeled_data[1])
-        # print(neg_artifically_labeled_data[-1])
+        print(pos_artifically_labeled_data[1])
+        print(pos_artifically_labeled_data[2])
+        print(len(pos_artifically_labeled_data))
+        print("NOW NEG")
+        print(neg_artifically_labeled_data[1])
+        print(neg_artifically_labeled_data[2])
+        print(len(neg_artifically_labeled_data))
+        count_pos = 0
+        count_neg = 0
 
+        # Shorten the "neg" else it trains for long time compared to "pos"
+        for i in range(6000):
+            #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
+            neg_artifically_labeled_data[i] = neg_artifically_labeled_data[i][:-3]
+            neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-3]
+            #print(pos_artifically_labeled_data[i][0:2])
+            count_pos += len(pos_artifically_labeled_data[i])
+            count_neg += len(neg_artifically_labeled_data[i])
         # Build Pos Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True)
+        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=pos_data_corresponding_to_labels, labels=pos_artifically_labeled_data, n_jobs=1, verbose=True, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
         print("NEXT HMM")
         # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=2, verbose=True, max_iterations = 100)
-    
+        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=6, X=neg_data_corresponding_to_labels, labels=neg_artifically_labeled_data, n_jobs=1, verbose=True, max_iterations = 100, state_names=["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos"])
+
         with open('./Pickled Objects/High_Order_HMM_POS', 'wb') as f:
             pickle.dump(hmm_supervised_pos, f)
         with open('./Pickled Objects/High_Order_HMM_NEG', 'wb') as f:
@@ -347,9 +359,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
   
     # !!! Debug the matrix to find which one is which
-    # print(transition_proba_matrix_neg)
+    # print(transition_proba_matrix_pos)
     # fig, ax1 = plt.subplots()
-    # hmm_supervised_neg.plot()
+    # hmm_supervised_pos.plot()
     # plt.show() 
     # quit()
     # # Result :  
@@ -357,8 +369,10 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # pos  [1]
     # none-start [2]
     # none-end  [3]
-    mapping = ["neg", "pos", "start", "end"]
-    #mapping = ["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos", "start", "end"]
+    if enable_highorder == 0:
+        mapping = ["neg", "pos", "start", "end"]
+    else:
+        mapping = ["dummyneg", "dummypos", "negneg", "negpos", "posneg", "pospos", "start", "end"]
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
     unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
     predicted = []

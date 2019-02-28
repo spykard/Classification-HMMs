@@ -21,7 +21,7 @@
 
 (4) [any-based] [★★★★★] [yes] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] **High-order HMM**: Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one.
 
-(5) [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]    Clustering-based HMM
+(5) [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]    Clustering then HMM
 
 
 (5) [any-based] **Bidirectional HMM**

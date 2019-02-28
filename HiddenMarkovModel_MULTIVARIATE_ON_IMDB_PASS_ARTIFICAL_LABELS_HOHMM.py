@@ -418,6 +418,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     test_data_size = len(data_corresponding_to_labels_test)
     count_newunseen = 0
     count_problematic = 0
+    empty_sequences = 0
 
     #print(hmm_supervised_pos.states[1].distribution.parameters[0]["oh"])
 
@@ -496,6 +497,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         
         else:  # Empty Sequence
             print("EMPTY SEQUENCE, performing random guessing")
+            empty_sequences += 1
             rng = randint(0, 1)
             if rng == 0:
                 predicted.append("pos")
@@ -507,7 +509,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
-    print("New unseen observations:", count_newunseen, "Problematic Sequences:", count_problematic)
+    print("New unseen observations:", count_newunseen, "Problematic Sequences:", count_problematic, "Empty Sequences:", empty_sequences)
 
     return None
 

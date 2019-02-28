@@ -285,7 +285,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #     second_order_labels.append(tempp)
         # neg_artifically_labeled_data = second_order_labels  # Convert the name
 
-        # Test    
+        # Test
+        # # THIS DOESN'T HAVE TO BE PERFECT 1 TO 1 MAPPING SINCE WE JUST MULTIPLY ANYWAY    
         second_order_labels = []    
         for seq in artifically_labeled_data_test:
             tempp = []
@@ -347,7 +348,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # Compare proba matrix to HOHMM
 
-    set_pickle_load_2 = 0
+    set_pickle_load_2 = 1
 
     if set_pickle_load_2 == 0:
 
@@ -359,10 +360,10 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         builder.add_batch_training_examples(neg_data_corresponding_to_labels, neg_artifically_labeled_data)
         hmm_neg = builder.build(highest_order = 2, k_smoothing=0.5e-05)  # or 9.0e-06
 
-        # with open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'wb') as f:
-        #     pickle.dump(hmm_pos, f)
-        # with open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'wb') as f:
-        #     pickle.dump(hmm_neg, f)           
+        with open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'wb') as f:
+            pickle.dump(hmm_pos, f)
+        with open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'wb') as f:
+            pickle.dump(hmm_neg, f)           
 
     else:
         hmm_pos = pickle.load(open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'rb'))

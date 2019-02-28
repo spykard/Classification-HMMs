@@ -10,6 +10,21 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
+## Natural Language Processing Hidden Markov Models
+
+(number) [on what type of sequential data it works on] [difficulty] [is it more or less ready] [references]
+
+(1) [any-based] [★] [yes] [[Manning et al.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.121.2604&rep=rep1&type=pdf)] [[Mathew](https://www.slideshare.net/thomas_a_mathew/text-categorization-using-ngrams-and-hiddenmarkovmodels)] **State-emission HMM**: An extremely basic form of HMM, used when we have no notion of class/category sequence. Definition: If the symbol emitted at time _t_ depends on both the state at time _t_ and at time _t+1_ we have what is sometimes called an arc-emission HMM. However, an alternative formulation is a state-emission HMM, where the symbol emitted at time _t_ depends just on the state at time _t_. For example, imagine a crazy soft drink machine that prefers to output a certain drink and after each output changes state randomly.
+
+(2) [sequence-based] [★] [yes] []
+
+
+
+(5) Bidirectional HMM
+
+(6) Hierarchical HMM
+
+
 
 ## To Do
 

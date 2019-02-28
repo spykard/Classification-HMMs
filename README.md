@@ -15,12 +15,12 @@
 
 ## Method A
 
-Not really a classification Method
+Even if it looks like it, it is not really a classification method.
 ![alt text](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
 ## Method B
 
-Pure classification
+Pure classification.
 ![alt text](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
 
 <br><br/>

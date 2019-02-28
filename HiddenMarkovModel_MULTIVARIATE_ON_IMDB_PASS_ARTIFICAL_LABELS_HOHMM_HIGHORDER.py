@@ -347,22 +347,22 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     # Compare proba matrix to HOHMM
 
-    set_pickle_load_2 = 1
+    set_pickle_load_2 = 0
 
-    if set_pickle_load_2 == 1:
+    if set_pickle_load_2 == 0:
 
         # Try HOHMM
         builder = Builder()
         builder.add_batch_training_examples(pos_data_corresponding_to_labels, pos_artifically_labeled_data)
         # The smoothing factor number needs to be very specific and is found by looking at the values themselves e.g. through pomegranate
-        hmm_pos = builder.build(highest_order = 2, k_smoothing=0.5e-05)
+        hmm_pos = builder.build(highest_order = 2, k_smoothing=0.5e-05)  # or 9.0e-06
         builder.add_batch_training_examples(neg_data_corresponding_to_labels, neg_artifically_labeled_data)
-        hmm_neg = builder.build(highest_order = 2, k_smoothing=0.5e-05)
+        hmm_neg = builder.build(highest_order = 2, k_smoothing=0.5e-05)  # or 9.0e-06
 
-        with open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'wb') as f:
-            pickle.dump(hmm_pos, f)
-        with open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'wb') as f:
-            pickle.dump(hmm_neg, f)           
+        # with open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'wb') as f:
+        #     pickle.dump(hmm_pos, f)
+        # with open('./Pickled Objects/High_Order_HOHMM_HMM_NEG', 'wb') as f:
+        #     pickle.dump(hmm_neg, f)           
 
     else:
         hmm_pos = pickle.load(open('./Pickled Objects/High_Order_HOHMM_HMM_POS', 'rb'))
@@ -394,6 +394,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         # Debugging
         print(hmm_p["pi"])
         print(hmm_p["A"])
+        print(hmm_p["B"])
 
         print(len(hmm_p["B"]))
         print(len(hmm_p["B"][0]), len(hmm_p["B"][1]))

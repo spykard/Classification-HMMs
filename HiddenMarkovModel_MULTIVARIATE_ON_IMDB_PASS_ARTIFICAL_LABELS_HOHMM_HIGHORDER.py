@@ -429,6 +429,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     for k in range(test_data_size):
         current_observations = data_corresponding_to_labels_test[k]
+        # SKIP the ones we apply "pi" on        
         current_states = artifically_labeled_data_test[k][1:]
         # Debug
         # print(k, len(current_observations))

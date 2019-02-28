@@ -51,7 +51,7 @@ weighted avg       0.85      0.85      0.85     12509
 
 
 
-2.3. *neg-short* PomeHMM - also added a smoothing factor to everything but shortened the "neg" observations/labels otherwise HMM_neg would take forever to train
+2.3. *neg-short* PomeHMM - also added a smoothing factor to everything but shortened the "neg" observations/labels otherwise HMM_neg doesn't train (possibly semi-supervised gets enabled)
 
 New unseen observations: 1067 Problematic Sequences: 42 Empty Sequences: 3
 - - - - - RESULT METRICS - 4.19sec HMM 1st Order Supervised - - - - -
@@ -70,7 +70,7 @@ weighted avg       0.85      0.85      0.85     12509
 
 
 
-3.1. *neg-short* PomeHMM (second-order) - made it second-order with first-order representation but shortened the "neg" observations/labels otherwise HMM_neg would take forever to train:
+3.1. *neg-short* PomeHMM (second-order) - made it second-order with first-order representation but shortened the "neg" observations/labels otherwise HMM_neg doesn't train (possibly semi-supervised gets enabled)
 
 New unseen observations: 1067 Problematic Sequences: 412 Empty Sequences: 3
 - - - - - RESULT METRICS - 8.03sec HMM 1th Order Supervised - - - - -

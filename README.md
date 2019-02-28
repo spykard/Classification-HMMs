@@ -14,5 +14,5 @@
 ## TODO
 
 * Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order
-* Plot the new problematic unseen transition count as the order increases
+* Showcase how as the order increases we have transitions that are too low probability; the problematic count might help with this
 * Note the new unseen observation count which stays constant

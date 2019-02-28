@@ -349,6 +349,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # Compare proba matrix to HOHMM
 
     set_pickle_load_2 = 1
+    unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation     
 
     if set_pickle_load_2 == 0:
 
@@ -417,7 +418,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #artifically_labeled_data_test = artifically_labeled_data_test[0:500]
 
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
-    unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
     predicted = []
     test_data_size = len(data_corresponding_to_labels_test)
     count_newunseen = 0

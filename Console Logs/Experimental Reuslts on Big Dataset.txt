@@ -1,0 +1,214 @@
+1. NAIVE BAYES:
+
+Exact Accuracy:  0.8414849262347659
+              precision    recall  f1-score   support
+
+         neg       0.82      0.88      0.85      6214
+         pos       0.87      0.80      0.84      6258
+
+   micro avg       0.84      0.84      0.84     12472
+   macro avg       0.84      0.84      0.84     12472
+weighted avg       0.84      0.84      0.84     12472
+
+[[5466  748]
+ [1229 5029]]
+
+
+
+2.1. PomeHMM
+
+- - - - - RESULT METRICS - HMM 1st Order Supervised - - - - -
+Exact Accuracy:  0.842753217683268
+              precision    recall  f1-score   support
+
+         neg       0.84      0.85      0.84      6289
+         pos       0.84      0.84      0.84      6220
+
+   micro avg       0.84      0.84      0.84     12509
+   macro avg       0.84      0.84      0.84     12509
+weighted avg       0.84      0.84      0.84     12509
+
+[[5320  969]
+ [ 998 5222]]
+
+
+
+2.2. PomeHMM - added a smoothing factor to unseen transitions:
+
+- - - - - RESULT METRICS - 4.45sec HMM 1st Order Supervised - - - - -
+Exact Accuracy:  0.8519465984491167
+              precision    recall  f1-score   support
+
+         neg       0.85      0.86      0.85      6289
+         pos       0.85      0.85      0.85      6220
+
+   micro avg       0.85      0.85      0.85     12509
+   macro avg       0.85      0.85      0.85     12509
+weighted avg       0.85      0.85      0.85     12509
+
+[[5388  901]
+ [ 951 5269]]
+
+
+
+2.3. PomeHMM - also added a smoothing factor to everything:
+
+New unseen observations: 1067 Problematic Sequences: 42 Empty Sequences: 3
+- - - - - RESULT METRICS - 4.19sec HMM 1st Order Supervised - - - - -
+Exact Accuracy:  0.8520265408905588
+              precision    recall  f1-score   support
+
+         neg       0.85      0.86      0.85      6289
+         pos       0.85      0.85      0.85      6220
+
+   micro avg       0.85      0.85      0.85     12509
+   macro avg       0.85      0.85      0.85     12509
+weighted avg       0.85      0.85      0.85     12509
+
+[[5388  901]
+ [ 950 5270]]
+
+
+
+3.1. *neg-short* PomeHMM (second-order) - made it second-order with first-order representation and shortened the "neg" observations/labels otherwise HMM_neg would take forever to train:
+
+New unseen observations: 1067 Problematic Sequences: 412 Empty Sequences: 3
+- - - - - RESULT METRICS - 8.03sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.8060596370613159
+              precision    recall  f1-score   support
+
+         neg       0.82      0.79      0.80      6289
+         pos       0.79      0.82      0.81      6220
+
+   micro avg       0.81      0.81      0.81     12509
+   macro avg       0.81      0.81      0.81     12509
+weighted avg       0.81      0.81      0.81     12509
+
+[[4963 1326]
+ [1100 5120]]
+
+
+
+3.2. *neg-short* PomeHMM (second-order) - also added a smoothing factor to everything
+
+New unseen observations: 1071 Problematic Sequences: 114 Empty Sequences: 3
+- - - - - RESULT METRICS - 9.10sec HMM 1th Order Supervised - - - - -
+Exact Accuracy:  0.8154129027100487
+              precision    recall  f1-score   support
+
+         neg       0.83      0.80      0.81      6289
+         pos       0.80      0.83      0.82      6220
+
+   micro avg       0.82      0.82      0.82     12509
+   macro avg       0.82      0.82      0.82     12509
+weighted avg       0.82      0.82      0.82     12509
+
+[[5016 1273]
+ [1036 5184]]
+
+
+
+4. HOHMM (first-order):
+
+New unseen observations: 740 Problematic Sequences: 43 Empty Sequences: 3
+- - - - - RESULT METRICS - 10.11sec HMM 1st Order Supervised - - - - -
+Exact Accuracy:  0.8319609880885762
+              precision    recall  f1-score   support
+
+         neg       0.78      0.93      0.85      6289
+         pos       0.91      0.74      0.81      6220
+
+   micro avg       0.83      0.83      0.83     12509
+   macro avg       0.84      0.83      0.83     12509
+weighted avg       0.84      0.83      0.83     12509
+
+[[5832  457]
+ [1645 4575]]
+
+
+
+5.1. HOHMM (second-order) - without adding a smoothing factor to everything:
+
+- - - - - RESULT METRICS - 16.26sec HMM 2nd Order Supervised - - - - -
+Exact Accuracy:  0.7226796706371412
+              precision    recall  f1-score   support
+
+         neg       0.69      0.81      0.75      6289
+         pos       0.77      0.63      0.69      6220
+
+   micro avg       0.72      0.72      0.72     12509
+   macro avg       0.73      0.72      0.72     12509
+weighted avg       0.73      0.72      0.72     12509
+
+[[5115 1174]
+ [2295 3925]]
+
+
+
+5.2. HOHMM (second-order) - also added a smoothing factor to everything:
+
+- - - - - RESULT METRICS - 16.38sec HMM 2nd Order Supervised - - - - -
+Exact Accuracy:  0.830841793908386
+              precision    recall  f1-score   support
+
+         neg       0.80      0.89      0.84      6289
+         pos       0.87      0.77      0.82      6220
+
+   micro avg       0.83      0.83      0.83     12509
+   macro avg       0.84      0.83      0.83     12509
+weighted avg       0.84      0.83      0.83     12509
+
+[[5600  689]
+ [1427 4793]]
+
+
+
+5.3. HOHMM (second-order) - added a smoothing factor to everything but also fixed the previous to last state not being calculated:
+
+New unseen observations: 740 Problematic Sequences: 48 Empty Sequences: 20
+- - - - - RESULT METRICS - 9.28sec HMM 2nd Order Supervised - - - - -
+Exact Accuracy:  0.8363578223678951
+              precision    recall  f1-score   support
+
+         neg       0.82      0.87      0.84      6289
+         pos       0.86      0.80      0.83      6220
+
+   micro avg       0.84      0.84      0.84     12509
+   macro avg       0.84      0.84      0.84     12509
+weighted avg       0.84      0.84      0.84     12509
+
+[[5459  830]
+ [1217 5003]]
+
+
+
+6.1. HOHMM (third-order) - with a smoothing factor to everything (0.5e-05)
+
+New unseen observations: 738 Problematic Sequences: 53 Empty Sequences: 49
+- - - - - RESULT METRICS - 15.57sec HMM 3rd Order Supervised - - - - -
+Exact Accuracy:  0.8371572467823167
+              precision    recall  f1-score   support
+
+         neg       0.84      0.83      0.84      6289
+         pos       0.83      0.84      0.84      6220
+
+   micro avg       0.84      0.84      0.84     12509
+   macro avg       0.84      0.84      0.84     12509
+weighted avg       0.84      0.84      0.84     12509
+
+[[5218 1071]
+ [ 966 5254]]
+
+- - - - - RESULT METRICS - 14.85sec HMM 3rd Order Supervised - - - - -
+Exact Accuracy:  0.8381165560796227
+              precision    recall  f1-score   support
+
+         neg       0.84      0.83      0.84      6289
+         pos       0.83      0.85      0.84      6220
+
+   micro avg       0.84      0.84      0.84     12509
+   macro avg       0.84      0.84      0.84     12509
+weighted avg       0.84      0.84      0.84     12509
+
+[[5223 1066]
+ [ 959 5261]]

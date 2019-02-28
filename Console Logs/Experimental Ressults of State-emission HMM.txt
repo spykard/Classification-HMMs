@@ -2,16 +2,25 @@ Dataset: Finegrained
 
 1. General Mixture Model (not a HMM; Method A) - States: constant document labels, Observations: sentence polarity labels
 
-HMM 1th Order Supervised : Accuracy is 0.7124 F1-score is 0.7003
+HMM 1th Order Supervised : Accuracy is 0.7124 F1-score is 0.7003 (Averages)
 
 
 
 2. Dumb - States: constant document labels, Observations: constant document labels
 
-HMM 1th Order Supervised : Accuracy is 0.3333 F1-score is 0.1667
+HMM 1th Order Supervised : Accuracy is 0.3333 F1-score is 0.1667 (Averages)
 
 
 
-3. State-emission HMM (Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+3. State-emission HMM (doesn't utilize labels because of the nature of a state-emission first-order HMM; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
 
-HMM 1th Order Supervised : Accuracy is 0.7176 F1-score is 0.6909
+HMM 1th Order Supervised : Accuracy is 0.7176 F1-score is 0.6909 (Averages)
+
+
+
+4. State-emission HMM second-order (Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+
+HMM 2nd Order Supervised : Accuracy is 0.7940 F1-score is 0.7916
+
+

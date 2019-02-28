@@ -354,6 +354,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #print(hmm_supervised_pos)
     #test_observ = ["realise", "pure"]
     #test_states = ["neg", "neg"]
+    #
 
     transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()

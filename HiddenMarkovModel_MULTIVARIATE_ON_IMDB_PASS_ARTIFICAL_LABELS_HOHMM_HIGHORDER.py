@@ -477,7 +477,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
                 sentiment_score_pos = sentiment_score_pos * emissionprob_pos * trans_prob_pos
                 sentiment_score_neg = sentiment_score_neg * emissionprob_neg * trans_prob_neg
-            # last state with no transition          
+            # CHANGE PERFORMED ON FOLLOWING LINE    
+            # last 2 state with no transition          
             #current_state_ind_pos = state_mapping_pos.index(current_states[-1])
             #current_state_ind_neg = state_mapping_neg.index(current_states[-1])
 

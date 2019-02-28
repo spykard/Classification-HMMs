@@ -41,32 +41,41 @@ Pure classification
 
 * Quan et al. (+ Multivariate) - states: emotions, observations: custom encoding with 150 possible observations per state
 
-(5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)] 
+(5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
 
 * Kang et al. - states: clusters, obervations: words
 
-(6) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)] 
+(6) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
 
-(7) **Hierarchical HMM**  [ ] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)] 
+(7) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
 
 (8) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 
-## To Do
+# To Do
 
 * Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order
 
-### Counting
+## Counting
 
 * Showcase how as the order increases we have transitions that are too low probability; the problematic count will help with this.
 * Showcase how as the order increases we have more empty sequences; `['neg', 'neg-pos', 'neg-pos-pos']` is an empty sequence since HOHMM doesn't use dummy states.
 * Note the new unseen observation count which stays constant; the unseen count will help with this.
+
+## Known Issues
+
+* Training on the "neg" subset of the IMDb dataset on pomegranate completely bugs when using emission_pseudocount; possibly semi-supervised learning gets enabled; sequence are slightly longer than "pos" ones. Temporary fix is to shorten the "neg" sequences by 1.
+
 <br><br/>
+
+# Other
 
 ## Conclusions
 
-* A HMM can increase the performance of any ... by utilizing the sequential information of text
+* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or framework by utilizing the sequential information of text. This is done by producing artificial labels.
+* Utilizing n-grams on the observations increases accuracy heavily.
+
 <br><br/>
 
 ## List of other people's Implementations

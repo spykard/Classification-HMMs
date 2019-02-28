@@ -2,7 +2,7 @@
 
 ## Coding Notes
 
-* The states on pomegranate are represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc'_
+* The states on pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc'_
 
 ```python
   ...
@@ -10,19 +10,23 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
-## Natural Language Processing Hidden Markov Models
+## List of Models with emphasis on Natural Language Processing
 
-(number) [on what type of sequential data it works on] [difficulty] [is it more or less ready] [references]
+(number) [on what type of sequential data it works on] [difficulty] [is it more or less ready] [references relevant to NLP]
 
 (1) [any-based] [★] [yes] [[Manning et al.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.121.2604&rep=rep1&type=pdf)] [[Mathew](https://www.slideshare.net/thomas_a_mathew/text-categorization-using-ngrams-and-hiddenmarkovmodels)] **State-emission HMM**: An extremely basic form of HMM, used when we have no notion of class/category sequence. Definition: If the symbol emitted at time _t_ depends on both the state at time _t_ and at time _t+1_ we have what is sometimes called an arc-emission HMM. However, an alternative formulation is a state-emission HMM, where the symbol emitted at time _t_ depends just on the state at time _t_. For example, imagine a crazy soft drink machine that prefers to output a certain drink and after each output changes state randomly.
 
-(2) [sequence-based] [★] [yes] []
+(2) [any-based] [★] [yes]  **Classic HMM**: The well-known sequential model used for Part-of-Speech tagging, Biology-related tasks, Image recognition (pixels as a sequence) etc.
 
 
+(4) [any-based] [★★★★★] [yes] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] **High-order HMM**: Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one.
 
-(5) Bidirectional HMM
+(5) [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]    Clustering-based HMM
 
-(6) Hierarchical HMM
+
+(5) [any-based] **Bidirectional HMM**
+
+(6) [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)] **Hierarchical HMM** 
 
 
 

@@ -76,6 +76,8 @@ emis = [  # Let's make it so that the 3rd feature means healthy
 trans = [["healthy","fever"], ["fever","fever"], ["healthy","healthy"], ["fever","healthy"]]  # ADD 1 MORE LABEL THAN SEQUENCES AND IT GIVES ERROR, ADD 1 LESS AND IT ENABLES SEMI-SUPERVISED TRAINING
 
 hmm_leanfrominput = HiddenMarkovModel.from_samples(MultivariateGaussianDistribution, 2, X=emis, labels=trans)
+print(hmm_leanfrominput)
+quit()
 
 #print(hmm_leanfrominput.states)
 #for x in range(0, 2):
@@ -100,6 +102,7 @@ x = IndependentComponentsDistribution.from_samples([[11, 22, 33]], distributions
 print(x)
 
 # IndependentComponentsDistribution from_samples, Can only use numbers in One-Hot encoding for strings
+# SEE GITHUB ISSUE POST FOR FIX
 hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution(distributions=distri_sum), 2, X=emis, labels=trans)
 #hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution([DiscreteDistribution({"c1": 0.33, "c2": 0.33, "c3": 0.33}), DiscreteDistribution({"c1": 0.33, "c2": 0.33, "c3": 0.33})]), 2, X=emis, labels=trans)
 

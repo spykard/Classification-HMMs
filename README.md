@@ -16,12 +16,12 @@
 ## Method A
 
 Even if it looks like it, it is not really a classification method.
-![alt text](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
+![relative link](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
 ## Method B
 
 Pure classification.
-![alt text](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
+![relative link](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
 
 <br><br/>
 
@@ -38,7 +38,7 @@ Pure classification.
 * Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features such as tfidf etc.
 * Other ideas - states: polarity, observations: multiple tfidf values
 
-(4) **High-order HMM** [any-based] [★★★★★] [yes] [B] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] [[Ching et al.](https://link.springer.com/chapter/10.1007/978-3-540-45080-1_73)] [[Lee et al.](http://link-springer-com-s.vpn.whu.edu.cn:9440/content/pdf/10.1007%2F11779568_74.pdf)] : Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one.
+(4) **High-order HMM** [any-based] [★★★★★] [yes] [B] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] [[Kochanski](http://kochanski.org/gpk/teaching/0401Oxford/HMM.pdf)] [[Ching et al.](https://link.springer.com/chapter/10.1007/978-3-540-45080-1_73)] [[Lee et al.](http://link-springer-com-s.vpn.whu.edu.cn:9440/content/pdf/10.1007%2F11779568_74.pdf)] : Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one. The implementation might work through Kochanski's transformation, Preez's transformation and [miniHMM's](https://github.com/joshuagryphon/minihmm/blob/master/minihmm/represent.py) dummy states and initial probabilities.  
 
 * Quan et al. (+ Multivariate) - states: emotions, observations: custom encoding with 150 possible observations per state
 
@@ -58,10 +58,23 @@ Pure classification.
 
 <br><br/>
 
+# Experiments
+
+## Conclusions
+
+(all) Utilizing n-grams on the observations heavily increases accuracy.
+(all) Using a higher n-gram means more new unseen transitions.
+
+* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels.
+* Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.
+
+<br><br/>
+
 # To Do
 
-* Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order. However, I already have a smart implementation on Finegrained.py by using state names as labels instead of "pos"/"neg"/"neu".
+* Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order. However, I already have a smart implementation on `Finegrained.py` by using state names as labels instead of "pos"/"neg"/"neu".
 * On the IMDb artificial labels HMM, try to train it only on emotional words instead of all the words while using a state-of-the-art lexicon/tool/whatever.
+* Switch code to object-oriented, where the class has a function to plot results etc.
 
 ## Counting
 
@@ -72,16 +85,6 @@ Pure classification.
 ## Known Issues
 
 * Training on the "neg" subset of the IMDb dataset on Pomegranate completely bugs when using emission_pseudocount or higher-order represented as first-order; possibly semi-supervised learning gets enabled; sequence are slightly longer than "pos" ones. Temporary fix is to shorten the "neg" sequences by 1.
-
-<br><br/>
-
-# Other
-
-## Conclusions
-
-* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels.
-* Utilizing n-grams on the observations increases accuracy heavily.
-* Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.
 
 <br><br/>
 

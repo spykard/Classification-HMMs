@@ -63,8 +63,8 @@ s2 = ['healthy', 'fever', 'fever', 'healthy', 'healthy', 'fever']
 #print(n, d)
 #print(sequence[0][1])
 
-xx = IndependentComponentsDistribution([NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1)])
-print(xx)
+# xx = IndependentComponentsDistribution([NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1)])
+# print(xx)
 
 
 
@@ -85,7 +85,22 @@ trans = [["healthy","fever","fever","fever"], ["fever","fever","fever","fever"],
 #         ]
 # trans = [["healthy","fever","fever"], ["fever","fever","fever"], ["healthy","healthy","fever"], ["fever","healthy","fever"]]  # ADD 1 MORE LABEL THAN SEQUENCES AND IT GIVES ERROR, ADD 1 LESS AND IT ENABLES SEMI-SUPERVISED TRAINING
 
-hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution([NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1)]), 2, X=emis, labels=trans, independent_dists=None)
+# https://github.com/jmschrei/pomegranate/issues/120
+distrs = [NormalDistribution(0.5,1), NormalDistribution(0.5,1), NormalDistribution(0.5,1), NormalDistribution(0.5,1)]
+distrs = [PoissonDistribution(0,1), PoissonDistribution(0,1), PoissonDistribution(0,1), PoissonDistribution(0,1)]
+#create_ICD = IndependentComponentsDistribution(distrs)
+# IT WORKSSSSS!
+#x = IndependentComponentsDistribution.from_samples([[11, 22, 33, 44], [11, 22, 33, 44]], distributions=distrs)  # Can only use One-Hot encoding as numbers
+# X = emis
+# labels = trans
+# X_ = [x for x, label in zip(X, labels) if label != None]
+# X_ = np.concatenate(X_) 
+# labels_ = np.concatenate([l for l in labels if l is not None])
+# x = [IndependentComponentsDistribution.from_samples(X_[labels_ == "healthy"], distributions=distrs)]
+# print(x)
+# quit()
+
+hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution, 2, X=emis, labels=trans, independent_dists=distrs)
 print(hmm_leanfrominput)
 quit()
 
@@ -107,13 +122,15 @@ d1 = DiscreteDistribution({"just_initializing": 1.00})
 d2 = DiscreteDistribution({"just_initializing": 1.00})
 d3 = DiscreteDistribution({"just_initializing": 1.00})
 
+# DOESN'T WORK WITH DISCREETE ANYWAY https://github.com/jmschrei/pomegranate/issues/402
 distri_sum = [d1,d2,d3]
 x = IndependentComponentsDistribution.from_samples([[11, 22, 33]], distributions=distri_sum)  # Can only use One-Hot encoding as numbers
+x = IndependentComponentsDistribution.from_samples([["lol", "lol", "lol"]], distributions=distri_sum)  # Can only use One-Hot encoding as numbers
 print(x)
 
 # IndependentComponentsDistribution from_samples, Can only use numbers in One-Hot encoding for strings
 # SEE GITHUB ISSUE POST FOR FIX
-hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution(distributions=distri_sum), 2, X=emis, labels=trans)
+hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution, 2, X=emis, labels=trans, independent_dists=[DiscreteDistribution, DiscreteDistribution, DiscreteDistribution])
 #hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution([DiscreteDistribution({"c1": 0.33, "c2": 0.33, "c3": 0.33}), DiscreteDistribution({"c1": 0.33, "c2": 0.33, "c3": 0.33})]), 2, X=emis, labels=trans)
 
 

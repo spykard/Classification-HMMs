@@ -16,12 +16,12 @@
 ## Method A
 
 Even if it looks like it, it is not really a classification method.
-![relative link](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
+![Method A](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
 ## Method B
 
 Pure classification.
-![relative link](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
+![Method B](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
 
 <br><br/>
 
@@ -30,6 +30,9 @@ Pure classification.
 (number) *Name* [on what type of sequential data it works on] [difficulty] [method A/B] [is it more or less ready] [references relevant to NLP]
 
 (1) **State-emission HMM** [sentence-based] [★] [yes] [A] [[Manning et al.](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.121.2604&rep=rep1&type=pdf)] [[Mathew](https://www.slideshare.net/thomas_a_mathew/text-categorization-using-ngrams-and-hiddenmarkovmodels)] : An extremely basic form of HMM, used when we have no notion of class/category sequence. Definition: If the symbol emitted at time _t_ depends on both the state at time _t_ and at time _t+1_ we have what is sometimes called an arc-emission HMM. However, an alternative formulation is a state-emission HMM, where the symbol emitted at time _t_ depends just on the state at time _t_. For example, imagine a crazy soft drink machine that prefers to output a certain drink and after each output changes state randomly.
+
+* General Mixture Model which is not a HMM - states: constant document labels, observations: sentence polarity labels
+* State-emission HMM - states: sentence polarity labels, observations: sentence polarity labels
 
 (2) **Classic HMM** [any-based] [★] [yes] [A] [[Rabiner](https://www.ece.ucsb.edu/Faculty/Rabiner/ece259/Reprints/tutorial%20on%20hmm%20and%20applications.pdf)] : The well-known sequential model used for Part-of-Speech tagging, Biology-related tasks, Image recognition (pixels as a sequence) etc.
 
@@ -45,8 +48,9 @@ Pure classification.
 (5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
 
 * Kang et al. - states: clusters, obervations: words
+* Other ideas - Combine (5) and (6) or something, states: labels, observations: clusters
 
-(6) **Spyros HMM** [any-based] [★★★] [yes] [B] [My Mind] : We want to perform classification but in text-related tasks we have a single label instead of a sequence of labels. In order to tackle this, take any Machine Learning classifier or tool, train it on the data and then have it predict the class label of every single word - we create artificial labels. Even though we are performing predictions on the data it was trained on, the resulting labels are VERY noisy since we are doing it on a single-word basis (e.g. get me the sentiment label of "movie" and get me the label of "review"). Then, the proposed HMM is trained on the artificial data and actually performs better than the original classifiers. For even higher performance, have 10 state-of-the-art classifiers and tools predict the (artificial) label of each word and perform a majority vote.
+(6) **Spyros HMM** [any-based] [★★★] [yes] [B] [My Mind] : We want to perform classification but in text-related tasks we have a single label instead of a sequence of labels. In order to tackle this, take any Machine Learning classifier or tool, train it on the data and then have it predict the class label of every single word - we create artificial labels. Even though we are performing predictions on the data it was trained on, the resulting labels are VERY noisy since we are doing it on a single-word basis (e.g. get me the sentiment label of "movie" and get me the label of "review"). Then, the proposed HMM is trained on the artificial data and actually performs better than the original classifiers. For even higher performance, have 10 state-of-the-art classifiers and tools (LSTM, lexicon etc.)  predict the (artificial) label of each word and perform a majority vote.
 
 * Kang et al. - states: clusters, obervations: words
 
@@ -62,11 +66,15 @@ Pure classification.
 
 ## Conclusions
 
-(all) Utilizing n-grams on the observations heavily increases accuracy.
-(all) Using a higher n-gram means more new unseen transitions.
-
-* A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels.
-* Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.
+(all) Utilizing n-grams on the observations heavily increases accuracy, see console logs and graphs.
+(all) Using a higher n-gram means more new unseen transitions, see graphs.
+(all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.
+(1) [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)
+(2) Can be run at any time.
+(3) TODO
+(4) [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)
+(5) TODO
+(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)
 
 <br><br/>
 
@@ -74,7 +82,10 @@ Pure classification.
 
 * Fix general HMM code to be mapped on the states _s<sub>i</sub>_ depending on alphabetical order. However, I already have a smart implementation on `Finegrained.py` by using state names as labels instead of "pos"/"neg"/"neu".
 * On the IMDb artificial labels HMM, try to train it only on emotional words instead of all the words while using a state-of-the-art lexicon/tool/whatever.
-* Switch code to object-oriented, where the class has a function to plot results etc.
+* Switch code to object-oriented, where the class has a function to plot results (e.g. functions such as 'compare_length', 'print_console_to_text', 'plot_results').
+* Look for ideal smoothing factor.
+* Look for ideal ensemble of HMMs such as dor product instead of average. 
+* Bidrectional HMM.
 
 ## Counting
 
@@ -88,7 +99,7 @@ Pure classification.
 
 <br><br/>
 
-## List of other people's Implementations
+## List of other Ideas
 
 * Use Naive Bayes since they only have sentence sentiment to classify each word and that is the state - https://github.com/saumyakb/CS4740-NLP-Sentiment-Analysis-using-HMM - states: naive bayes artificial labels, observations: words
 

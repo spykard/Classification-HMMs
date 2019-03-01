@@ -2,25 +2,155 @@ Dataset: Finegrained
 
 1. General Mixture Model (not a HMM; Method A) - States: constant document labels, Observations: sentence polarity labels
 
-HMM 1th Order Supervised : Accuracy is 0.7124 F1-score is 0.7003 (Averages)
+HMM 1th Order Supervised : Accuracy is 0.7124 F1-score is 0.7003 (5-fold Averages)
 
 
 
 2. Dumb - States: constant document labels, Observations: constant document labels
 
-HMM 1th Order Supervised : Accuracy is 0.3333 F1-score is 0.1667 (Averages)
+HMM 1th Order Supervised : Accuracy is 0.3333 F1-score is 0.1667 (5-fold Averages)
 
 
 
 3. State-emission HMM (doesn't utilize labels because of the nature of a state-emission first-order HMM; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
 
-HMM 1th Order Supervised : Accuracy is 0.7176 F1-score is 0.6909 (Averages)
+HMM 1th Order Supervised : Accuracy is 0.7176 F1-score is 0.6909 (5-fold Averages)
 
 
 
-4. State-emission HMM second-order (Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+3.1. State-emission HMM second-order (Method B) - States: sentence polarity labels, Observations: sentence polarity labels
 
 
-HMM 2nd Order Supervised : Accuracy is 0.7940 F1-score is 0.7916
+HMM 2nd Order Supervised : Accuracy is 0.7940 F1-score is 0.7916 (5-fold Averages)
+
+(Best)
+Exact Accuracy:  0.8305084745762712
+              precision    recall  f1-score   support
+
+         neg       0.76      0.80      0.78        20
+         neu       0.79      0.79      0.79        19
+         pos       0.95      0.90      0.92        20
+
+   micro avg       0.83      0.83      0.83        59
+   macro avg       0.83      0.83      0.83        59
+weighted avg       0.83      0.83      0.83        59
+
+[[16  3  1]
+ [ 4 15  0]
+ [ 1  1 18]]
+
+
+
+3.2. State-emission HMM second-order (also added a smoothing factor of 0.1 to everything; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+
+HMM 2nd Order Supervised : Accuracy is 0.7940 F1-score is 0.7928 (5-fold Averages)
+
+(Best)
+Exact Accuracy:  0.8421052631578947
+              precision    recall  f1-score   support
+
+         neg       0.94      0.89      0.92        19
+         neu       0.75      0.79      0.77        19
+         pos       0.84      0.84      0.84        19
+
+   micro avg       0.84      0.84      0.84        57
+   macro avg       0.85      0.84      0.84        57
+weighted avg       0.85      0.84      0.84        57
+
+[[17  2  0]
+ [ 1 15  3]
+ [ 0  3 16]]
+
+
+
+3.3. State-emission HMM second-order (also added a smoothing factor of 0.5 to everything; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+HMM 2nd Order Supervised : Accuracy is 0.7869 F1-score is 0.7868 (5-fold Averages)
+
+(Best)
+Exact Accuracy:  0.847457627118644
+              precision    recall  f1-score   support
+
+         neg       0.80      0.80      0.80        20
+         neu       0.80      0.84      0.82        19
+         pos       0.95      0.90      0.92        20
+
+   micro avg       0.85      0.85      0.85        59
+   macro avg       0.85      0.85      0.85        59
+weighted avg       0.85      0.85      0.85        59
+
+[[16  3  1]
+ [ 3 16  0]
+ [ 1  1 18]]
+
+
+
+3.4. State-emission HMM second-order (also added a smoothing factor of 0.7 to everything; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+HMM 2nd Order Supervised : Accuracy is 0.7835 F1-score is 0.7835 (5-fold Averages)
+
+Exact Accuracy:  0.847457627118644
+              precision    recall  f1-score   support
+
+         neg       0.83      0.75      0.79        20
+         neu       0.77      0.89      0.83        19
+         pos       0.95      0.90      0.92        20
+
+   micro avg       0.85      0.85      0.85        59
+   macro avg       0.85      0.85      0.85        59
+weighted avg       0.85      0.85      0.85        59
+
+[[15  4  1]
+ [ 2 17  0]
+ [ 1  1 18]]
+
+
+
+3.5. State-emission HMM second-order (also added a smoothing factor of 0.9 to everything; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+HMM 2nd Order Supervised : Accuracy is 0.7904 F1-score is 0.7906
+
+(Best)
+Exact Accuracy:  0.864406779661017
+              precision    recall  f1-score   support
+
+         neg       0.88      0.75      0.81        20
+         neu       0.78      0.95      0.86        19
+         pos       0.95      0.90      0.92        20
+
+   micro avg       0.86      0.86      0.86        59
+   macro avg       0.87      0.87      0.86        59
+weighted avg       0.87      0.86      0.86        59
+
+[[15  4  1]
+ [ 1 18  0]
+ [ 1  1 18]]
+
+
+
+3.6. State-emission HMM second-order (also added a smoothing factor of 0.99 to everything; Method B) - States: sentence polarity labels, Observations: sentence polarity labels
+
+HMM 2nd Order Supervised : Accuracy is 0.7869 F1-score is 0.7873
+
+(Best)
+Exact Accuracy:  0.864406779661017
+              precision    recall  f1-score   support
+
+         neg       0.88      0.75      0.81        20
+         neu       0.78      0.95      0.86        19
+         pos       0.95      0.90      0.92        20
+
+   micro avg       0.86      0.86      0.86        59
+   macro avg       0.87      0.87      0.86        59
+weighted avg       0.87      0.86      0.86        59
+
+[[15  4  1]
+ [ 1 18  0]
+ [ 1  1 18]]
+
+
+
+Conclusion: Surprisingly, the accuracy increases linearly alongside the smoothing factor value
 
 

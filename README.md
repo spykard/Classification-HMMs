@@ -38,9 +38,9 @@ Pure classification.
 
 (3) **Multivariate HMM** [mostly sentence-based] [TO ADD] [ ] [ ] [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Tune et al.](https://arxiv.org/pdf/1305.0321.pdf)] [[Li et al.](http://vision.gel.ulaval.ca/~parizeau/Publications/P971225.pdf)] : Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
 
-Can be either Continuous (Method A) or Discrete (Method A/B) and we are also restricted to mostly sentence-based tasks.
+Can be either Continuous (Method A, new formula would need to be invented for Method B) or Discrete (Method A/B) and we are also restricted to mostly sentence-based tasks.
 
-* Example of Continuous: pass multiple tfidf values on each sentence, where we have a sequence of sentences.
+* Example of Continuous: pass multiple tfidf values for each sentence, where we have a sequence of sentences.
 * Example of Discrete: pass multiple words on each sentence; a very good idea would be to pass both the word and its Part-of-Speech tag on a Spyros HMM.  
 
 * Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features of a document such as tfidf etc. (where is the sequence?)
@@ -76,7 +76,7 @@ Can be either Continuous (Method A) or Discrete (Method A/B) and we are also res
 (all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.  
 (1) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (2) Can be run at any time.  
-(3) TODO  
+(3) Didn't work 
 (4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (5) TODO  
 (6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  

@@ -69,12 +69,12 @@ Pure classification.
 (all) Utilizing n-grams on the observations heavily increases accuracy, see console logs and graphs.  
 (all) Using a higher n-gram means more new unseen transitions, see graphs.  
 (all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.  
-(1) [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
+(1) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (2) Can be run at any time.  
 (3) TODO  
-(4) [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
+(4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (5) TODO  
-(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Ressults of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
+(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
 
 <br><br/>
 

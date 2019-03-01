@@ -178,11 +178,11 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
     #     state_names.append("s" + str(i))
    
         # Build Pos Class HMM - !!! state_names should be in alphabetical order
-    hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=pos_data, labels=pos_data, n_jobs=1, emission_pseudocount=0.0, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
+    hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=pos_data, labels=pos_data, n_jobs=1, emission_pseudocount=0.99, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
     print("NEXT HMM")
     # Build Neg Class HMM - !!! state_names should be in alphabetical order
-    hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=neg_data, labels=neg_data, n_jobs=1, emission_pseudocount=0.0, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
-    hmm_supervised_neu = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=neu_data, labels=neu_data, n_jobs=1, emission_pseudocount=0.0, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
+    hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=neg_data, labels=neg_data, n_jobs=1, emission_pseudocount=0.99, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
+    hmm_supervised_neu = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=9, X=neu_data, labels=neu_data, n_jobs=1, emission_pseudocount=0.99, verbose=True, state_names=['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos'])
 
     
     # Note: Algorithm used is Baum-Welch
@@ -193,7 +193,7 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
     transition_proba_matrix_neu = hmm_supervised_neu.dense_transition_matrix()
 
     # ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
-    # print(transition_proba_matrix_pos)
+    #print(hmm_supervised_pos)
     # ###
 
     # ### Plot the Hidden Markov Model Graph
@@ -201,12 +201,12 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
     # fig.canvas.set_window_title("Hidden Markov Model Graph")
     # hmm_supervised_pos.plot()
     # plt.show()
-    # quit()
+    #quit()
     # ###
     mapping = ['negneg','negneu','negpos','neuneg','neuneu','neupos','posneg','posneu','pospos','start','end']
 
 
-    unseen_factor_smoothing = 0.0001
+    unseen_factor_smoothing = 0.1
     predicted = []
     test_data_size = len(test_data)
     count_newunseen = 0
@@ -286,7 +286,8 @@ def HMM_NthOrder_Supervised(pos_data_train, neg_data_train, neu_data_train, data
                 sentiment_score_neu *= unseen_factor_smoothing                
 
             max_winner = max(sentiment_score_pos, sentiment_score_neg, sentiment_score_neu)
-            print("Scores are:", (sentiment_score_pos, sentiment_score_neg, sentiment_score_neu), "for:", current_observations)
+            # Debug
+            #print("Scores are:", (sentiment_score_pos, sentiment_score_neg, sentiment_score_neu), "for:", current_observations)
             # Comparison
             if sentiment_score_pos == max_winner:
                 predicted.append("pos")

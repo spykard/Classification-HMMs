@@ -63,19 +63,29 @@ s2 = ['healthy', 'fever', 'fever', 'healthy', 'healthy', 'fever']
 #print(n, d)
 #print(sequence[0][1])
 
+xx = IndependentComponentsDistribution([NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1)])
+print(xx)
 
 
-# Multivariate Continuous
+
+# Multivariate Continuous, in a TFIDF scenario -> sequence [[object1_tfidf_of_word1, object1_tfidf_of_word2...], [object2_tfidf_of_word1, object2_tfidf_of_word2...]]
 emis = [  # Let's make it so that the 3rd feature means healthy
-        [[0.20, 0.10, 0.95], [0.25, 0.10, 0.00]],  # Seq 1
-        [[0.25, 0.10, 0.10], [0.00, 0.10, 0.10]],  # Seq 2
-        [[0.30, 0.55, 0.80], [0.50, 0.55, 0.10]],  # Seq 3
-        [[0.60, 0.55, 0.10], [0.20, 0.15, 0.10]]   # Seq 4
+        [[0.20, 0.10, 0.95, 0.50], [0.25, 0.10, 0.00, 0.50], [0.25, 0.10, 0.00, 0.50], [0.25, 0.10, 0.00, 0.50]],  # Seq 1
+        [[0.25, 0.10, 0.10, 0.50], [0.00, 0.10, 0.10, 0.50], [0.25, 0.10, 0.00, 0.50], [0.25, 0.10, 0.00, 0.50]],  # Seq 2
+        [[0.30, 0.55, 0.80, 0.50], [0.50, 0.55, 0.10, 0.50], [0.25, 0.10, 0.00, 0.50], [0.25, 0.10, 0.00, 0.50]],  # Seq 3
+        [[0.60, 0.55, 0.10, 0.50], [0.20, 0.15, 0.10, 0.50], [0.25, 0.10, 0.00, 0.50], [0.25, 0.10, 0.00, 0.50]]   # Seq 4
         ]
-     
-trans = [["healthy","fever"], ["fever","fever"], ["healthy","healthy"], ["fever","healthy"]]  # ADD 1 MORE LABEL THAN SEQUENCES AND IT GIVES ERROR, ADD 1 LESS AND IT ENABLES SEMI-SUPERVISED TRAINING
+trans = [["healthy","fever","fever","fever"], ["fever","fever","fever","fever"], ["healthy","healthy","fever","fever"], ["fever","healthy","fever","fever"]]  # ADD 1 MORE LABEL THAN SEQUENCES AND IT GIVES ERROR, ADD 1 LESS AND IT ENABLES SEMI-SUPERVISED TRAINING
 
-hmm_leanfrominput = HiddenMarkovModel.from_samples(MultivariateGaussianDistribution, 2, X=emis, labels=trans)
+# emis = [  # Let's make it so that the 3rd feature means healthy
+#         [0.20, 0.10, 0.95],  # Seq 1
+#         [0.25, 0.10, 0.10],  # Seq 2
+#         [0.30, 0.55, 0.80],  # Seq 3
+#         [0.60, 0.55, 0.10]   # Seq 4
+#         ]
+# trans = [["healthy","fever","fever"], ["fever","fever","fever"], ["healthy","healthy","fever"], ["fever","healthy","fever"]]  # ADD 1 MORE LABEL THAN SEQUENCES AND IT GIVES ERROR, ADD 1 LESS AND IT ENABLES SEMI-SUPERVISED TRAINING
+
+hmm_leanfrominput = HiddenMarkovModel.from_samples(IndependentComponentsDistribution([NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1), NormalDistribution(0,1)]), 2, X=emis, labels=trans, independent_dists=None)
 print(hmm_leanfrominput)
 quit()
 

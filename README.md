@@ -40,8 +40,8 @@ Pure classification.
 
 Can be either Continuous (Method A, new formula would need to be invented for Method B) or Discrete (Method A/B) and we are also restricted to mostly sentence-based tasks.
 
-* Example of Continuous: pass multiple tfidf values for each sentence, where we have a sequence of sentences.
-* Example of Discrete: pass multiple words on each sentence; a very good idea would be to pass both the word and its Part-of-Speech tag on a Spyros HMM.  
+* Example of Continuous: pass multiple tfidf values for each sentence, where we have a sequence of sentences. (too many variables)
+* Example of Discrete: pass multiple words on each sentence (too many variables); a very good idea would be to pass both the word and its Part-of-Speech tag on a Spyros HMM.  
 
 * Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features of a document such as tfidf etc. (where is the sequence?)
 * Other ideas - states: polarity, observations: multiple tfidf values of document (where is the sequence?)

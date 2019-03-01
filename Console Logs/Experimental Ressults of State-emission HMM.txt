@@ -17,6 +17,23 @@ HMM 1th Order Supervised : Accuracy is 0.3333 F1-score is 0.1667 (5-fold Average
 HMM 1th Order Supervised : Accuracy is 0.7176 F1-score is 0.6909 (5-fold Averages)
 
 
+(Best)
+Exact Accuracy:  0.7719298245614035
+              precision    recall  f1-score   support
+
+         neg       0.76      1.00      0.86        19
+         neu       0.80      0.42      0.55        19
+         pos       0.77      0.89      0.83        19
+
+   micro avg       0.77      0.77      0.77        57
+   macro avg       0.78      0.77      0.75        57
+weighted avg       0.78      0.77      0.75        57
+
+[[19  0  0]
+ [ 6  8  5]
+ [ 0  2 17]]
+
+
 
 3.1. State-emission HMM second-order (Method B) - States: sentence polarity labels, Observations: sentence polarity labels
 
@@ -151,6 +168,6 @@ weighted avg       0.87      0.86      0.86        59
 
 
 
-Conclusion: Surprisingly, the accuracy increases linearly alongside the smoothing factor value
+Conclusion: Surprisingly, the accuracy increases linearly alongside the smoothing factor value. This only happens on higher-orders (or because we are performing Method B), since adding a smoothing factor to the first-order has the opposite effect.
 
 

@@ -36,10 +36,15 @@ Pure classification.
 
 (2) **Classic HMM** [any-based] [★] [yes] [A] [[Rabiner](https://www.ece.ucsb.edu/Faculty/Rabiner/ece259/Reprints/tutorial%20on%20hmm%20and%20applications.pdf)] : The well-known sequential model used for Part-of-Speech tagging, Biology-related tasks, Image recognition (pixels as a sequence) etc.
 
-(3) **Multivariate HMM** [any-based] [TO ADD] [ ] [ ] [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Tune et al.](https://arxiv.org/pdf/1305.0321.pdf)] [[Li et al.](http://vision.gel.ulaval.ca/~parizeau/Publications/P971225.pdf)] : Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
+(3) **Multivariate HMM** [mostly sentence-based] [TO ADD] [ ] [ ] [[Liu et al.](https://www.hindawi.com/journals/mpe/2015/987189/)] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Tune et al.](https://arxiv.org/pdf/1305.0321.pdf)] [[Li et al.](http://vision.gel.ulaval.ca/~parizeau/Publications/P971225.pdf)] : Lifts the restriction of a single observation per time state. As one would imagine this is very useful for Natural Language Processing tasks, since we have a bunch of text per observation and not a time series or a DNA sequence.
 
-* Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features such as tfidf etc.
-* Other ideas - states: polarity, observations: multiple tfidf values
+Can be either Continuous (Method A) or Discrete (Method A/B) and we are also restricted to mostly sentence-based tasks.
+
+* Example of Continuous: pass multiple tfidf values on each sentence, where we have a sequence of sentences.
+* Example of Discrete: pass multiple words on each sentence; a very good idea would be to pass both the word and its Part-of-Speech tag on a Spyros HMM.  
+
+* Liu et al. - states: crazy Particle Swarm Opt. to find states; 4 hidden states, observations: 4 features of a document such as tfidf etc. (where is the sequence?)
+* Other ideas - states: polarity, observations: multiple tfidf values of document (where is the sequence?)
 
 (4) **High-order HMM** [any-based] [★★★★★] [yes] [B] [[Quan et al.](https://www.sciencedirect.com/science/article/pii/S0020025515007057)] [[Preez](https://www.sciencedirect.com/science/article/pii/S0885230897900371)] [[Kochanski](http://kochanski.org/gpk/teaching/0401Oxford/HMM.pdf)] [[Ching et al.](https://link.springer.com/chapter/10.1007/978-3-540-45080-1_73)] [[Lee et al.](http://link-springer-com-s.vpn.whu.edu.cn:9440/content/pdf/10.1007%2F11779568_74.pdf)] : Lifts a major restriction of HMMs and allows the states to also depend on the observation/state preceding the directly previous one. The implementation might work through Kochanski's transformation, Preez's transformation and [miniHMM's](https://github.com/joshuagryphon/minihmm/blob/master/minihmm/represent.py) dummy states and initial probabilities.  
 
@@ -86,6 +91,7 @@ Pure classification.
 * Look for ideal smoothing factor.
 * Look for ideal ensemble of HMMs such as dor product instead of average. 
 * Bidrectional HMM.
+* See HMM (3) discrete.  
 
 ## Counting
 

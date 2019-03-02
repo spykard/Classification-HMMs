@@ -447,10 +447,10 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
             # Training
             # Build Pos Class HMM - !!! state_names should be in alphabetical order
-            hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=pos_data_corresponding_to_labels, verbose=True, labels=pos_clustered_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1)
+            hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=pos_data_corresponding_to_labels, verbose=True, labels=pos_clustered_labeled_data, transition_pseudocount=0.5e-05, emission_pseudocount=0.5e-05, n_jobs=1)
             print("NEXT HMM")
             # Build Neg Class HMM - !!! state_names should be in alphabetical order
-            hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=neg_data_corresponding_to_labels, verbose=True, labels=neg_clustered_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1)       
+            hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=neg_data_corresponding_to_labels, verbose=True, labels=neg_clustered_labeled_data, transition_pseudocount=0.5e-05, emission_pseudocount=0.5e-05, n_jobs=1)       
             # Note: Algorithm used is Baum-Welch
 
             with open('./Pickled Objects/Clustered_HMM_POS', 'wb') as f:
@@ -458,8 +458,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             with open('./Pickled Objects/Clustered_HMM_NEG', 'wb') as f:
                 pickle.dump(hmm_supervised_neg, f)
 
-
-    #quit()
     #print(neg_artifically_labeled_data[0])
 
     hmm_supervised_pos = pickle.load(open('./Pickled Objects/Clustered_HMM_POS', 'rb'))
@@ -487,6 +485,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
 
+    # print(list(transition_proba_matrix_pos[0]))
+    # print(list(transition_proba_matrix_neg[0]))
+    # quit()
     # !!! Debug the matrix to find which one is which (result: they are sorted with "none-start" and "none-end" at the final 2 spots)
     # print(transition_proba_matrix_pos)
     # fig, ax1 = plt.subplots()
@@ -528,7 +529,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         if len(current_observations) > 0:         
             sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
             sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
-            print(sentiment_score_pos, sentiment_score_neg)
 
             for i in range(len(current_observations)-1):
 
@@ -576,7 +576,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 predicted.append("neg")
             else:
                 #print("NOT ENOUGH TRAINING DATA OR SOMETHING, performing random guessing")
-                count_problematic += 1     
+                count_problematic += 1   
                 rng = randint(0, 1)
                 if rng == 0:
                     predicted.append("pos")

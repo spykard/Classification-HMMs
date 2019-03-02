@@ -92,6 +92,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 * Look for ideal ensemble of HMMs such as dor product instead of average. 
 * Bidrectional HMM.
 * See HMM (3) discrete.  
+* Dataframe sample function should take random_state as a parameter.
 
 ## Counting
 

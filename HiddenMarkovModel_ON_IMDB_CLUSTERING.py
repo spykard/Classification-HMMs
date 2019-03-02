@@ -403,7 +403,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #     count_neg += len(neg_clustered_labeled_data[i])
         # print(count_pos/6000.0, count_neg/6000.0)
 
-        train_or_load = 1
+        train_or_load = 0
         if train_or_load == 1:
             # DUMMY INSTANCES FOR THE CLUSTERS THAT DONT APPEAR AT ALL, THERE ARE SMARTER SOLUTIONS THAN THIS SUCH AS MAPPING THEM MANUALLY AFTERWARDS WITH 0.0 on a 102x102 matrix
             mapping_pos = set()
@@ -439,7 +439,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             for i in range(6000):  # Arbitary number, ~6000+ would include all instances
                 #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
                 neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-1]
-                neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-1]           
+                neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-1]           
                 #print(pos_artifically_labeled_data[i][0:2])
                 count_pos += len(pos_clustered_labeled_data[i])
                 count_neg += len(neg_clustered_labeled_data[i])
@@ -459,6 +459,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 pickle.dump(hmm_supervised_neg, f)
 
 
+    #quit()
     #print(neg_artifically_labeled_data[0])
 
     hmm_supervised_pos = pickle.load(open('./Pickled Objects/Clustered_HMM_POS', 'rb'))
@@ -527,6 +528,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         if len(current_observations) > 0:         
             sentiment_score_pos = transition_proba_matrix_pos[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
             sentiment_score_neg = transition_proba_matrix_neg[mapping.index("start"), mapping.index(current_states[0])]  # Transition from start to first state
+            print(sentiment_score_pos, sentiment_score_neg)
 
             for i in range(len(current_observations)-1):
 

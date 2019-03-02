@@ -63,7 +63,7 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     # 4. Shuffle the Datasets, it seems to be too perfectly ordered
-    df_dataset = df_dataset.sample(frac=0.50).reset_index(drop=True)
+    df_dataset = df_dataset.sample(frac=0.50, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -142,19 +142,19 @@ def Create_Clustered_to_File_Test(data_test, labels_test, vocab, pipeline):
             if token_to_string in vocab:
                 to_append_data.append(token_to_string)
                 # we can simply directly append the artificial label itself
-                prediction_bayes = pipeline.predict([token_to_string])[0]
-                to_append_labels.append(prediction_bayes)
+                prediction_kmeans = pipeline.predict([token_to_string])[0]
+                to_append_labels.append(str(prediction_kmeans))
         
         clustered_labeled_data_test.append(to_append_labels)
         data_corresponding_to_labels_test.append(to_append_data)
-        #golden_truth.append(labels_test_new[i])
+        golden_truth.append(labels_test_new[i])
 
     with open('./Pickled Objects/Clustered_Labels_from_kMeans_Test_Set', 'wb') as f:
         pickle.dump(clustered_labeled_data_test, f)
     with open('./Pickled Objects/Data_corresponding_to_Labels_from_clustering_Test_Set', 'wb') as f:
         pickle.dump(data_corresponding_to_labels_test, f)
-    #with open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'wb') as f:
-    #    pickle.dump(golden_truth, f)
+    with open('./Pickled Objects/Clustered_Labels_Golden_Truth_Test_Set', 'wb') as f:
+        pickle.dump(golden_truth, f)
 
 
 def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order):
@@ -222,8 +222,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         pipeline = pickle.load(open('./Pickled Objects/IMDb pipeline of k-Means 200_features', 'rb'))
 
-    create_artificial = 0   
-    if create_artificial == 1:  
+    create_clusters = 0   
+    if create_clusters == 1:  
         vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
         selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
         vocab = [vocab[i] for i in selected_indices]
@@ -250,7 +250,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     clustered_labeled_data_test = pickle.load(open('./Pickled Objects/Clustered_Labels_from_kMeans_Test_Set', 'rb'))
     data_corresponding_to_labels_test = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_clustering_Test_Set', 'rb'))
-    golden_truth_test = pickle.load(open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'rb'))
+    golden_truth_test = pickle.load(open('./Pickled Objects/Clustered_Labels_Golden_Truth_Test_Set', 'rb'))
 
     # print(len(clustered_labeled_data_test), len(data_corresponding_to_labels_test), len(golden_truth_test))
     # print(pos_clustered_labeled_data[0:2])
@@ -403,43 +403,90 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #     count_neg += len(neg_clustered_labeled_data[i])
         # print(count_pos/6000.0, count_neg/6000.0)
 
-        # Figure out the mappings for the 2 HMMs
-        mapping_pos = set()
-        for i in range(len(pos_clustered_labeled_data)):
-            mapping_pos.update(pos_clustered_labeled_data[i])
+        train_or_load = 1
+        if train_or_load == 1:
+            # DUMMY INSTANCES FOR THE CLUSTERS THAT DONT APPEAR AT ALL, THERE ARE SMARTER SOLUTIONS THAN THIS SUCH AS MAPPING THEM MANUALLY AFTERWARDS WITH 0.0 on a 102x102 matrix
+            mapping_pos = set()
+            for i in range(len(pos_clustered_labeled_data)):
+                mapping_pos.update(pos_clustered_labeled_data[i])
+            mapping_neg = set()
+            for i in range(len(neg_clustered_labeled_data)):
+                mapping_neg.update(neg_clustered_labeled_data[i])
 
-        print(sorted(list(mapping_pos)))
-        quit()
+            mapping_pos = sorted(list(mapping_pos))
+            mapping_neg = sorted(list(mapping_neg))
+
+            dummy_instances_pos = []
+            for i in range(100):
+                if str(i) not in mapping_pos:
+                    dummy_instances_pos.append(str(i))
+            dummy_instances_neg = []
+            for i in range(100):
+                if str(i) not in mapping_neg:
+                    dummy_instances_neg.append(str(i))
+
+            for j in dummy_instances_pos:
+                pos_data_corresponding_to_labels.append(["thisisnevergonnahappen_placeholder_word"])
+                pos_clustered_labeled_data.append([j])
+            for j in dummy_instances_neg:
+                neg_data_corresponding_to_labels.append(["thisisnevergonnahappen_placeholder_word"])
+                neg_clustered_labeled_data.append([j])
 
 
+            # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount OR when setting second-order
+            count_pos = 0
+            count_neg = 0
+            for i in range(6000):  # Arbitary number, ~6000+ would include all instances
+                #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
+                neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-1]
+                neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-1]           
+                #print(pos_artifically_labeled_data[i][0:2])
+                count_pos += len(pos_clustered_labeled_data[i])
+                count_neg += len(neg_clustered_labeled_data[i])
+            print(count_pos/6000.0, count_neg/6000.0)
 
-        # Training
-        # Build Pos Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=72, X=pos_data_corresponding_to_labels, verbose=True, labels=pos_clustered_labeled_data, emission_pseudocount=0, n_jobs=1)
-        print("NEXT HMM")
-        # Build Neg Class HMM - !!! state_names should be in alphabetical order
-        hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=71, X=neg_data_corresponding_to_labels, verbose=True, labels=neg_clustered_labeled_data, emission_pseudocount=0, n_jobs=1)       
-        # Note: Algorithm used is Baum-Welch
+            # Training
+            # Build Pos Class HMM - !!! state_names should be in alphabetical order
+            hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=pos_data_corresponding_to_labels, verbose=True, labels=pos_clustered_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1)
+            print("NEXT HMM")
+            # Build Neg Class HMM - !!! state_names should be in alphabetical order
+            hmm_supervised_neg = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=100, X=neg_data_corresponding_to_labels, verbose=True, labels=neg_clustered_labeled_data, emission_pseudocount=0.5e-05, n_jobs=1)       
+            # Note: Algorithm used is Baum-Welch
 
-        with open('./Pickled Objects/Clustered_HMM_POS', 'wb') as f:
-            pickle.dump(hmm_supervised_pos, f)
-        with open('./Pickled Objects/Clustered_High_Order_HMM_NEG', 'wb') as f:
-            pickle.dump(hmm_supervised_neg, f)
+            with open('./Pickled Objects/Clustered_HMM_POS', 'wb') as f:
+                pickle.dump(hmm_supervised_pos, f)
+            with open('./Pickled Objects/Clustered_HMM_NEG', 'wb') as f:
+                pickle.dump(hmm_supervised_neg, f)
 
-    quit()
+
     #print(neg_artifically_labeled_data[0])
 
-    # Testing
-    #print(len(pos_artifically_labeled_data), len(neg_artifically_labeled_data))
-    #print(hmm_supervised_pos)
+    hmm_supervised_pos = pickle.load(open('./Pickled Objects/Clustered_HMM_POS', 'rb'))
+    hmm_supervised_neg = pickle.load(open('./Pickled Objects/Clustered_HMM_NEG', 'rb'))  
+
+    # I COULD HAVE, FOR A BETTER PERFORMANCE, mapped the transition matrices to match each other with a length of CLUSTERS+2 (102)
+    # But much more complicated
+    # # Figure out the mappings for the 2 HMMs since some clusters aren't used at all
+    # mapping_pos = set()
+    # for i in range(len(pos_clustered_labeled_data)):
+    #     mapping_pos.update(pos_clustered_labeled_data[i])
+    # mapping_neg = set()
+    # for i in range(len(neg_clustered_labeled_data)):
+    #     mapping_neg.update(neg_clustered_labeled_data[i])
+
+    # mapping_pos = sorted(list(mapping_pos))
+    # mapping_neg = sorted(list(mapping_neg))
+    # print(mapping_neg)
+
+    # print(hmm_supervised_pos)
     #test_observ = ["realise", "pure"]
     #test_states = ["neg", "neg"]
     #
-
+    print("LOADED")
     transition_proba_matrix_pos = hmm_supervised_pos.dense_transition_matrix()
     transition_proba_matrix_neg = hmm_supervised_neg.dense_transition_matrix()
-  
-    # !!! Debug the matrix to find which one is which
+
+    # !!! Debug the matrix to find which one is which (result: they are sorted with "none-start" and "none-end" at the final 2 spots)
     # print(transition_proba_matrix_pos)
     # fig, ax1 = plt.subplots()
     # hmm_supervised_pos.plot()
@@ -451,9 +498,14 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     # none-start [2]
     # none-end  [3]
     if enable_highorder == 0:
+        # MAPPING
         mapping = [str(i) for i in range(100)]
+        mapping = sorted(mapping)
+        mapping.append("start")
+        mapping.append("end")
     else:
         mapping = ["i don't know"]
+
     # PLOT HOW THIS VARIABLE AFFECTS PERFORMANCE
     unseen_factor_smoothing = 0.5e-05  # Probability if we stumble upon new unseen observation 
     predicted = []
@@ -468,7 +520,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     for k in range(test_data_size):
         current_observations = data_corresponding_to_labels_test[k]
-        current_states = artifically_labeled_data_test[k]
+        current_states = clustered_labeled_data_test[k]
         # Debug
         # print(k, len(current_observations))
 
@@ -521,7 +573,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
             elif sentiment_score_pos < sentiment_score_neg:
                 predicted.append("neg")
             else:
-                print("NOT ENOUGH TRAINING DATA OR SOMETHING, performing random guessing")
+                #print("NOT ENOUGH TRAINING DATA OR SOMETHING, performing random guessing")
                 count_problematic += 1     
                 rng = randint(0, 1)
                 if rng == 0:
@@ -541,9 +593,9 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     #seq_count2 = x_test.shape[0]
     #multivariate_3d_test_matrix = np.empty([seq_count2, 1, feature_count])  # Feature Count Remains the same when we vectorize the test set
 
-    Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
-
     print("New unseen observations:", count_newunseen, "Problematic Sequences:", count_problematic, "Empty Sequences:", empty_sequences)
+
+    Print_Result_Metrics(golden_truth_test, predicted, targetnames, silent_enable_2, time_counter, 0, "HMM "+str(n_order)+"th Order Supervised")
 
     return None
 

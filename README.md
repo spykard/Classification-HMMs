@@ -52,7 +52,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 (5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
 
-* Kang et al. - states: clusters, obervations: words
+* Kang et al. - states: clusters, obervations: words - We can either (1) form some sort of clustering on the SVD dot matrix like Kang did, (2) form a clustering of the documents and then predict on each word, (3) form a clustering on word2vec
 * Other ideas - Combine (5) and (6) or something, states: labels, observations: clusters
 
 (6) **Spyros HMM** [any-based] [★★★] [yes] [B] [My Mind] : We want to perform classification but in text-related tasks we have a single label instead of a sequence of labels. In order to tackle this, take any Machine Learning classifier or tool, train it on the data and then have it predict the class label of every single word - we create artificial labels. Even though we are performing predictions on the data it was trained on, the resulting labels are VERY noisy since we are doing it on a single-word basis (e.g. get me the sentiment label of "movie" and get me the label of "review"). Then, the proposed HMM is trained on the artificial data and actually performs better than the original classifiers. For even higher performance, have 10 state-of-the-art classifiers and tools (LSTM, lexicon etc.)  predict the (artificial) label of each word and perform a majority vote.

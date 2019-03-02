@@ -128,7 +128,7 @@ def Create_Artificial_Labels_to_File_Test(data_test, labels_test, vocab, pipelin
 
     for i in range(instance_count):
         print("Currently in instance:", i, "of Test set")
-        # some retarded bug
+        # CHANGE THIS TO BE OUTSIDE THE LOOP TO MAKE IT FASTER
         data_test_new = data_test.tolist()
         labels_test_new = labels_test.tolist()
         #print(data_train_new[0], "\n", data_train_new[1])

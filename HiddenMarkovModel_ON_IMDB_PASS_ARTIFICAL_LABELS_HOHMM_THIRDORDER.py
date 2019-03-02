@@ -77,7 +77,7 @@ def Create_Artificial_Labels_to_File(data_train, labels_train, vocab, pipeline):
 
     for i in range(instance_count):
         print("Currently in instance:", i, "of Train set")
-        # some retarded bug
+        # CHANGE THIS TO BE OUTSIDE THE LOOP TO MAKE IT FASTER
         data_train_new = data_train.tolist()
         labels_train_new = labels_train.tolist()
         #print(data_train_new[0], "\n", data_train_new[1])

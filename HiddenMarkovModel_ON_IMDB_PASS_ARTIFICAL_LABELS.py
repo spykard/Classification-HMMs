@@ -76,11 +76,14 @@ def Create_Artificial_Labels_to_File(data_train, labels_train, vocab, pipeline):
     instance_count = len(data_train)
     nlp = spacy.load('en_core_web_sm')
 
+    # CHANGED THIS TO BE OUTSIDE THE LOOP 
+    # (some retarded bug)
+    data_train_new = data_train.tolist()
+    labels_train_new = labels_train.tolist()
+
     for i in range(instance_count):
         print("Currently in instance:", i, "of Train set")
-        # some retarded bug
-        data_train_new = data_train.tolist()
-        labels_train_new = labels_train.tolist()
+
         #print(data_train_new[0], "\n", data_train_new[1])
         tokenize_it = word_tokenize(data_train_new[i])
         to_append_labels = []
@@ -126,11 +129,14 @@ def Create_Artificial_Labels_to_File_Test(data_test, labels_test, vocab, pipelin
     instance_count = len(data_test)
     nlp = spacy.load('en_core_web_sm')
 
+    # CHANGED THIS TO BE OUTSIDE THE LOOP 
+    # (some retarded bug)
+    data_test_new = data_test.tolist()
+    labels_test_new = labels_test.tolist()
+
     for i in range(instance_count):
         print("Currently in instance:", i, "of Test set")
-        # some retarded bug
-        data_test_new = data_test.tolist()
-        labels_test_new = labels_test.tolist()
+
         #print(data_train_new[0], "\n", data_train_new[1])
         tokenize_it = word_tokenize(data_test_new[i])
         to_append_labels = []

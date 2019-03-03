@@ -68,7 +68,7 @@ def Run_Preprocessing(dataset_name):
     return df_dataset
 
 
-def Create_Clustered_to_File(data_train, labels_train, vocab, pipeline):
+def Create_Clustered_to_File(data_train, labels_train, f_tuple):
     # Training Data Transform
     pos_clustered_labeled_data = []
     pos_data_corresponding_to_labels = []
@@ -89,10 +89,11 @@ def Create_Clustered_to_File(data_train, labels_train, vocab, pipeline):
         for j in tokenize_it:
             #print(i)
             token_to_string = str(j)
-            if token_to_string in vocab:
+            if token_to_string in f_tuple[0]:
                 to_append_data.append(token_to_string)
+                get_ind = f_tuple[0].index(token_to_string)
                 # we can simply directly append the artificial label itself
-                prediction_kmeans = pipeline.predict([token_to_string])[0]
+                prediction_kmeans = f_tuple[1][get_ind]
                 to_append_labels.append(str(prediction_kmeans))
 
         if labels_train_new[i] == "pos":
@@ -117,7 +118,7 @@ def Create_Clustered_to_File(data_train, labels_train, vocab, pipeline):
     #    pickle.dump(golden_truth, f)
 
 
-def Create_Clustered_to_File_Test(data_test, labels_test, vocab, pipeline):
+def Create_Clustered_to_File_Test(data_test, labels_test, f_tuple):
     # Test Data Transform
     clustered_labeled_data_test = []
     data_corresponding_to_labels_test = []
@@ -139,10 +140,11 @@ def Create_Clustered_to_File_Test(data_test, labels_test, vocab, pipeline):
         for j in tokenize_it:
             #print(i)
             token_to_string = str(j)
-            if token_to_string in vocab:
+            if token_to_string in f_tuple[0]:
                 to_append_data.append(token_to_string)
+                get_ind = f_tuple[0].index(token_to_string)
                 # we can simply directly append the artificial label itself
-                prediction_kmeans = pipeline.predict([token_to_string])[0]
+                prediction_kmeans = f_tuple[1][get_ind]
                 to_append_labels.append(str(prediction_kmeans))
         
         clustered_labeled_data_test.append(to_append_labels)
@@ -181,25 +183,56 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     pickle_load = 1 
 
+    from scipy.sparse.linalg import svds
 
     if pickle_load == 0:
         # STEP 1 CLUSTERING
         pipeline = Pipeline([ # Optimal
                             ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
 
-                            ('tfidf', TfidfTransformer(use_idf=True)),
-                            #('feature_selection', TruncatedSVD(n_components=2000)),  # Has Many Issues
-                            ('feature_selection', SelectKBest(score_func=chi2, k=2000)),  # Dimensionality Reduction                  
-                            ('clf', KMeans(n_clusters=100 ,max_iter=1000, verbose=True)),])  
+                            ('tfidf', TfidfTransformer(use_idf=True, norm='l2')),  # using normalization makes k-Means equivalent to cosine similarity k-Means
+                            #('feature_selection', TruncatedSVD(n_components=15)),  # Has Many Issues
+                            ('feature_selection', SelectKBest(score_func=chi2, k=12000)),  # Dimensionality Reduction                  
+                            #('clf', KMeans(n_clusters=75 ,max_iter=1000, verbose=True)),
+                            ])  
         
-        pipeline.fit(data_train, labels_train)  # labels_train is just there for API consistency, None is actually used
+        output = pipeline.fit_transform(data_train, labels_train)  # labels_train is just there for API consistency, None is actually used
+        output = output.transpose()
 
-        # (3) PREDICT
-        #predicted = pipeline.predict(data_test)
+        use_scipy_or_sklearn = 0
+
+        if use_scipy_or_sklearn == 1:
+
+            u, s, v = svds(output, k=2000)  # For some stupid reason for our task we need words to be rows not columns for the SVD to produce the correct U*S format
+            u_s = u*s
+            print(u_s.shape)
+
+        else:
+
+            clf = TruncatedSVD(n_components=2000)
+            newtry = clf.fit_transform(output)
+            print(newtry.shape)
 
 
-        with open('./Pickled Objects/IMDb pipeline of k-Means 2000_features', 'wb') as f:
-            pickle.dump(pipeline, f)
+        vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
+        selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
+        vocab = [vocab[i] for i in selected_indices]
+
+        # A very interesting way to find the best features, getting exact mapping to features IS IMPOSSIBLE in SVD
+        #print(clf.components_[0].argsort()[::-1], len(vocab))
+        #best_features = [vocab[i] for i in clf.components_[0].argsort()[::-1]]
+        #print(best_features[:10])
+
+        clf = KMeans(n_clusters=75 ,max_iter=1000, verbose=True)
+        results = clf.fit(newtry)
+
+        predictions = clf.labels_  # prediction results on the labels, equivalent to fit_predict
+
+        f_tuple = (vocab, predictions)
+        print(f_tuple)
+
+        with open('./Pickled Objects/IMDb word-based SVD-norm k-Means 2000_features mapping list', 'wb') as f:
+            pickle.dump(f_tuple, f)
 
         # accuracy = metrics.accuracy_score(labels_test, predicted)
         # other_metrics_to_print = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=False)
@@ -220,23 +253,17 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     elif pickle_load == 1:
 
-        pipeline = pickle.load(open('./Pickled Objects/IMDb pipeline of k-Means 2000_features', 'rb'))
+        f_tuple = pickle.load(open('./Pickled Objects/IMDb word-based SVD-norm k-Means 2000_features mapping list', 'rb'))
 
     create_clusters = 0   
     if create_clusters == 1:  
-        vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
-        selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
-        vocab = [vocab[i] for i in selected_indices]
 
-
-
-
-        print(pipeline.named_steps['clf'].cluster_centers_.shape)
+        #print(pipeline.named_steps['clf'].cluster_centers_.shape)
         #print(pipeline.named_steps['clf'].cluster_centers_[0, 0:20])
         #print(pipeline.named_steps['clf'].labels_)
 
-        p1 = multiprocessing.Process(target=Create_Clustered_to_File, args=(data_train, labels_train, vocab, pipeline))
-        p2 = multiprocessing.Process(target=Create_Clustered_to_File_Test, args=(data_test, labels_test, vocab, pipeline))
+        p1 = multiprocessing.Process(target=Create_Clustered_to_File, args=(data_train, labels_train, f_tuple))
+        p2 = multiprocessing.Process(target=Create_Clustered_to_File_Test, args=(data_test, labels_test, f_tuple))
         p1.start()
         p2.start()
         quit()
@@ -403,6 +430,22 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #     count_neg += len(neg_clustered_labeled_data[i])
         # print(count_pos/6000.0, count_neg/6000.0)
 
+        # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount OR when setting second-order
+        # SHORTEN THE SEQUENCES BY A LOT
+        count_pos = 0
+        count_neg = 0
+        for i in range(6000):  # Arbitary number, ~6000+ would include all instances
+            #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]2
+            neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-25]
+            neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-25]   
+            pos_clustered_labeled_data[i] = pos_clustered_labeled_data[i][:-25]
+            pos_data_corresponding_to_labels[i] = pos_data_corresponding_to_labels[i][:-25]                           
+            #print(pos_artifically_labeled_data[i][0:2])
+            count_pos += len(pos_clustered_labeled_data[i])
+            count_neg += len(neg_clustered_labeled_data[i])
+        print(count_pos/6000.0, count_neg/6000.0)
+
+
         train_or_load = 0
         if train_or_load == 1:
             # DUMMY INSTANCES FOR THE CLUSTERS THAT DONT APPEAR AT ALL, THERE ARE SMARTER SOLUTIONS THAN THIS SUCH AS MAPPING THEM MANUALLY AFTERWARDS WITH 0.0 on a 102x102 matrix
@@ -415,6 +458,8 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
             mapping_pos = sorted(list(mapping_pos))
             mapping_neg = sorted(list(mapping_neg))
+
+            print(len(mapping_pos), len(mapping_neg))
 
             dummy_instances_pos = []
             for i in range(100):
@@ -432,18 +477,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                 neg_data_corresponding_to_labels.append(["thisisnevergonnahappen_placeholder_word"])
                 neg_clustered_labeled_data.append([j])
 
-
-            # Shorten the "neg" else it trains for long time compared to "pos" when using emission_pseudocount OR when setting second-order
-            count_pos = 0
-            count_neg = 0
-            for i in range(6000):  # Arbitary number, ~6000+ would include all instances
-                #pos_artifically_labeled_data[i] = pos_artifically_labeled_data[i][:-1]
-                neg_clustered_labeled_data[i] = neg_clustered_labeled_data[i][:-1]
-                neg_data_corresponding_to_labels[i] = neg_data_corresponding_to_labels[i][:-1]           
-                #print(pos_artifically_labeled_data[i][0:2])
-                count_pos += len(pos_clustered_labeled_data[i])
-                count_neg += len(neg_clustered_labeled_data[i])
-            print(count_pos/6000.0, count_neg/6000.0)
 
             # Training
             # Build Pos Class HMM - !!! state_names should be in alphabetical order

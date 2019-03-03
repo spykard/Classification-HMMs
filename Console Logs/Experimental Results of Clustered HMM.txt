@@ -1,6 +1,6 @@
 Dataset: IMDb
 
-1. no matter what settings
+1. no matter what settings these are the results, here the test sequences are shorted for the HMM to be trainable
 
 New unseen observations: 8977 Problematic Sequences: 10457 Empty Sequences: 4
 Exact Accuracy:  0.4982312268853513

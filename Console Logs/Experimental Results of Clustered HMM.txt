@@ -1,0 +1,17 @@
+Dataset: IMDb
+
+1. no matter what settings
+
+New unseen observations: 8977 Problematic Sequences: 10457 Empty Sequences: 4
+Exact Accuracy:  0.4982312268853513
+              precision    recall  f1-score   support
+
+         neg       0.50      0.57      0.53      6233
+         pos       0.50      0.43      0.46      6205
+
+   micro avg       0.50      0.50      0.50     12438
+   macro avg       0.50      0.50      0.50     12438
+weighted avg       0.50      0.50      0.50     12438
+
+[[3548 2685]
+ [3556 2649]]

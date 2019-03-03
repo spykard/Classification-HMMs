@@ -74,12 +74,12 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 (all) Utilizing n-grams on the observations heavily increases accuracy, see console logs and graphs.  
 (all) Using a higher n-gram means more new unseen transitions, see graphs.  
 (all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.  
-(1) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
+(1) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt)  
 (2) Can be run at any time.  
 (3) Didn't work 
 (4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
-(5) Idea 2 didn't work, TODO  
-(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
+(5) Idea 2 didn't work, idea 3 didn't work [Experimental Results of Clustered HMM.txt](Console%20Logs/Experimental%20Results%20of%20Clustered%20HMM.txt).
+(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
 
 <br><br/>
 

@@ -52,7 +52,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 (5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
 
-* Kang et al. - states: clusters, obervations: words - We can either (1) form some sort of clustering on the SVD dot matrix like Kang did, (2) form a clustering of the documents and then predict on each word, (3) form a clustering on word2vec
+* Kang et al. - states: clusters, obervations: words - We can either (1) form some sort of clustering on the SVD term-to-term dot matrix like Kang did, (2) form a clustering of the documents and then predict on each word, (3) form a clustering on word2vec (better not https://datascience.stackexchange.com/questions/30917/k-means-clustering-of-word-embedding-gives-strange-results)
 * Other ideas - Combine (5) and (6) or something, states: labels, observations: clusters
 
 (6) **Spyros HMM** [any-based] [★★★] [yes] [B] [My Mind] : We want to perform classification but in text-related tasks we have a single label instead of a sequence of labels. In order to tackle this, take any Machine Learning classifier or tool, train it on the data and then have it predict the class label of every single word - we create artificial labels. Even though we are performing predictions on the data it was trained on, the resulting labels are VERY noisy since we are doing it on a single-word basis (e.g. get me the sentiment label of "movie" and get me the label of "review"). Then, the proposed HMM is trained on the artificial data and actually performs better than the original classifiers. For even higher performance, have 10 state-of-the-art classifiers and tools (LSTM, lexicon etc.)  predict the (artificial) label of each word and perform a majority vote.
@@ -78,7 +78,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 (2) Can be run at any time.  
 (3) Didn't work 
 (4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
-(5) Idea 2 didn't work, TOOD  
+(5) Idea 2 didn't work, TODO  
 (6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
 
 <br><br/>

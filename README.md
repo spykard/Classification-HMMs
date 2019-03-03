@@ -50,7 +50,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 * Quan et al. (+ Multivariate) - states: emotions, observations: custom encoding with 150 possible observations per state
 
-(5) **Clustering then HMM** [any-based] [TO ADD] [ ] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
+(5) **Clustering then HMM** [any-based] [★★★★★] [yes] [B] [[Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979)]  
 
 * Kang et al. - states: clusters, obervations: words - We can either (1) form some sort of clustering on the SVD term-to-term dot matrix like Kang did, (2) form a clustering of the documents and then predict on each word, (3) form a clustering on word2vec (better not https://datascience.stackexchange.com/questions/30917/k-means-clustering-of-word-embedding-gives-strange-results)
 * Other ideas - Combine (5) and (6) or something, states: labels, observations: clusters

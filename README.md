@@ -103,6 +103,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 * Take a look at the weighting function from Quan and Ren.
 * Use Stanford Sentiment Treebank and its tree structure to split it into sequences (alternative source https://www.kaggle.com/c/movie-review-sentiment-analysis-kernels-only/data) leading to a HMM with 2-3 sentences per document.
 * Attempt different Ensembles (see Arani paper) instead of average, e.g. multiply.
+* Attempt different smoothing techniques (http://www.aclweb.org/anthology/P99-1023 , Section 3.2)
 
 ## Counting
 

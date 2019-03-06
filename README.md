@@ -93,6 +93,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 * Bidrectional HMM.
 * See HMM (3) discrete.  
 * Dataframe sample function should take random_state as a parameter.
+* Take a look at the weighting function from Quan and Ren
 
 ## Counting
 

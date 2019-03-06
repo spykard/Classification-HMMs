@@ -61,16 +61,15 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 (7) **Non-sequential HMM** [any-based] [★★★] [TODO] [B] [[Iglesias et al.](https://search.proquest.com/openview/2119a1817a1618e9220edc27fea5ba1b/1?pq-origsite=gscholar&cbl=2049104)] [[Yi](https://dl.acm.org/citation.cfm?id=1168646)] [[Yi et al.](https://journals.sagepub.com/doi/pdf/10.1177/0165551508092257?casa_token=QZGFQENo5t0AAAAA:Plxel2MQi8LMt8TYRA21FQW4NgACsgLTVYlXFsSSvWuC0i3lokWWA0o0Te59xBOK_8WPWMaj2So)] : Is applicable to scenarios where the transition probabilities are not a statistical reflection of the relationship among different states like in traditional HMMs. This occurs when each state represents a different information source and then the relationship between states can be rephrased as the one between different information sources. What is considered as training data is two separate data sets from different sources, which does not seem to have relevant information about their relationship. For example, imagine a HMM consisting of three hidden states, one for the title of a text, one for the body and one for keywords.
 
+(8) **Autoregressive HMM** [ ] [ ] [ ] [ ] [Ephraim et al.](https://www.computer.org/csdl/proceedings-article/icassp/1988/00196638/12OmNynJMG9) : Tackles the problem of capturing correlations between observed variables that are far away from each other in terms of time steps.
 
-(AUTOREGRESSIVE)
+(9) **Input-output HMM** [[Bengio et al.](http://papers.nips.cc/paper/964-an-input-output-hmm-architecture.pdf)] : Introduces observed variables that can influence either the hidden state variables, output variables or both. This technique can be particularly helpful in the domain of supervised learning for sequential data.
 
-(INPUT OUTPUT)
+(10) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
 
-(8) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
+(11) **Hierarchical HMM** [ ] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
 
-(9) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
-
-(10) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
+(12) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 
@@ -86,7 +85,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 (3) Didn't work  
 (4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (5) Idea 2 didn't work, idea 3 didn't work [Experimental Results of Clustered HMM.txt](Console%20Logs/Experimental%20Results%20of%20Clustered%20HMM.txt).  
-(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)
+(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
 (7) It is possible to have HMM that don't utilize sequential data at all.
 
 <br><br/>

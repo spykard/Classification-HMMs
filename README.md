@@ -59,11 +59,17 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 * Kang et al. - states: clusters, obervations: words
 
-(7) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
+(7) **Non-sequential HMM**  A HMM text classification model with learning capacity - Συντόμευση, Text classification using a hidden Markov model - Συντόμευση, A hidden Markov modelbased text classification of medical documents
 
-(8) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
+(AUTOREGRESSIVE)
 
-(9) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
+(INPUT OUTPUT)
+
+(8) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
+
+(9) **Hierarchical HMM** [TO ADD] [ ] [ ] [ ] [[Fine et al.](https://link.springer.com/content/pdf/10.1023/A:1007469218079.pdf)]  
+
+(10) The remaining HMM models that alter assumptions about time etc. (e.g. Semi-Markov)
 
 <br><br/>
 
@@ -79,7 +85,8 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 (3) Didn't work  
 (4) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Ressults%20of%20State-emission%20HMM.txt)  
 (5) Idea 2 didn't work, idea 3 didn't work [Experimental Results of Clustered HMM.txt](Console%20Logs/Experimental%20Results%20of%20Clustered%20HMM.txt).  
-(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)  
+(6) A HMM can increase the performance of any bag-of-words-based Machine Learning classifier or tool by utilizing the sequential information of text. This is done by producing artificial labels. [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt) and [Experimental Results on Big Dataset.txt](Console%20Logs/Experimental%20Results%20on%20Big%20Dataset.txt)
+(7) It is possible to have HMM that don't utilize sequential data at all.
 
 <br><br/>
 

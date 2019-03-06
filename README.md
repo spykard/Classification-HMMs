@@ -59,7 +59,8 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 * Kang et al. - states: clusters, obervations: words
 
-(7) **Non-sequential HMM**  A HMM text classification model with learning capacity - Συντόμευση, Text classification using a hidden Markov model - Συντόμευση, A hidden Markov modelbased text classification of medical documents
+(7) **Non-sequential HMM** [any-based] [★★★] [TODO] [B] [[Iglesias et al.](https://search.proquest.com/openview/2119a1817a1618e9220edc27fea5ba1b/1?pq-origsite=gscholar&cbl=2049104)] [[Yi](https://dl.acm.org/citation.cfm?id=1168646)] [[Yi et al.](https://journals.sagepub.com/doi/pdf/10.1177/0165551508092257?casa_token=QZGFQENo5t0AAAAA:Plxel2MQi8LMt8TYRA21FQW4NgACsgLTVYlXFsSSvWuC0i3lokWWA0o0Te59xBOK_8WPWMaj2So)] : Is applicable to scenarios where the transition probabilities are not a statistical reflection of the relationship among different states like in traditional HMMs. This occurs when each state represents a different information source and then the relationship between states can be rephrased as the one between different information sources. What is considered as training data is two separate data sets from different sources, which does not seem to have relevant information about their relationship. For example, imagine a HMM consisting of three hidden states, one for the title of a text, one for the body and one for keywords.
+
 
 (AUTOREGRESSIVE)
 

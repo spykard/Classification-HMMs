@@ -101,6 +101,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 * See HMM (3) discrete.  
 * Dataframe sample function should take random_state as a parameter.
 * Take a look at the weighting function from Quan and Ren
+* Use Stanford Sentiment Treebank and its tree structure to split it into sequences (alternative source https://www.kaggle.com/c/movie-review-sentiment-analysis-kernels-only/data) leading to a HMM with 2-3 sentences per document.
 
 ## Counting
 

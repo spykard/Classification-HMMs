@@ -63,7 +63,7 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 
 (8) **Autoregressive HMM** [ ] [ ] [ ] [ ] [Ephraim et al.](https://www.computer.org/csdl/proceedings-article/icassp/1988/00196638/12OmNynJMG9)] : Tackles the problem of capturing correlations between observed variables that are far away from each other in terms of time steps.
 
-(9) **Input-output HMM** [ ] [ ] [ ] [ ] [[Bengio et al.](http://papers.nips.cc/paper/964-an-input-output-hmm-architecture.pdf)] : Introduces observed variables that can influence either the hidden state variables, output variables or both. This technique can be particularly helpful in the domain of supervised learning for sequential data.
+(9) **Input-output HMM** [ ] [ ] [ ] [ ] [[Bengio et al.](http://papers.nips.cc/paper/964-an-input-output-hmm-architecture.pdf)] : Introduces observed variables that can influence either the hidden state variables, output variables or both. This technique can be particularly helpful in the domain of supervised learning for sequential data. However, I think it requires data/information about in the form of "before-after".  
 
 (10) **Bidirectional HMM** [any-based] [ ] [ ] [ ] [[Zacher et al.](http://msb.embopress.org/content/msb/10/12/768.full.pdf)] [[Arani et al.](https://digital-library.theiet.org/content/journals/10.1049/iet-cvi.2017.0645)]  
 

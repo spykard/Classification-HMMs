@@ -1,6 +1,8 @@
 # Takes into consideration the previous observation for each time step instead of the current one and doesn't even spot "whateveromegalul"
 # algorithm='baum-welch' fixes the bug, 
 # removing state_names on the 1st example also fixes the bug but introduces errors
+# e.g. hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=3, X=pos_data_corresponding_to_labels, algorithm='labeled', verbose=True, labels=pos_clustered_labeled_data, n_jobs=1)
+
 from pomegranate import *
 
 # Happens in this example

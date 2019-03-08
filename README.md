@@ -1,5 +1,9 @@
 # Hidden Markov Models
 
+## Coding Notes - Overall
+
+* On architecture B, if we require exact probabilities per class we have to normalize the result of the math formula. [Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979) divide the multiplied probability score by the length of the sequence.
+
 ## Coding Notes - Pomegranate
 
 * The states on Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_.
@@ -31,15 +35,23 @@ Our best bet is to not use the state_names parameter and not use "s0" etc. as la
 
 * The emission-pseudocount is not added to states that only occur at the start of sequences, e.g. observations:`[["234", "123", "234"], ["651", "1"]]` and state_labels:`[["s234", "s123", "s234"], ["s651", "s1"]]` means that state651 will have probability of 1 for 651 and 0 for everything else.
 
+## Coding Notes - Matlab
+
+[Function to be used](https://www.mathworks.com/help/stats/hmmestimate.html)
+[Matlab Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
+
+## Coding Notes - HOHMM
+
+[Documentation](https://simple-hohmm.readthedocs.io/en/latest/)
 
 <br><br/>
 
-## Method A
+## Architecture A
 
 Even if it looks like it, it is not really a classification method.
 ![Method A](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
-## Method B
+## Architecture B
 
 Pure classification.
 ![Method B](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)

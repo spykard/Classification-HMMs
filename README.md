@@ -37,7 +37,7 @@ Our best bet is to not use the state_names parameter and not use "s0" etc. as la
 
 ## Coding Notes - Matlab
 
-[Function to be used](https://www.mathworks.com/help/stats/hmmestimate.html)
+[Function to be used](https://www.mathworks.com/help/stats/hmmestimate.html)  
 [Matlab Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
 
 ## Coding Notes - HOHMM

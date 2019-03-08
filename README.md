@@ -1,8 +1,8 @@
 # Hidden Markov Models
 
-## Coding Notes
+## Coding Notes - Pomegranate
 
-* The states on Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_
+* The states on Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_.
 
 ```python
   ...
@@ -10,6 +10,27 @@
   silent_states = list(sorted(silent_states, key=attrgetter('name')))
   ...
 ```
+
+For anything that isn't algorithm='labeled': just use the state_names parameter to avoid some bugs, e.g.1. state_labels:`["bbb", "aaa", "bbb"]` then state_names=`["aaa", "bbb"]`. EVEN better, convert all state labels to s<sub>0</sub>,s<sub>1</sub>...s<sub>n</sub>, e.g.2. state_labels:`["s2", "s1", "s0"]` then state_names=`["s0", "s1", "s2"]`.
+
+For algorithm='labeled': extremely bad implementation riddled with bugs, [e.g.](Weird%20Labeled%20training%20Bug.py). Instead of taking into consideration the current observation, it takes the previous observation for each time step. The '_labeled_summarize' function is a mess.
+
+Our best bet is to not use the state_names parameter and not use "s0" etc. as labels on the input data. This way we "bypass" the bug; ignore the errors that come up from the following piece of code.
+
+```python
+  ...
+  for i in range(label_ndarray.shape[0]):
+      if isinstance(label_ndarray[i], State):
+          labels[i] = self.states.index(label_ndarray[i])
+      else:
+          labels[i] = self.state_name_mapping[label_ndarray[i]]
+  ...
+```
+
+* The emission-pseudocount does not work for algorithm='labeled'.
+
+* The emission-pseudocount is not added to states that only occur at the start of sequences, e.g. observations:`[["234", "123", "234"], ["651", "1"]]` and states_labels:`[["s234", "s123", "s234"], ["s651", "s1"]]` means that state651 will have probability of 1 for 651 and 0 for everything else.
+
 
 <br><br/>
 

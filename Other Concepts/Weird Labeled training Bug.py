@@ -16,7 +16,6 @@ pos_data_corresponding_to_labels = [["dummy1", "good", "bad", "bad", "whateverom
 # Training
 # Build Pos Class HMM - !!! state_names should be in alphabetical order
 hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=3, X=pos_data_corresponding_to_labels, algorithm='labeled', verbose=True, labels=pos_clustered_labeled_data, n_jobs=1, state_names=sorted(["pos", "neg", "dummy1"]))
-hmm_supervised_pos = HiddenMarkovModel.from_samples(DiscreteDistribution, n_components=3, X=pos_data_corresponding_to_labels, algorithm='labeled', verbose=True, labels=pos_clustered_labeled_data, n_jobs=1)
 
 print("NEXT HMM")
 for i in list(hmm_supervised_pos.states):

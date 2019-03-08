@@ -29,7 +29,7 @@ Our best bet is to not use the state_names parameter and not use "s0" etc. as la
 
 * The emission-pseudocount does not work for algorithm='labeled'.
 
-* The emission-pseudocount is not added to states that only occur at the start of sequences, e.g. observations:`[["234", "123", "234"], ["651", "1"]]` and states_labels:`[["s234", "s123", "s234"], ["s651", "s1"]]` means that state651 will have probability of 1 for 651 and 0 for everything else.
+* The emission-pseudocount is not added to states that only occur at the start of sequences, e.g. observations:`[["234", "123", "234"], ["651", "1"]]` and state_labels:`[["s234", "s123", "s234"], ["s651", "s1"]]` means that state651 will have probability of 1 for 651 and 0 for everything else.
 
 
 <br><br/>

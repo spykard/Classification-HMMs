@@ -38,7 +38,15 @@ Our best bet is to not use the state_names parameter and not use "s0" etc. as la
 ## Coding Notes - Matlab
 
 [Function to be used](https://www.mathworks.com/help/stats/hmmestimate.html)  
-[Matlab Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
+[Install the Matlab Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)  
+Path of execution: /usr/local/MATLAB/R2018b/extern/engines/python  
+Path of installation: ~/anaconda3/envs/matlabCompatiblePython/lib/python3.6/site-packages  
+Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setup.py install  
+(no need for --prefix="installdir" parameter)  
+
+[Passing data to Matlab](https://www.mathworks.com/help/matlab/matlab_external/pass-data-to-matlab-from-python.html)  
+[Passing arrays to Matlab](https://www.mathworks.com/help/matlab/matlab_external/matlab-arrays-as-python-variables.html)  
+[Call Matlab Functions from Python](https://www.mathworks.com/help/matlab/matlab_external/call-matlab-functions-from-python.html)
 
 ## Coding Notes - HOHMM
 

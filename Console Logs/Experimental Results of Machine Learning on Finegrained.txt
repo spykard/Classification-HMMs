@@ -2,20 +2,20 @@ Dataset: Finegrained
 
 1.2. Naive Bayes - just bag of words, no sentence information/labels
 
-f1-score average across 5-fold: 0.4731582569411589
-
+f1-score average across 5-fold: 0.4731582569411589 (with "mix")
+f1-score average across 5-fold: 0.4731582569411589 (without "mix", which is comperable to the results of State-emission HMM)
 
 
 1.2. Naive Bayes - just sentence labels, no usage of words
 
 f1-score average across 5-fold: 0.6860947776112187
-
+f1-score average across 5-fold: 0.6928156606781714 (without "mix", which is comperable to the results of State-emission HMM)
 
 
 1.3. Naive Bayes - bag of words and sentence labels appended as 3 extra features
 
 f1-score average across 5-fold: 0.7213443530144533
-
+f1-score average across 5-fold: 0.7085988262783882
 
 
 2.1 Decision Tree - bag of words and sentence labels appended as 3 extra features

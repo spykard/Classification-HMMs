@@ -1,0 +1,23 @@
+Dataset: Finegrained
+
+1.2. Naive Bayes - just bag of words, no sentence information/labels
+
+f1-score average across 5-fold: 0.4731582569411589
+
+
+
+1.2. Naive Bayes - just sentence labels, no usage of words
+
+f1-score average across 5-fold: 0.6860947776112187
+
+
+
+1.3. Naive Bayes - bag of words and sentence labels appended as 3 extra features
+
+f1-score average across 5-fold: 0.7213443530144533
+
+
+
+2.1 Decision Tree - bag of words and sentence labels appended as 3 extra features
+
+Using the "feature_importance" attribute, we note that "pos" and "neg" are very high importance around 0.23, while "neu" has an importance of 0.03; this confirms that the classifier/experiment is working correctly

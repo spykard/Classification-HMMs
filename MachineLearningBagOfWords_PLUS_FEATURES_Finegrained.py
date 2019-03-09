@@ -342,7 +342,9 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     #quit()
 
     clf = ComplementNB()
+    #clf = DecisionTreeClassifier(max_features=None)
     clf.fit(tfidf_dense, labels_train)
+
 
     # Test
     tf_idf_matrix_test = vectorizer.transform(data_test)

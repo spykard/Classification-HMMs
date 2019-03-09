@@ -25,8 +25,14 @@ class AdvancedHMM:
         self.pi = None
 
         self.length = 0
-        self.trained_model = None  # The object that is output after training, depends on the framework that was used
+        self.architectures = ["A", "B"]
+        self.chosen_architecture = ""
+        self.models = ["General Mixture Model", "State-emission HMM"]
+        self.chosen_model = ""
+
+        self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.multivariate = False
+        self.state_to_label_mapping = {}
 
         # Evaluation
         self.k_fold = 0
@@ -36,7 +42,28 @@ class AdvancedHMM:
                                                     # Metrics_String: []], 
                                                     # Time_Complexity: []}
 
-    #def input(self):
+    def clean_up(self):
+        """
+        Resets the values which are not needed to their original values, after the entire process is finished.
+        """
+        self.observations = []
+        self.state_labels = []
+        self.trained_model = None
+
+    
+    def verify_and_autodetect(self, observations_in, state_labels_in):
+        """
+        (1) Ensure that the input data are of the same shape.
+        (2) Automatically detect some basic HMMs that could be useful and suggest them to the user.
+        (3) Print the approach that the user has selected.
+        """
+        # Verify shape validity
+        if len(observations_in) != len(state_labels_in):
+            raise ValueError("the first input list is of length " + str(len(observations_in)) + " while the second is of length " + str(len(state_labels_in)) + ".")
+        else:
+            for i in range(len(observations_in)):
+                if len(observations_in[i]) != len(state_labels_in[i]):
+                    raise ValueError("on row with index " + str(i) + ", the sequence of the first list is of size " + str(len(observations_in[i])) + " while the one of the second is of size " + str(len(state_labels_in[i])) + ".")
 
 
 
@@ -125,5 +152,8 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
     plt.show()
 
 
-x = AdvancedHMM()
-print(x.length)
+observations_in = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
+labels_in = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
+hmm = AdvancedHMM()
+hmm.verify_and_autodetect(observations_in, labels_in)
+print(hmm.length)

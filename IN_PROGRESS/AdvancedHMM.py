@@ -4,11 +4,12 @@ AdvancedHMM: A framework that implements (mostly supervised) state-of-the-art Hi
 
 import numpy as np
 import itertools
+from collections import defaultdict
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 
-class HiddenMarkovModel:
+class AdvancedHMM:
     """
         observations: Observation sequence
         state_labels: Hidden State sequence
@@ -16,6 +17,28 @@ class HiddenMarkovModel:
         B: Observation probability matrix
         pi: Initial probabilities
     """
+    def __init__(self):
+        self.observations = []
+        self.state_labels = []
+        self.A = None
+        self.B = None
+        self.pi = None
+
+        self.length = 0
+        self.trained_model = None  # The object that is output after training, depends on the framework that was used
+        self.multivariate = False
+
+        # Evaluation
+        self.k_fold = 0
+        self.cross_val_metrics = defaultdict(list)  # {Name: [], 
+                                                    # F1-score: [], 
+                                                    # Accuracy: [], 
+                                                    # Metrics_String: []], 
+                                                    # Time_Complexity: []}
+
+    #def input(self):
+
+
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -23,7 +46,7 @@ def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
     length = len(y)
     if any(len(lst) != length for lst in [x_f1, x_acc, y]):
-        raise ValueError("the two lists of values and one list of strings must all be of same length")
+        raise ValueError("the two lists of values and one list of strings must all be of exact same length")
 
     indices = np.arange(length)
             
@@ -59,7 +82,7 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
     """
     length = len(y)
     if any(len(lst) != length for lst in [x_f1, x_acc, y]):
-        raise ValueError("the two lists of values and one list of strings must all be of same length")
+        raise ValueError("the two lists of values and one list of strings must all be of exact same length")
 
     indices = np.arange(length)
              
@@ -100,3 +123,7 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
     fig.tight_layout()
 
     plt.show()
+
+
+x = AdvancedHMM()
+print(x.length)

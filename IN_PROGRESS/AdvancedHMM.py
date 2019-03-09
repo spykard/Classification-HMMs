@@ -5,6 +5,7 @@ AdvancedHMM: A framework that implements (mostly supervised) state-of-the-art Hi
 import numpy as np
 import itertools
 from collections import defaultdict
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
@@ -18,8 +19,8 @@ class AdvancedHMM:
         pi: Initial probabilities
     """
     def __init__(self):
-        self.observations = []
-        self.state_labels = []
+        self.observations = None
+        self.state_labels = None
         self.A = None
         self.B = None
         self.pi = None
@@ -50,21 +51,54 @@ class AdvancedHMM:
         self.state_labels = []
         self.trained_model = None
 
-    
-    def verify_and_autodetect(self, observations_in, state_labels_in):
+    def verify_and_autodetect(self):
         """
         (1) Ensure that the input data are of the same shape.
         (2) Automatically detect some basic HMMs that could be useful and suggest them to the user.
         (3) Print the approach that the user has selected.
         """
         # Verify shape validity
-        if len(observations_in) != len(state_labels_in):
-            raise ValueError("the first input list is of length " + str(len(observations_in)) + " while the second is of length " + str(len(state_labels_in)) + ".")
+        if len(self.observations) == 0 or len(self.state_labels) == 0:
+            raise ValueError("one or both of the input containers appear to be empty.")
+        elif len(self.observations) != len(self.state_labels):
+            raise ValueError("the first input container is of length " + str(len(self.observations)) + " while the second is of length " + str(len(self.state_labels)) + ".")
         else:
-            for i in range(len(observations_in)):
-                if len(observations_in[i]) != len(state_labels_in[i]):
-                    raise ValueError("on row with index " + str(i) + ", the sequence of the first list is of size " + str(len(observations_in[i])) + " while the one of the second is of size " + str(len(state_labels_in[i])) + ".")
+            for i in range(len(self.observations)):
+                if len(self.observations[i]) != len(self.state_labels[i]):
+                    raise ValueError("on row with index " + str(i) + ", the sequence of the first container is of size " + str(len(self.observations[i])) + " while the one of the second is of size " + str(len(self.state_labels[i])) + ".")
 
+        if self.chosen_architecture not in self.architectures:
+            raise ValueError("selected architecture does not exist.")
+        if self.chosen_model not in self.models:
+            raise ValueError("selected model does not exist.")
+
+        # Attempt to automatically detect some HMMs that are a good fit for the input data
+        #  only the first and last row of the data are used in this process
+        if len(set(self.state_labels[0])) == 1 and len(set(self.state_labels[-1])):  # General Mixture Model Detection
+            print("(Supervised Training Suggestion: The labels seem to remain constant, consider using the General Mixture Model")
+
+
+
+    def build(self, observations_pandas, state_labels_pandas, architecture, model, k_fold):
+        """
+        The main function of the framework. Execution starts from here
+
+        Parameters:
+                observations_pandas: pandas Series that contains the data that will be used as observations
+                state_labels_pandas: pandas Series that contains the data that will be used as labels for the states
+                architecture: string denoting a choice by the user
+                model: string denoting a choice by the user
+                k_fold: the number of folds to be used in the cross-validation
+        """
+
+        self.observations = observations_pandas.values  # or tolist() to get list instead of ndarray
+        self.state_labels = state_labels_pandas.values
+        self.chosen_architecture = architecture
+        self.chosen_model = model
+
+        self.verify_and_autodetect()
+
+        self.length = len(self.observations)
 
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
@@ -152,8 +186,9 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
     plt.show()
 
 
-observations_in = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
-labels_in = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
+observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
+labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
+observations_series = pd.Series(observations)
+labels_series = pd.Series(labels)
 hmm = AdvancedHMM()
-hmm.verify_and_autodetect(observations_in, labels_in)
-print(hmm.length)
+hmm.build(observations_series, labels_series, architecture="A", model="State-emission HMM", k_fold=1)

@@ -26,51 +26,6 @@ cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accu
 time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
 
 
-def Run_Preprocessing(dataset_name):
-    '''    Dataset Dependant Preprocessing    '''
-
-    # 1. Load the Dataset
-    # data = [["" for j in range(3)] for i in range(294)]
-    data = ["" for i in range(294)]
-    sequences = [[] for i in range(294)]
-    labels = ["" for i in range(294)]
-    count = 0
-    with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
-        for line in file:
-            if len(line.split("_")) == 3:
-                labels[count] = line.split("_")[1]
-            elif len(line.strip()) == 0:
-                count += 1
-            else:
-                temp = [x.strip() for x in line.split("\t")]
-                if len(temp[1]) > 1:
-                    # "nr" label is ignored
-                    if temp[0] in ["neg", "neu", "pos", "mix"]:
-                        sequences[count].append(temp[0])              
-
-                    data[count] += temp[1]
-
-    print("--Processed", count+1, "documents", "\n--Dataset Name:", dataset_name)
-
-    df_dataset = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
-
-    # 2. Remove empty instances from DataFrame, actually affects accuracy
-    emptyCells = df_dataset.loc[df_dataset.loc[:,'Sequences'].map(len) < 1].index.values
-    df_dataset = df_dataset.drop(emptyCells, axis=0).reset_index(drop=True)  # Reset_Index to make the row numbers be consecutive again
-
-    # 3. Balance the Dataset by Undersampling
-    # mask = df_dataset.loc[:,'Labels'] == "No"
-    # df_dataset_to_undersample = df_dataset[mask].sample(n=1718, random_state=22)
-    # df_dataset = df_dataset[~mask]
-    # df_dataset = pd.concat([df_dataset, df_dataset_to_undersample], ignore_index=True)
-    # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
-
-    # 4. Shuffle the Datasets, it seems to be too perfectly ordered
-    # df_dataset = df_dataset.sample(frac=1).reset_index(drop=True)
-
-    return df_dataset
-
-
 def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, documentSentiments, targetnames, n_jobs, algorithm, graph_print_enable, silent_enable, silent_enable_2, n_order):
     '''    Create a Hidden Markov Model of n-th Order, trained in a Supervised manner    '''
     '''    Input:     
@@ -272,46 +227,6 @@ def Print_Result_CrossVal_Final(k):
         print(model, ": Accuracy is", "{:0.4f}".format(avg[0]), "F1-score is", "{:0.4f}".format(avg[1]))
         cross_validation_average[model] = avg  # Save the average on a global variable
 
-
-def Plot_Results(k, dataset_name):
-    '''    Plot the Metrics of all Hidden Markov Models in a Graph    '''
-    global cross_validation_average
-
-    print("Plotting AVERAGES of Cross Validation...")
-    indices = np.arange(len(cross_validation_average))
-    scores_acc = []
-    scores_f1 = []
-    model_names = []
-    for model in cross_validation_average:
-        scores_acc.append(cross_validation_average[model][0]) 
-        scores_f1.append(cross_validation_average[model][1])
-        model_names.append(model)
-             
-    fig, ax1 = plt.subplots(figsize=(15, 8))
-    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
-    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
-
-    p1 = ax1.bar(indices + 0.35, scores_acc, align="center", width=0.35, label="Accuracy (%)", color="navy")    
-    p2 = ax1.bar(indices, scores_f1, align="center", width=0.35, label="Accuracy (%)", color="cornflowerblue")
-
-    ax1.set_title(dataset_name + " - Averages across " + str(k) + "-fold Cross Validation")
-    ax1.set_ylim([0, 1])
-    ax1.yaxis.set_major_locator(MaxNLocator(11))
-    ax1.yaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
-    ax1.set_ylabel("Performance")    
-    ax1.legend((p1[0], p2[0]), ("Accuracy", "F1-score"))
-
-    ax1.set_xticks(indices + 0.35 / 2)
-    ax1.set_xticklabels(model_names)
-
-    # Rotates labels and aligns them horizontally to left 
-    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=-45, ha="left", rotation_mode="anchor")
-
-    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
-    fig.tight_layout()
-
-    plt.show()
-    print()
 
 
 ### START

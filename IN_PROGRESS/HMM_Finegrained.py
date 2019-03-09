@@ -1,6 +1,6 @@
-''' 
+""" 
 Sentiment Analysis: (mainly Supervised) Text Classification using Hidden Markov Models
-'''
+"""
 
 import pandas as pd
 
@@ -8,7 +8,7 @@ import pandas as pd
 dataset_name = "Finegrained Sentiment Dataset"
 random_state = 22
 
-# 1. Load the Dataset
+# 1. Dataset dependent loading
 data = ["" for i in range(294)]
 sequences = [[] for i in range(294)]
 labels = ["" for i in range(294)]

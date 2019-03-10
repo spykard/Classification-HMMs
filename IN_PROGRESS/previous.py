@@ -47,26 +47,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                     and one could argue that the model doesn't learn anything about transitions between hidden states, it still appears to learn transitions fine '''
 
 
-    ### Supervised Training
-    # In this case we need to find out which State corresponds to each label (pos/neg/neu) before training  
-
-    ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
-    print()
-    if silent_enable != 1:
-        for x in range(0, len(documentSentiments)):
-            print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
-    print("Indexes:", tuple(zip(documentSentiments, state_names)))
-    ###
-
-    ### Plot the Hidden Markov Model Graph
-    if graph_print_enable == 1:
-        fig, ax1 = plt.subplots()
-        fig.canvas.set_window_title("Hidden Markov Model Graph")
-        ax1.set_title(str(n_order) + "-th Order")
-        hmm_leanfrominput_supervised.plot()
-        plt.show()
-    ###
-
     ### Supervised Prediction (Testing) - Uses either Viterbi or Maximum a posteriori. Ensembling cannot be used with Viterbi predictions.
     predicted = list()
 

@@ -49,6 +49,7 @@ class AdvancedHMM:
                                                     # Accuracy: [], 
                                                     # Metrics_String: []], 
                                                     # Time_Complexity: []}
+        self.cross_val_prediction_matrix = []       # The final predictions for all the folds of cross validation
 
     def clean_up(self):
         """
@@ -192,7 +193,8 @@ class AdvancedHMM:
     def build(self, architecture, model, framework, k_fold, 
               state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False, 
               n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
-              pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1):
+              pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,
+              pome_algorithm_t="map"):
         """
         The main function of the framework. Execution starts from here.
 
@@ -218,9 +220,11 @@ class AdvancedHMM:
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.  
 
-                pome_algorithm: refers to a specific setting for the Pomegranate training, can be either "baum-welch", "viterbi" or "labeled", 
-                pome_verbose: refers to a specific setting for the Pomegranate training, can be either True or False.
-                pome_njobs: refers to a specific setting for the Pomegranate training, a value different than 1 enables parallelization.
+                pome_algorithm: refers to a setting for the Pomegranate training, can be either "baum-welch", "viterbi" or "labeled". 
+                pome_verbose: refers to a setting for the Pomegranate training, can be either True or False.
+                pome_njobs: refers to a setting for the Pomegranate training, a value different than 1 enables parallelization.
+
+                pome_algorithm_t: refers to a setting for the prediction phase, can be either "map" or "viterbi", 
         """
         self.selected_architecture = architecture
         self.selected_model = model
@@ -238,8 +242,10 @@ class AdvancedHMM:
         self.convert_to_ngrams(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
         self.create_state_to_label_mapping()
 
-        # Train
+        # Training Phase
         self.train(pome_algorithm, pome_verbose, pome_njobs)
+        # Prediction Phase
+        self.predict(pome_algorithm_t)
 
     def train(self, pome_algorithm, pome_verbose, pome_njobs):
         """
@@ -267,15 +273,32 @@ class AdvancedHMM:
                                                        verbose=pome_verbose, n_jobs=pome_njobs)
 
         if pome_algorithm == "baum-welch":
-            print("Training completed using the Baum-Welch algorithm. Since this algorithm is meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
+            print("Training completed using the Baum-Welch algorithm. Since this algorithm is originally meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
         elif pome_algorithm == "viterbi":
-            print("Training completed using the Viterbi algorithm. However, it is worth noting that this algorithm is meant for un/semi-supervised scenarios.")   
+            print("Training completed using the Viterbi algorithm. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
         elif pome_algorithm == "labeled":
             print("Training completed using the Labeled algorithm.")         
 
         self.trained_model = pome_HMM
         self.create_observation_to_label_mapping() 
         self.pome_object_to_matrices() 
+
+    def predict(self, pome_algorithm_t):
+        """
+        Perform predictions on new sequences.
+        """
+        if self.selected_framework == 'pome':
+            if pome_algorithm_t not in ["map", "viterbi"]:
+                raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'")
+        else:
+            raise ValueError("TODO") 
+
+            if pome_algorithm_t == "map":
+
+
+                print("Training completed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.") 
+            elif pome_algorithm_t == "viterbi":
+                print("Training completed using the Viterbi algorithm. Returns a set of exact predictions not probabilities.") 
 
     def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
@@ -503,9 +526,19 @@ observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1",
 labels_series = pd.Series(labels)
 observations_series = pd.Series(observations)
 hmm = AdvancedHMM()
+# General Settings
+# Data
+# Text Scenario
+# n-gram Settings
+# 1st Framework Training Settings
+# 1st Framework Prediction Settings
+
 hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1,   \
           state_labels_pandas=labels_series, observations_pandas=observations_series, \
           text_instead_of_sequences=[], text_enable=False,                            \
           n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
-          pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1                  \
+          pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
+          pome_algorithm_t="map"                                                      \
           )
+
+# self.cross_val_prediction_matrix

@@ -122,11 +122,11 @@ class AdvancedHMM:
         # only the first and last row of the data are used in this process
         if self.text_enable == False:         
             if (len(set(self.state_labels[0])) == 1) and (len(set(self.state_labels[-1]))):  # General Mixture Model Detection
-                print("(Supervised Training Suggestion): The labels seem to remain constant, consider using the General Mixture Model.")
+                print("(Supervised Training Autodetect): The labels seem to remain constant, consider using the General Mixture Model.")
             elif (self.state_labels[0] == self.observations[0]) and (self.state_labels[-1] == self.observations[-1]):  # State-emission Model Detection
-                print("(Supervised Training Suggestion): The states seem to emit themselves as observations, consider using the State-emission HMM.")
+                print("(Supervised Training Autodetect): The states seem to emit themselves as observations, consider using the State-emission HMM.")
             else:
-                print("(Supervised Training Suggestion): Consider using Architecture B with any HMM.")
+                print("(Supervised Training Autodetect): This appears to be a generic task, consider using Architecture B with any HMM.")
 
             print("Selected Architecture:", self.selected_architecture, "| Selected Model:", self.selected_model, "\n")
         else:
@@ -134,7 +134,7 @@ class AdvancedHMM:
 
     def check_shape(self, container_1, container_2):
         """
-        Given two containers, checks whether their contents are of the exact same shape
+        Given two containers, checks whether their contents are of exact same shape
         """
         if len(container_1) != len(container_2):
             return False
@@ -229,13 +229,14 @@ class AdvancedHMM:
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
         """
+        if n < 2:
+            print("N-gram conversion is disabled.")
+            return None
         if target not in ["states", "obs", "both"]:
             raise ValueError("invalid selection of target for the n-gram process.")
         if self.selected_framework != "pome":
             if target != "obs":
                 raise ValueError("you should be attempting to perform n-grams on the states only when using the 'pome' framework.")   
-        if n < 2:
-            return None
 
         if (len(self.state_labels) > 0) and (len(self.observations) > 0):
             ngrams_temp = []
@@ -258,30 +259,47 @@ class AdvancedHMM:
                 ngrams_temp.append(current_seq)  
 
             self.observations = ngrams_temp
-            print(self.observations) 
-            print("N-gram conversion to", n, "\b-gram was sucessful. Container type also changed from ndarray<list> to list<list>")
+            print("N-gram conversion to", n, "\b-gram was sucessful. Container type was also changed from ndarray<list> to list<list>.")
         else:
             raise ValueError("n-gram conversion failed, one or both of the state/observations containers appear to be empty.")          
 
         if self.check_shape(self.state_labels, self.observations) == False:
-            print("-Warning: one of the containers is now shorter than the other, consider using the flags or using 'both' as target")
-
-            print("--")
-
-            raise ValueError("n-gram conversion was successful, but one of the containers is now shorter than the other.")          
+            print("--Warning: one of the containers is now shorter than the other on the y axis, consider using the flags or using 'both' as target.")
+            self._ngrams_balance_shape()
 
     def _ngrams_balance_shape(self):
         """
         Executed after the n-gram process is completed, if the state and observation containers of the class are not of the same exact shape.
-        (1) If a row is empty on one container, wipes it on the other. Caused by prev_flag=False
-        (2) If a row is shorter on one container, removes the first elements on the other. Caused by dummy_flag=False
+        (1) If a row is empty on one container, wipes it on the other. Caused by prev_flag=False.
+        (2) If a row is shorter on one container, removes the first elements on the other. Caused by dummy_flag=False. This is probably not the best idea, but we are all consenting adults here.
         """
         count_wipe = 0
         count_shorten = 0
         for i in range(self.length):
+            length_1 = len(self.state_labels[i])
+            length_2 = len(self.observations[i])
 
+            if length_1 == 0:
+                self.observations[i] = []
+                count_wipe += 1
+            elif length_2 == 0:
+                self.state_labels[i] = []
+                count_wipe += 1
+            if length_1 > length_2:
+                self.state_labels[i] = self.state_labels[i][-length_2:]  # Remove the first elements of the list
+                count_shorten += 1
+            elif length_2 > length_1:
+                self.observations[i] = self.observations[i][-length_1:]  # Remove the first elements of the list
+                count_shorten += 1    
 
-
+        if count_wipe > 0:
+            print("---Wiped", count_wipe, "rows/instances. Caused by prev_flag=False.")
+        if count_shorten > 0:
+            print("---Shorterned", count_shorten, "rows/instances. Caused by dummy_flag=False. This is probably not the best idea, but we are all consenting adults here.")
+        if self.check_shape(self.state_labels, self.observations) == False:
+            raise ValueError("one of the containers is still shorter than the other on the y axis.")               
+        else:
+            print("--Containers are now of exact same shape")
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -401,4 +419,4 @@ hmm = AdvancedHMM()
 hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1,   \
           state_labels_pandas=labels_series, observations_pandas=observations_series, \
           text_instead_of_sequences=[], text_enable=False,                            \
-          n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True)
+          n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False)

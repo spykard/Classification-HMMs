@@ -17,9 +17,12 @@
 
 For anything that isn't algorithm='labeled': just use the state_names parameter to avoid some bugs, e.g.1. state_labels:`["bbb", "aaa", "bbb"]` then state_names=`["aaa", "bbb"]`. EVEN better, convert all state labels to s<sub>0</sub>,s<sub>1</sub>...s<sub>n</sub>, e.g.2. state_labels:`["s2", "s1", "s0"]` then state_names=`["s0", "s1", "s2"]`.
 
-For algorithm='labeled': extremely bad implementation riddled with bugs, see [.py](/Other%20Concepts/Weird%20Labeled%20training%20Bug.py). Instead of taking into consideration the current observation, it takes the previous observation for each time step. The '_labeled_summarize' function is a mess. In detail: (1) if the label names are "s0", "s1" etc. even if 'state_names' parameter is not used, the bug happens, (2) if the label names are anything else and 'state_names' is used to assist the function, the bug happens, (3) however if the label names are anything alse and 'state_names' is not used, the bug doesn't happen. The bug also doesn't happen in the opposite scenario, where "s0" etc. are used, but irelevant 'state_names' are also given.
+For algorithm='labeled': extremely bad implementation riddled with bugs, see [.py](/Other%20Concepts/Weird%20Labeled%20training%20Bug.py). The '_labeled_summarize' function is a mess.  
+Observation Probabilities Bug: Instead of taking into consideration the current observation, it takes the previous observation for each time step. In detail: (1) if the label names are "s0", "s1" etc. even if 'state_names' parameter is not used, the bug happens, (2) if the label names are anything else and 'state_names' is used to assist the function, the bug happens, (3) however if the label names are anything alse and 'state_names' is not used, the bug doesn't happen. The bug also doesn't happen in the opposite scenario, where "s0" etc. are used, but irelevant 'state_names' are also given.  
+State transition Probabilities Bug: All the transitions end up being the exact same (the initial distribution). This bug happens when the previous one doesn't; it happens on (3) and doesn't on (1) and (2).  
+Initial transition Probabilies Bug: All the transitions end up being the exact same (the initial distribution).  
 
-Our best bet is (3), which is to not use the state_names parameter and not use "s0" etc. as labels on the input data. This way we "bypass" the bug; ignore the errors that come up from the following piece of code.
+At first I thought our best bet was (3), but we stil have the last 2 bugs. Just don't use "labeled" and use "baum-welch" with 'max_iterations' set to 1.
 
 ```python
   ...

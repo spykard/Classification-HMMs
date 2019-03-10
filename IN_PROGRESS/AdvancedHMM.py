@@ -10,7 +10,7 @@ import pomegranate as pome
 import time  # Pomegranate has it's own 'time' and can cause conflicts
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from nltk import ngrams
+from nltk import ngrams as ngramsgenerator
 
 class AdvancedHMM:
     """
@@ -34,6 +34,8 @@ class AdvancedHMM:
         self.selected_architecture = ""
         self.models = ["General Mixture Model", "State-emission HMM", "Classic HMM"]
         self.selected_model = ""
+        self.frameworks = ["pome", "hohmm"]
+        self.selected_framework = ""
 
         self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.multivariate = False
@@ -113,6 +115,8 @@ class AdvancedHMM:
             raise ValueError("selected architecture does not exist.")
         if self.selected_model not in self.models:
             raise ValueError("selected model does not exist.")
+        if self.selected_framework not in self.frameworks:
+            raise ValueError("selected framework does not exist.")            
 
         # Attempt to automatically detect some HMMs that are a good fit for the input data
         # only the first and last row of the data are used in this process
@@ -150,23 +154,35 @@ class AdvancedHMM:
         #     observation_mapping.update(set(obs_lst))
 
 
-    def build(self, architecture, model, k_fold, state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False):
+    def build(self, architecture, model, framework, k_fold, state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False, n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False):
         """
         The main function of the framework. Execution starts from here.
 
         Parameters:
-                architecture: string denoting a choice by the user
-                model: string denoting a choice by the user
-                k_fold: the number of folds to be used in the cross-validation
-                state_labels_pandas: pandas Series that contains the data that will be used as labels for the states
-                observations_pandas: pandas Series that contains the data that will be used as observations
+                architecture: string denoting a choice by the user.
+                model: string denoting a choice by the user.
+                framework: string denoting a choice by the user.
+                k_fold: the number of folds to be used in the cross-validation.
+
+                state_labels_pandas: pandas Series that contains the data that will be used as labels for the states.
+                observations_pandas: pandas Series that contains the data that will be used as observations.
 
                 text_instead_of_sequences: a completely different operating mode, where the user inputs text documents; 
-                                           in this scenario the first two arguments don't have to be used
-                text_enable: enables the use of the 'text_instead_of_sequences' parameter
+                                           in this scenario the first two arguments don't have to be used.
+                text_enable: enables the use of the 'text_instead_of_sequences' parameter.
+
+                n_grams: n-gram order
+                n_target: a string that sets the container to be used, "states", "obs" or "both".
+                n_prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
+                           'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
+                           'False' disables it and returns an empty list for such cases.
+                n_dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
+                            e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
+                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.                
         """
         self.selected_architecture = architecture
         self.selected_model = model
+        self.selected_framework = framework        
         self.k_fold = k_fold
 
         self.check_input_type(state_labels_pandas, observations_pandas, text_instead_of_sequences, text_enable)
@@ -177,8 +193,7 @@ class AdvancedHMM:
         else:
             self.length = len(self.text_data)
 
-        # if n_grams > 1:
-        self.convert_to_ngrams(n=2, prev_flag=False, dummy_flag=True)
+        self.convert_to_ngrams(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
 
         # Train
 
@@ -200,12 +215,13 @@ class AdvancedHMM:
             plt.show()
         ###
 
-    def convert_to_ngrams(self, n, prev_flag, dummy_flag):
+    def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
-        Convert the contents of the state and observation containers to an n-gram representation.
+        Convert the contents of containers to an n-gram representation.
 
         Parameters:
                 n: n-gram order
+                target: a string that sets the container to be used, "states", "obs" or "both".
                 prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
                            'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
                            'False' disables it and returns an empty list for such cases.
@@ -213,8 +229,13 @@ class AdvancedHMM:
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
         """
-
-        # IF FRAMEWORK = HOHMM, error na min afinei na finoun ngrams gia states
+        if target not in ["states", "obs", "both"]:
+            raise ValueError("invalid selection of target for the n-gram process.")
+        if self.selected_framework != "pome":
+            if target != "obs":
+                raise ValueError("you should be attempting to perform n-grams on the states only when using the 'pome' framework.")   
+        if n < 2:
+            return None
 
         if (len(self.state_labels) > 0) and (len(self.observations) > 0):
             ngrams_temp = []
@@ -224,26 +245,43 @@ class AdvancedHMM:
                     if dummy_flag == True:
                         for i in range(n-1):  # Append one or more dummies at the start of the sequence
                             seq.insert(i, "dummy"+str(i+1))
-                    for grams in ngrams(seq, n):
+                    for grams in ngramsgenerator(seq, n):
                         current_seq.append("".join(grams))  
 
                 elif prev_flag == True:
                     if dummy_flag == True:
                         for i in range(len(seq)-1):
                             seq.insert(i, "dummy"+str(i+1))
-                    for grams in ngrams(seq, len(seq)):
+                    for grams in ngramsgenerator(seq, len(seq)):
                         current_seq.append("".join(grams))                    
 
                 ngrams_temp.append(current_seq)  
 
             self.observations = ngrams_temp
             print(self.observations) 
-            print("Observations converted to", n, "\b-gram. Container type also changed from ndarray<list> to list<list>")
+            print("N-gram conversion to", n, "\b-gram was sucessful. Container type also changed from ndarray<list> to list<list>")
         else:
-            raise ValueError("n-gram conversion failed, one or both of the input containers appear to be empty.")          
+            raise ValueError("n-gram conversion failed, one or both of the state/observations containers appear to be empty.")          
 
         if self.check_shape(self.state_labels, self.observations) == False:
+            print("-Warning: one of the containers is now shorter than the other, consider using the flags or using 'both' as target")
+
+            print("--")
+
             raise ValueError("n-gram conversion was successful, but one of the containers is now shorter than the other.")          
+
+    def _ngrams_balance_shape(self):
+        """
+        Executed after the n-gram process is completed, if the state and observation containers of the class are not of the same exact shape.
+        (1) If a row is empty on one container, wipes it on the other. Caused by prev_flag=False
+        (2) If a row is shorter on one container, removes the first elements on the other. Caused by dummy_flag=False
+        """
+        count_wipe = 0
+        count_shorten = 0
+        for i in range(self.length):
+
+
+
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -360,4 +398,7 @@ labels_series = pd.Series(labels)
 observations_series = pd.Series(observations)
 hmm = AdvancedHMM()
 # text = pd.Series(["omegalol", "omeg"])
-hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, text_instead_of_sequences=[], text_enable=False)
+hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1,   \
+          state_labels_pandas=labels_series, observations_pandas=observations_series, \
+          text_instead_of_sequences=[], text_enable=False,                            \
+          n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True)

@@ -40,6 +40,7 @@ class AdvancedHMM:
         self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.multivariate = False
         self.state_to_label_mapping = {}
+        self.observations_to_label_mapping = {}
 
         # Evaluation
         self.k_fold = 0
@@ -116,7 +117,7 @@ class AdvancedHMM:
         if self.selected_model not in self.models:
             raise ValueError("selected model does not exist.")
         if self.selected_framework not in self.frameworks:
-            raise ValueError("selected framework does not exist.")            
+            raise ValueError("selected framework does not exist.") 
 
         # Attempt to automatically detect some HMMs that are a good fit for the input data
         # only the first and last row of the data are used in this process
@@ -143,18 +144,37 @@ class AdvancedHMM:
                 return False
         return True
 
-    def set_mapping(self):
+    def create_state_to_label_mapping(self):
         """
-        Depends on the framework that is being used
+        Maps the strings of states (e.g. 'pos') from the input sequence, to indices 1,2,...n that correspond to the states/matrix that the training produces.
+        The mapping depends on the framework that was chosen, see README for more information.
         """
-        print("inprogress")
-        # self.state_to_label_mapping
-        # observation_mapping = set()
-        # for obs_lst in pos_data_corresponding_to_labels:
-        #     observation_mapping.update(set(obs_lst))
+        if (len(self.state_labels) > 0): 
+            unique_states = set()       
+            for seq in self.state_labels:
+                unique_states.update(set(seq))
+        else:
+            raise ValueError("state index to label mapping failed, the state container appears to be empty.")          
+        if self.selected_framework == "pome":
+            for i, unique_s in enumerate(sorted(list(unique_states))):
+                self.state_to_label_mapping[unique_s] = i 
+            print("State to label mapping completed using sorting ('pome'-based).") 
+        else:
+            raise ValueError("TODO")    
+
+    def create_observations_to_label_mapping(self):
+        """
+        Maps the strings of observations (e.g. 'good') from the input sequence, to indices 1,2,...n that correspond to the matrix that the training produces.
+        The mapping depends on the framework that was chosen, see README for more information.
+        """
+        if (len(self.state_labels) > 0): 
+            print('hi')
 
 
-    def build(self, architecture, model, framework, k_fold, state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False, n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False):
+    def build(self, architecture, model, framework, k_fold, 
+              state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False, 
+              n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
+              pome_algorithm="labeled", pome_verbose=False, pome_njobs=1):
         """
         The main function of the framework. Execution starts from here.
 
@@ -178,7 +198,11 @@ class AdvancedHMM:
                            'False' disables it and returns an empty list for such cases.
                 n_dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
-                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.                
+                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.  
+
+                pome_algorithm: refers to a specific setting for the Pomegranate training, can be either "labeled", "baum-welch" or "viterbi".
+                pome_verbose: refers to a specific setting for the Pomegranate training, can be either True or False.
+                pome_njobs: refers to a specific setting for the Pomegranate training, a value different than 1 enables parallelization.
         """
         self.selected_architecture = architecture
         self.selected_model = model
@@ -194,26 +218,44 @@ class AdvancedHMM:
             self.length = len(self.text_data)
 
         self.convert_to_ngrams(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
+        self.create_state_to_label_mapping()
 
         # Train
+        self.train(pome_algorithm, pome_verbose, pome_njobs)
 
-
-    def train(self):
+    def train(self, pome_algorithm, pome_verbose, pome_njobs):
+        """
+        Train a set of models using k-fold cross-validation
+        """
         time_counter = time.time()
 
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False)
-        if verbose == True:
-            for x in range(0, len(documentSentiments)):
-                print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
-        print("Indexes:", tuple(zip(documentSentiments, state_names)))
-        ### Plot the Hidden Markov Model Graph
-        if graph_print_enable == 1:
-            fig, ax1 = plt.subplots()
-            fig.canvas.set_window_title("Hidden Markov Model Graph")
-            ax1.set_title(str(n_order) + "-th Order")
-            hmm_leanfrominput_supervised.plot()
-            plt.show()
-        ###
+        if self.selected_framework == 'pome':
+            if pome_algorithm not in ["labeled", "baum-welch", "viterbi"]:
+                raise ValueError("please set the 'pome_algorithm' parameter to one of the following: 'labeled', 'baum-welch', 'viterbi'")
+            if pome_njobs != 1:
+                print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
+            self._train_pome(pome_algorithm, pome_verbose, pome_njobs)
+        else:
+            raise ValueError("TODO")  
+
+    def _train_pome(self, pome_algorithm, pome_verbose, pome_njobs):
+        """
+        Train a Hidden Markov Model using the Pomegranate framework as a baseline.
+        """
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.state_to_label_mapping), X=self.observations, labels=self.state_labels, \
+                                                       algorithm=pome_algorithm, end_state=False, verbose=pome_verbose, n_jobs=pome_njobs)
+                
+        if pome_algorithm == "labeled":
+            print("Training completed using simple counting (Labeled algorithm). Ignore the errors above.")
+        elif pome_algorithm == "baum-welch":
+            print("Training completed using the Baum-Welch algorithm, which however is meant for un/semi-supervised scenarios.") 
+        elif pome_algorithm == "viterbi":
+            print("Training completed using the Viterbi algorithm, which however is meant for un/semi-supervised scenarios.")            
+
+        for x in range(len(self.state_to_label_mapping)):
+            print("State", pome_HMM.states[x].name, pome_HMM.states[x].distribution.parameters)
+
+        self.create_observations_to_label_mapping(pome_HMM.states)    
 
     def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
@@ -385,6 +427,16 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 
     plt.show()
 
+def pome_graph_plot(pomegranate_model, hmm_order):
+    """
+    Given a trained Pomegranate model, plots the Hidden Markov Model Graph
+    """
+    fig, ax1 = plt.subplots()
+    fig.canvas.set_window_title("Hidden Markov Model Graph")
+    ax1.set_title(str(hmm_order) + "-th Order")
+    pomegranate_model.plot()
+    plt.show()
+
 def general_mixture_model_label_generator(sequences, individual_labels):
     """
     Given a pandas Series of sequences and one label per sequence, 'multiplies' the label in order to have
@@ -410,8 +462,8 @@ def general_mixture_model_label_generator(sequences, individual_labels):
 # hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, )
 
 
-labels = [["dummy1", "pos", "pos", "pos"], ["dummy1", "pos"]]
-observations = [["1", "2", "3", "4"], ["1", "1"]]
+labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
+observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
 labels_series = pd.Series(labels)
 observations_series = pd.Series(observations)
 hmm = AdvancedHMM()
@@ -419,4 +471,6 @@ hmm = AdvancedHMM()
 hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1,   \
           state_labels_pandas=labels_series, observations_pandas=observations_series, \
           text_instead_of_sequences=[], text_enable=False,                            \
-          n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False)
+          n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
+          pome_algorithm="labeled", pome_verbose=False, pome_njobs=1                  \
+          )

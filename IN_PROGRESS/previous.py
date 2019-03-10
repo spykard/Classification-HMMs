@@ -49,19 +49,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     ### Supervised Training
     # In this case we need to find out which State corresponds to each label (pos/neg/neu) before training  
-    labels_supervised = list()
-    for i, x in enumerate(labels_train):
-        getlength = len(data_train_transformed[i])
-        state_name = "s" + str(documentSentiments.index(x))
-        labels_supervised.append([state_name] * getlength)
-
-    state_names = list()
-    for i in range(0, len(documentSentiments)):
-        state_names.append("s" + str(i))
-
-    hmm_leanfrominput_supervised = HiddenMarkovModel.from_samples(DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False, name="Finegrained HMM")
-    # Note: Algorithm used is Baum-Welch
-    ###
 
     ### Print information about the Hidden Markov Model such as the probability matrix and the hidden states
     print()

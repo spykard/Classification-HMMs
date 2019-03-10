@@ -3,6 +3,7 @@ Sentiment Analysis: (mainly Supervised) Text Classification using Hidden Markov 
 """
 
 import pandas as pd
+import AdvancedHMM
 
 
 dataset_name = "Finegrained Sentiment Dataset"
@@ -58,7 +59,8 @@ if False:
 # MAIN
 if True:
     # create Model
-    print("lol")
+    general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
+    print(general_mixture_model_labels)
 elif False:
     # create Model
     print("lel")

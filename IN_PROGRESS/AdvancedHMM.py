@@ -1,5 +1,5 @@
 """ 
-AdvancedHMM: A framework that implements (mostly supervised) state-of-the-art Hidden Markov Models for classfication tasks.
+AdvancedHMM: A framework that implements state-of-the-art Hidden Markov Models, mostly for supervised/classification tasks.
 """
 
 import numpy as np
@@ -139,6 +139,17 @@ class AdvancedHMM:
                 return False
         return True
 
+    def set_mapping(self):
+        """
+        Depends on the framework that is being used
+        """
+        print("inprogress")
+        # self.state_to_label_mapping
+        # observation_mapping = set()
+        # for obs_lst in pos_data_corresponding_to_labels:
+        #     observation_mapping.update(set(obs_lst))
+
+
     def build(self, architecture, model, k_fold, state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False):
         """
         The main function of the framework. Execution starts from here.
@@ -189,13 +200,6 @@ class AdvancedHMM:
             plt.show()
         ###
 
-    def _general_mixture_model(self):
-        labels_supervised = list()
-        for i, x in enumerate(labels_train):
-            getlength = len(data_train_transformed[i])
-            state_name = "s" + str(documentSentiments.index(x))
-            labels_supervised.append([state_name] * getlength)
-
     def convert_to_ngrams(self, n, prev_flag, dummy_flag):
         """
         Convert the contents of the state and observation containers to an n-gram representation.
@@ -203,21 +207,30 @@ class AdvancedHMM:
         Parameters:
                 n: n-gram order
                 prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
-                           'True' enables the calculation those shorter n-grams, leading to more unique states/observations.
+                           'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
                            'False' disables it and returns an empty list for such cases.
                 dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
         """
+
+        # IF FRAMEWORK = HOHMM, error na min afinei na finoun ngrams gia states
+
         if (len(self.state_labels) > 0) and (len(self.observations) > 0):
             ngrams_temp = []
             for seq in self.observations:
                 current_seq = list()
                 if len(seq) >= n:
-
+                    if dummy_flag == True:
+                        for i in range(n-1):  # Append one or more dummies at the start of the sequence
+                            seq.insert(i, "dummy"+str(i+1))
                     for grams in ngrams(seq, n):
-                        current_seq.append("".join(grams))
+                        current_seq.append("".join(grams))  
+
                 elif prev_flag == True:
+                    if dummy_flag == True:
+                        for i in range(len(seq)-1):
+                            seq.insert(i, "dummy"+str(i+1))
                     for grams in ngrams(seq, len(seq)):
                         current_seq.append("".join(grams))                    
 
@@ -230,7 +243,7 @@ class AdvancedHMM:
             raise ValueError("n-gram conversion failed, one or both of the input containers appear to be empty.")          
 
         if self.check_shape(self.state_labels, self.observations) == False:
-            raise ValueError("n-gram conversion was successful, but one of our containers is now shorter than the other.")          
+            raise ValueError("n-gram conversion was successful, but one of the containers is now shorter than the other.")          
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -316,6 +329,22 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 
     plt.show()
 
+def general_mixture_model_label_generator(sequences, individual_labels):
+    """
+    Given a pandas Series of sequences and one label per sequence, 'multiplies' the label in order to have
+    a single constant label per sequence and outputs it as a pandas Series
+    """
+    sequences = sequences.values
+    individual_labels = individual_labels.values
+
+    transformed_labels = list()
+    for i, seq in enumerate(sequences):
+        #getlength = len(data_train_transformed[i])
+        #state_name = "s" + str(documentSentiments.index(x))
+        transformed_labels.append([individual_labels[i]] * len(seq))
+
+    return(pd.Series(transformed_labels))
+
 
 # labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
 # observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
@@ -325,8 +354,8 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 # hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, )
 
 
-labels = [["dummy1", "pos", "pos", "pos"], ["dummy1", "pos", "pos", "pos"]]
-observations = [["dummy1", "s2", "s3", "s4"], ["s1", "s1", "s1", "s1"]]
+labels = [["dummy1", "pos", "pos", "pos"], ["dummy1", "pos"]]
+observations = [["1", "2", "3", "4"], ["1", "1"]]
 labels_series = pd.Series(labels)
 observations_series = pd.Series(observations)
 hmm = AdvancedHMM()

@@ -46,35 +46,6 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                     Mathematical Foundation: Even though the hidden state labels are constrained to remain the same across each sequence/instance
                     and one could argue that the model doesn't learn anything about transitions between hidden states, it still appears to learn transitions fine '''
 
-    time_counter = my_time.time()
-
-    # The sequences are stored as a List in the Dataframe, time to transform them to the correct form
-    data_train_transformed = list() 
-    data_test_transformed = list()       
-    if n_order == 1:  # No need to do ngrams on 1st Order
-        data_train_transformed = data_train.tolist()
-        # Same
-        data_test_transformed = data_test.tolist()
-    # High-Order
-    else:
-        for x in data_train:
-            ngrams_temp = ngrams(x, n_order)
-            temp = list()
-            if len(x) >= n_order:
-                for grams in ngrams_temp:
-                    temp.append("".join(grams))
-
-            data_train_transformed.append(temp)   
-        # Same
-        for x in data_test:
-            ngrams_temp = ngrams(x, n_order)
-            temp = list()
-            if len(x) >= n_order:
-                for grams in ngrams_temp:
-                    temp.append("".join(grams))
-
-            data_test_transformed.append(temp)   
-
 
     ### Supervised Training
     # In this case we need to find out which State corresponds to each label (pos/neg/neu) before training  

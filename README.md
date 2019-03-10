@@ -50,7 +50,9 @@ Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setu
 
 ## Coding Notes - HOHMM
 
-The states in HOHMM are mapped to the input state labels in the order that it encountered them.
+* The states in HOHMM are mapped to the input state labels in the order that it encountered them.
+
+* I suspect that the reason it doesn't use dummy states because it operates in the following way: for order _n_ ignore the first _n_ elements of the sequence and instead use them for the initial probability matrix, e.g. for 3rd-order ignore the first 3 "pos"/"neg" or whatever they are and built the following initial matrix: `['pos', 'neg'] ['posneg, 'pospos' ...] ['posposneg', 'pospospos' ...]`, the traditional matrix is on the 3rd list while the other 2 are reserved for the elements it ignores at the start of the sequqence.
 
 [Documentation](https://simple-hohmm.readthedocs.io/en/latest/)
 

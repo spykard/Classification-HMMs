@@ -50,7 +50,7 @@ Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setu
 
 ## Coding Notes - HOHMM
 
-The states in HOHMM, are mapped to the input state labels in the order that it encountered them.
+The states in HOHMM are mapped to the input state labels in the order that it encountered them.
 
 [Documentation](https://simple-hohmm.readthedocs.io/en/latest/)
 

@@ -6,7 +6,7 @@
 
 ## Coding Notes - Pomegranate
 
-* The states on Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input states in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_.
+* The states in Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input state labels in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_.
 
 ```python
   ...
@@ -49,6 +49,8 @@ Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setu
 [Call Matlab Functions from Python](https://www.mathworks.com/help/matlab/matlab_external/call-matlab-functions-from-python.html)
 
 ## Coding Notes - HOHMM
+
+The states in HOHMM, are mapped to the input state labels in the order that it encountered them.
 
 [Documentation](https://simple-hohmm.readthedocs.io/en/latest/)
 

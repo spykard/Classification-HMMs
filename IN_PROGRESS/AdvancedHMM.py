@@ -6,9 +6,11 @@ import numpy as np
 import itertools
 from collections import defaultdict
 import pandas as pd
+import pomegranate as pome
+import time  # Pomegranate has it's own 'time' and can cause conflicts
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-
+from nltk import ngrams
 
 class AdvancedHMM:
     """
@@ -122,13 +124,24 @@ class AdvancedHMM:
             else:
                 print("(Supervised Training Suggestion): Consider using Architecture B with any HMM.")
 
-            print("Selected Architecture:", self.selected_architecture, "| Selected Model:", self.selected_model)
+            print("Selected Architecture:", self.selected_architecture, "| Selected Model:", self.selected_model, "\n")
         else:
             print("You have opted to use additional text_data, this will require some kind of custom implementation from a scientific paper. Selected Architecture:", self.selected_architecture, "| Selected Model:", self.selected_model)
 
+    def check_shape(self, container_1, container_2):
+        """
+        Given two containers, checks whether their contents are of the exact same shape
+        """
+        if len(container_1) != len(container_2):
+            return False
+        for i in range(len(container_1)):
+            if len(container_1[i]) != len(container_2[i]):
+                return False
+        return True
+
     def build(self, architecture, model, k_fold, state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False):
         """
-        The main function of the framework. Execution starts from here
+        The main function of the framework. Execution starts from here.
 
         Parameters:
                 architecture: string denoting a choice by the user
@@ -143,12 +156,81 @@ class AdvancedHMM:
         """
         self.selected_architecture = architecture
         self.selected_model = model
+        self.k_fold = k_fold
 
         self.check_input_type(state_labels_pandas, observations_pandas, text_instead_of_sequences, text_enable)
         self.verify_and_autodetect()
 
-        self.length = len(self.observations)
+        if text_enable == False:
+            self.length = len(self.observations)
+        else:
+            self.length = len(self.text_data)
 
+        # if n_grams > 1:
+        self.convert_to_ngrams(n=2, prev_flag=False, dummy_flag=True)
+
+        # Train
+
+
+    def train(self):
+        time_counter = time.time()
+
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, len(documentSentiments), X=data_train_transformed, labels=labels_supervised, state_names=state_names, n_jobs=n_jobs, verbose=False)
+        if verbose == True:
+            for x in range(0, len(documentSentiments)):
+                print("State", hmm_leanfrominput_supervised.states[x].name, hmm_leanfrominput_supervised.states[x].distribution.parameters)
+        print("Indexes:", tuple(zip(documentSentiments, state_names)))
+        ### Plot the Hidden Markov Model Graph
+        if graph_print_enable == 1:
+            fig, ax1 = plt.subplots()
+            fig.canvas.set_window_title("Hidden Markov Model Graph")
+            ax1.set_title(str(n_order) + "-th Order")
+            hmm_leanfrominput_supervised.plot()
+            plt.show()
+        ###
+
+    def _general_mixture_model(self):
+        labels_supervised = list()
+        for i, x in enumerate(labels_train):
+            getlength = len(data_train_transformed[i])
+            state_name = "s" + str(documentSentiments.index(x))
+            labels_supervised.append([state_name] * getlength)
+
+    def convert_to_ngrams(self, n, prev_flag, dummy_flag):
+        """
+        Convert the contents of the state and observation containers to an n-gram representation.
+
+        Parameters:
+                n: n-gram order
+                prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
+                           'True' enables the calculation those shorter n-grams, leading to more unique states/observations.
+                           'False' disables it and returns an empty list for such cases.
+                dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
+                            e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
+                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
+        """
+        if (len(self.state_labels) > 0) and (len(self.observations) > 0):
+            ngrams_temp = []
+            for seq in self.observations:
+                current_seq = list()
+                if len(seq) >= n:
+
+                    for grams in ngrams(seq, n):
+                        current_seq.append("".join(grams))
+                elif prev_flag == True:
+                    for grams in ngrams(seq, len(seq)):
+                        current_seq.append("".join(grams))                    
+
+                ngrams_temp.append(current_seq)  
+
+            self.observations = ngrams_temp
+            print(self.observations) 
+            print("Observations converted to", n, "\b-gram. Container type also changed from ndarray<list> to list<list>")
+        else:
+            raise ValueError("n-gram conversion failed, one or both of the input containers appear to be empty.")          
+
+        if self.check_shape(self.state_labels, self.observations) == False:
+            raise ValueError("n-gram conversion was successful, but one of our containers is now shorter than the other.")          
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -243,12 +325,10 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 # hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, )
 
 
-labels = [["dummy1", "pos"], ["dummy1", "pos"]]
-observations = [["dummy1", "good"], ["dummy1", "good"]]
+labels = [["dummy1", "pos", "pos", "pos"], ["dummy1", "pos", "pos", "pos"]]
+observations = [["dummy1", "s2", "s3", "s4"], ["s1", "s1", "s1", "s1"]]
 labels_series = pd.Series(labels)
 observations_series = pd.Series(observations)
 hmm = AdvancedHMM()
 # text = pd.Series(["omegalol", "omeg"])
 hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, text_instead_of_sequences=[], text_enable=False)
-
-

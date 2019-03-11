@@ -174,11 +174,11 @@ class HMM_Framework:
             print("Since you selected architecture 'A', you are probably not utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
             element_1 = set(self.golden_truth)
             element_2 = self.unique_states
-            if element_1 != element_2:
-                raise ValueError("you have selected architecture 'A' but the number of unique states is " + str(len(element_2)) + " while the number of unique truth labels is " + str(len(element_1)) + "; consider using architecture 'B'.")                  
+            if element_1 != element_2 and self.selected_model == "State-emission HMM":
+                raise ValueError("you have selected architecture 'A' and 'State-emission HMM' but the number of unique states is " + str(len(element_2)) + " while the number of unique truth labels is " + str(len(element_1)) + "; consider using architecture 'B'.")                  
         elif self.selected_architecture == "B":
             if architecture_b_algorithm == "forward":
-                print("You have selected architecture 'B', the pure classification-based approach!. The 'forward' algorithm has some shortcomings which will be prined at the end, in this supervised task. Consider using 'formula'.")
+                print("You have selected architecture 'B', the pure classification-based approach!. The 'forward' algorithm has some shortcomings which will be printed at the end, in this supervised task. Consider using 'formula'.")
             elif architecture_b_algorithm == "formula":
                 print("You have selected architecture 'B', the pure classification-based approach!. The 'formula' algorithm is the ideal choice for supervised tasks.")
 
@@ -493,6 +493,7 @@ class HMM_Framework:
                                                                                                                               # Normalization already performed by Pomegranate
                     if _current_temp_log_proba == 0.0:                  # Maybe an out-of-vocabulary new observation, maybe a smarter solution would be normalized(log_of_e(1.0 / total_states))
                         print("--Warning: Unstable Prediction")         # It is unstable because it can be both out-of-vocabulary and perfect match, can't be sure.
+                        count_new_oov_local += 1
                         temp_predict_log_proba = np.NINF                              
                     temp_predict_log_proba.append(_current_temp_log_proba)
 
@@ -503,6 +504,9 @@ class HMM_Framework:
 
                 predict.append(self.hmm_to_label_mapping[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
+
+            self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
+            self.count_new_oov.append(count_new_oov_local) 
 
         else:
             raise ValueError("TODO!")          

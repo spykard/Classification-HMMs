@@ -100,6 +100,7 @@ elif True:
     # POME HAS EVALUATOR! log_probability()
     # HOHMM HAS EVALUATOR! evaluate()
     hmm.print_average_results()
+    #print(hmm.cross_val_prediction_matrix)
 
 
 # self.cross_val_prediction_matrix

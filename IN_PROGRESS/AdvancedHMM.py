@@ -379,7 +379,7 @@ class AdvancedHMM:
         predict = []  # The list of the actual labels that were predicted 
         count_new_unseen_local = 0        
         if pome_algorithm_t == "map":
-            predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label          
+            predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label to be stored         
             for i in range(predict_length):
                 if len(obs_test[i]) > 0:
                     try:      
@@ -395,9 +395,12 @@ class AdvancedHMM:
 
                 predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
+
             self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
             self.count_new_unseen.append(count_new_unseen_local)     
-        elif pome_algorithm_t == "viterbi":      
+
+        elif pome_algorithm_t == "viterbi": 
+            predict_matrix = np.empty((predict_length, 1), dtype=object)  # The matrix of predictions to be stored               
             for i in range(predict_length):
                 if len(obs_test[i]) > 0:
                     try:      
@@ -409,7 +412,9 @@ class AdvancedHMM:
                     temp_predict = random.randint(0, total_states - 1) 
 
                 predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
-            self.cross_val_prediction_matrix.append(temp_predict)
+                predict_matrix[i] = list(self.state_to_label_mapping.keys())[temp_predict]
+
+            self.cross_val_prediction_matrix.append(predict_matrix)
             self.count_new_unseen.append(count_new_unseen_local)   
 
         return(predict)
@@ -421,7 +426,8 @@ class AdvancedHMM:
         predict_length = len(obs_test) 
         total_states = len(self.unique_states)
         predict = []  # The list of the actual labels that were predicted 
-        count_new_unseen_local = 0          
+        count_new_unseen_local = 0         
+        predict_matrix = np.empty((predict_length, 1), dtype=object)  # The matrix of predictions to be stored             
         for i in range(predict_length):
             if len(obs_test[i]) > 0:  
                 try:              
@@ -433,9 +439,11 @@ class AdvancedHMM:
                 temp_predict = random.randint(0, total_states - 1)
 
             predict.append(temp_predict)  # This framework outputs the label name not an index
-        self.cross_val_prediction_matrix.append(temp_predict)
+            predict_matrix[i] = temp_predict
+
+        self.cross_val_prediction_matrix.append(predict_matrix)
         self.count_new_unseen.append(count_new_unseen_local)
-        
+
         return(predict)   
 
     def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):

@@ -24,7 +24,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos", "mix"]:
+                if temp[0] in ["neg", "neu", "pos"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]
@@ -64,17 +64,19 @@ if False:
 #       n-gram Settings
 #       1st Framework Training Settings
 #       1st Framework Prediction Settings
+#       2nd Framework Training Settings
 
-if True:
+if False:
     # create Model
     general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = AdvancedHMM.AdvancedHMM()
     hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,              \
-            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
-            pome_algorithm_t="map"                                                      \
+            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_smoothing=0.0, hohmm_synthesize=False
             )
     hmm.print_average_results()
 
@@ -82,17 +84,21 @@ if True:
 # ALREADY NOTICED THAT ON GAUSSIAN MIXTURE, USING DUMMY FLAG ON n_grams=3 IMPROVES PERFORMANCE (no shuffling)
 # ALSO NOT USING SHUFFLING LEADS TO MUCH BETTER PERFORMANCE ON n_grams=3
 
-elif False:
+elif True:
     # create Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
     hmm = AdvancedHMM.AdvancedHMM()
-    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
+    hmm.build(architecture="A", model="State-emission HMM", framework="hohmm", k_fold=5,                                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                            \
-            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,              \
-            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
-            pome_algorithm_t="map"                                                      \
-            )
+            text_instead_of_sequences=[], text_enable=False,                                                                              \
+            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_smoothing=0.0, hohmm_synthesize=False                                                                                   \
+            )   
+    
+    # POME HAS EVALUATOR! log_probability()
+    # HOHMM HAS EVALUATOR! evaluate()
     hmm.print_average_results()
 
 

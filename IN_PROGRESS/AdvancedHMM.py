@@ -50,6 +50,7 @@ class AdvancedHMM:
         self.multivariate = False
 
         self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
+        self.unique_states = set()
         self.state_to_label_mapping = {}  # {"pos": 0, "neg": 1,...}
         self.observation_to_label_mapping = {}   # {"good": 0, ambitious: 1, ...}
 
@@ -77,6 +78,7 @@ class AdvancedHMM:
         Important. Resets some important variables after each cross validation fold.
         """  
         self.trained_model = None
+        self.state_to_label_mapping = {}
         self.observation_to_label_mapping = {}
 
     def check_input_type(self, state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable):
@@ -161,6 +163,17 @@ class AdvancedHMM:
         else:
             print("You have opted to use additional text_data, this will require some kind of custom implementation from a scientific paper. Selected Architecture:", self.selected_architecture, "| Selected Model:", self.selected_model)
 
+    def check_architecture_selection(self):
+        """
+        Perform some checks regarding the selected architecture and the input data.
+        """
+        if self.selected_architecture == "A":
+            print("Since you selected architecture 'A', you are probably not utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
+            element_1 = set(self.golden_truth)
+            element_2 = self.unique_states
+            if element_1 != element_2:
+                raise ValueError("you have selected architecture 'A' but the number of unique states is " + str(len(element_2)) + " while the number of unique truth labels is " + str(len(element_1)) + "; consider using architecture 'B'.")                  
+
     def check_shape(self, container_1, container_2):
         """
         Given two containers, checks whether their contents are of exact same shape
@@ -172,38 +185,47 @@ class AdvancedHMM:
                 return False
         return True
 
+    def set_unique_states(self):
+        """
+        Find all unique state labels that occur in the entire dataset.
+        """
+        if (len(self.state_labels) > 0):       
+            for seq in self.state_labels:
+                self.unique_states.update(set(seq))
+        else:
+            raise ValueError("state index to label mapping failed, the state container appears to be empty.")  
+
     def create_state_to_label_mapping(self):
         """
         Maps the strings of states (e.g. 'pos') from the input sequence, to indices 1,2,...n that correspond to the states/matrix that the training produces.
         The mapping depends on the framework that was chosen, see README for more information.
-        """
-        if (len(self.state_labels) > 0): 
-            unique_states = set()       
-            for seq in self.state_labels:
-                unique_states.update(set(seq))
-        else:
-            raise ValueError("state index to label mapping failed, the state container appears to be empty.")          
+        """       
         if self.selected_framework == "pome":
-            for i, unique_s in enumerate(sorted(list(unique_states))):
+            for i, unique_s in enumerate(sorted(list(self.unique_states))):
                 self.state_to_label_mapping[unique_s] = i 
-            print("State to label mapping completed using sorting ('pome'-based).") 
-        else:
-            raise ValueError("TODO")    
+        elif self.selected_framework == "hohmm":
+            for i, unique_s in enumerate(self.trained_model.get_parameters()["all_states"]):
+                self.state_to_label_mapping[unique_s] = i 
 
     def create_observation_to_label_mapping(self):
         """
         Maps the strings of observations (e.g. 'good') from the input sequence, to indices 1,2,...n that correspond to the matrix that the training produces.
         The mapping depends on the framework that was chosen, see README for more information.
         """
-        if self.selected_framework == "pome": 
-            if len(self.trained_model.states) > 0:         
+        if self.selected_framework == "pome":
+            if len(self.trained_model.states) > 2:  # None-start and None-end always exist       
                 temp_dict = self.trained_model.states[0].distribution.parameters[0]  # Just the 1st no need for more
                 for i, unique_o in enumerate(temp_dict.keys()):
                     self.observation_to_label_mapping[unique_o] = i                    
             else:
-                raise ValueError("observations index to label mapping failed, the observation container appears to be empty.")                     
+                raise ValueError("observations index to label mapping failed, the state trained object appears to be empty.")                     
         else:
-            raise ValueError("TODO")                       
+            gets_obs = self.trained_model.get_parameters()["all_obs"]
+            if len(gets_obs) > 0:       
+                for i, unique_o in enumerate(gets_obs):
+                    self.observation_to_label_mapping[unique_o] = i 
+            else:
+                raise ValueError("observations index to label mapping failed, the observation traiend object appears to be empty.")                                
 
     def print_probability_parameters(self):
         """
@@ -220,8 +242,10 @@ class AdvancedHMM:
               state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=[],
               text_instead_of_sequences=[], text_enable=False, 
               n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
-              pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,
-              pome_algorithm_t="map"):
+              pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,
+              pome_algorithm_t="map",
+              hohmm_smoothing=0.0, hohmm_synthesize=False
+              ):
         """
         The main function of the framework. Execution starts from here.
 
@@ -248,11 +272,16 @@ class AdvancedHMM:
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.  
 
-                pome_algorithm: refers to a setting for the Pomegranate training, can be either "baum-welch", "viterbi" or "labeled". 
-                pome_verbose: refers to a setting for the Pomegranate training, can be either True or False.
-                pome_njobs: refers to a setting for the Pomegranate training, a value different than 1 enables parallelization.
+                pome_algorithm: refers to a setting for Pomegranate training, can be either "baum-welch", "viterbi" or "labeled". 
+                pome_verbose: refers to a setting for Pomegranate training, can be either True or False.
+                pome_njobs: refers to a setting for Pomegranate training, a value different than 1 enables parallelization.
+                pome_smoothing_trans: refers to a setting for Pomegranate training, adds the given float to all state transitions.
+                pome_smoothing_obs: refers to a setting for Pomegranate training, adds the given float to observations.
 
-                pome_algorithm_t: refers to a setting for the prediction phase, can be either "map" or "viterbi", 
+                pome_algorithm_t: refers to a setting for the prediction phase, can be either "map" or "viterbi".
+        
+                hohmm_smoothing: refers to a setting for HOHMM training, adds the given float to all XXXXXXX.
+                hohmm_synthesize: refers to a setting for HOHMM training, ensures to generate all permutations of states; avoids OOV and ensures model is fully ergodic.
         """
         self.selected_architecture = architecture
         self.selected_model = model
@@ -268,13 +297,9 @@ class AdvancedHMM:
             self.length = len(self.text_data)
 
         self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
-        self.create_state_to_label_mapping()
+        self.set_unique_states()
 
-        if self.selected_architecture == "A":
-            print("Since you selected architecture 'A', you are probably not utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
-            if set(self.golden_truth) != set(self.state_to_label_mapping.keys()):
-                raise ValueError("you have selected architecture 'A' but the number of unique states is different/higher than the number of unique truth labels; consider using architecture 'B'.")                  
-
+        self.check_architecture_selection()
 
         cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
@@ -283,30 +308,17 @@ class AdvancedHMM:
 
             time_counter = time.time()
             # Training Phase
-            self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
+            self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize)
             # Prediction Phase
-            predict = self.predict(obs_test, y_test, pome_algorithm_t)
+            predict = self.predict(obs_test, pome_algorithm_t)
             self.result_metrics(y_test, predict, time_counter)
 
             self.reset()
 
-        # Verbose to inform the user
-        print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
-        if pome_algorithm == "baum-welch":
-            print(k_fold, "\b-fold cross validation completed using the Baum-Welch algorithm for training. Since this algorithm is originally meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
-        elif pome_algorithm == "viterbi":
-            print(k_fold, "\b-fold cross validation completed using the Viterbi algorithm for training. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
-        elif pome_algorithm == "labeled":
-            print(k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
-        if pome_algorithm_t == "map":
-            print("Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.")
-        elif pome_algorithm_t == "viterbi":
-            print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities.") 
-        print("Predictions failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
-
+        self.verbose_final(pome_algorithm, pome_algorithm_t)
         self.clean_up()
 
-    def train(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs):
+    def train(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize):
         """
         Train a set of models using k-fold cross-validation
         """
@@ -317,36 +329,50 @@ class AdvancedHMM:
                 print("--Warning: The simple counting 'labeled' algorithm is riddled with bugs and the training is going to go completely wrong, consider using 'baum-welch'.")
             if pome_njobs != 1:
                 print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
-            self._train_pome(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
+            self._train_pome(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
             self.pome_object_to_matrices()  # Assign to the local parameters        
-        else:
-            raise ValueError("TODO")  
+        elif self.selected_framework == 'hohmm':   
+            self._train_hohmm(state_train, obs_train, hohmm_smoothing, hohmm_synthesize)
+            self.hohmm_object_to_matrices()  # Assign to the local parameters   
 
-    def _train_pome(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs):
+    def _train_pome(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
         Train a Hidden Markov Model using the Pomegranate framework as a baseline.
         """
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.state_to_label_mapping), X=obs_train, labels=state_train, \
-                                                       algorithm=pome_algorithm, end_state=False, max_iterations=1, state_names=list(self.state_to_label_mapping.keys()), \
-                                                       verbose=pome_verbose, n_jobs=pome_njobs)
-
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states), X=obs_train, labels=state_train,                       \
+                                                       algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
+                                                       max_iterations=1, state_names=sorted(list(self.unique_states)),                                                          \
+                                                       verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
+                                                       )
         self.trained_model = pome_HMM
+        self.create_state_to_label_mapping()
         self.create_observation_to_label_mapping() 
 
-    def predict(self, obs_test, y_test, pome_algorithm_t):
+    def _train_hohmm(self, state_train, obs_train, hohmm_smoothing, hohmm_synthesize):
+        """
+        Train a Hidden Markov Model using the HOHMM framework as a baseline. 
+        """      
+        _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
+        _hohmm_builder.add_batch_training_examples(list(obs_train), list(state_train))  # The builder does not accept objects of type ndarray<list>
+        _trained_hohmm = _hohmm_builder.build(highest_order = 1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
+        self.trained_model = _trained_hohmm
+        self.create_state_to_label_mapping()
+        self.create_observation_to_label_mapping() 
+
+    def predict(self, obs_test, pome_algorithm_t):
         """
         Perform predictions on new sequences.
         """
         if self.selected_framework == 'pome':
             if pome_algorithm_t not in ["map", "viterbi"]:
                 raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'")
-            return(self._predict_pome(obs_test, y_test, pome_algorithm_t))
-        else:
-            raise ValueError("TODO") 
+            return(self._predict_pome(obs_test, pome_algorithm_t))
+        elif self.selected_framework == 'hohmm':
+            return(self._predict_hohmm(obs_test))
 
-    def _predict_pome(self, obs_test, y_test, pome_algorithm_t):
+    def _predict_pome(self, obs_test, pome_algorithm_t):
         """
-        Perform the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
+        Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
         """   
         predict_length = len(obs_test)
         total_states = len(self.state_to_label_mapping)
@@ -388,6 +414,20 @@ class AdvancedHMM:
 
         return(predict)
         
+    def _predict_hohmm(self, obs_test):
+        """
+        Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.
+        """     
+        predict_length = len(obs_test) 
+        for i in range(predict_length):
+            if len(obs_test[i]) > 0:                
+                x = self.trained_model.decode(obs_test[i])  # We only care about the last prediction
+           
+            print(x)
+            quit()    
+        return(self.trained_model.decode(obs))   
+
+
     def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):
         """
         (1) Execute the n-gram conversion on the correct container, as defined by 'target'.
@@ -501,7 +541,7 @@ class AdvancedHMM:
 
     def pome_object_to_matrices(self):
         """
-        Assigns the A, B and pi matrices with the values form a Pomegranate trained object/model.
+        Assigns the A, B and pi matrices with the values form a Pomegranate trained object/model. They should be ndarrays.
         """
         # Note that last state is 'None-End' and previous to last is 'None-Start'
         # A
@@ -514,6 +554,18 @@ class AdvancedHMM:
         self.B = temp_obs_matrix
         # pi
         self.pi = self.trained_model.dense_transition_matrix()[-2,:-2]  # Previous to last
+
+    def hohmm_object_to_matrices(self):
+        """
+        Assigns the A, B and pi matrices with the values form a HOHMM trained object/model. They should be ndarrays.
+        """
+        get_params = self.trained_model.get_parameters()
+        # A
+        self.A = np.array(get_params["A"])
+        # B
+        self.B = np.array(get_params["B"])
+        # pi
+        self.pi = np.array(get_params["pi"])
 
     def result_metrics(self, golden_truth, prediction, time_counter):
         """
@@ -556,6 +608,30 @@ class AdvancedHMM:
         else:
             raise ValueError("cannot print average results; it seems that no predictions have been performed.")               
  
+    def verbose_final(self, pome_algorithm, pome_algorithm_t):
+        """
+        Verbose after the entire training and prediction is completed in order to inform the user.
+        """
+        if self.selected_framework == "pome":
+            print("State to label mapping completed using sorting ('pome'-based). x", self.k_fold, "times")  
+            print("Observation to label mapping completed ('pome'-based). x", self.k_fold, "times")             
+            if pome_algorithm == "baum-welch":
+                print(self.k_fold, "\b-fold cross validation completed using the Baum-Welch algorithm for training. Since this algorithm is originally meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
+            elif pome_algorithm == "viterbi":
+                print(self.k_fold, "\b-fold cross validation completed using the Viterbi algorithm for training. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
+            elif pome_algorithm == "labeled":
+                print(self.k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
+            if pome_algorithm_t == "map":
+                print("Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
+            elif pome_algorithm_t == "viterbi":
+                print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities, stored in 'cross_val_prediction_matrix'.") 
+        if self.selected_framework == "hohmm":        
+            print("State to label mapping completed ('hohmm'-based). x", self.k_fold, "times")  
+            print("Observation to label mapping completed ('hohmm'-based). x", self.k_fold, "times")  
+            print(self.k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
+            print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities, stored in 'cross_val_prediction_matrix'.")                
+        
+        print("Predictions failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """

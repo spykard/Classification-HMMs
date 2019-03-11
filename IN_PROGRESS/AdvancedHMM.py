@@ -8,6 +8,7 @@ from collections import defaultdict
 import pandas as pd
 import pomegranate as pome
 import time  # Pomegranate has it's own 'time' and can cause conflicts
+from math import log as log_of_e
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
@@ -44,8 +45,8 @@ class AdvancedHMM:
 
         self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.multivariate = False
-        self.state_to_label_mapping = {}
-        self.observation_to_label_mapping = {}
+        self.state_to_label_mapping = {}  # {"pos": 0, "neg": 1,...}
+        self.observation_to_label_mapping = {}   # {"good": 0, ambitious: 1, ...}
 
         # Evaluation
         self.k_fold = 0
@@ -55,6 +56,7 @@ class AdvancedHMM:
                                                     # Metrics_String: []], 
                                                     # Time_Complexity: []}
         self.cross_val_prediction_matrix = []       # The final predictions for all the folds of cross validation
+        self.count_new_unseen = []                  # Count the number of instances where we encountered new unseen observations
 
     def clean_up(self):
         """
@@ -262,12 +264,12 @@ class AdvancedHMM:
         cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, _ = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]
-            state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
+            _, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
             # Training Phase
             self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
             # Prediction Phase
-            self.predict(state_test, obs_test, y_test, pome_algorithm_t)
+            self.predict(obs_test, y_test, pome_algorithm_t)
 
         # Verbose to inform the user
         print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
@@ -277,7 +279,11 @@ class AdvancedHMM:
             print(k_fold, "\b-fold cross validation completed using the Viterbi algorithm for training. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
         elif pome_algorithm == "labeled":
             print(k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
-
+        if pome_algorithm_t == "map":
+            print("Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.")
+        elif pome_algorithm_t == "viterbi":
+            print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities.") 
+        print("Prediction failed because of new unseen observations on a total of:", self.count_new_unseen, "instances.")
 
         # self.clean_up()
 
@@ -304,28 +310,59 @@ class AdvancedHMM:
         Train a Hidden Markov Model using the Pomegranate framework as a baseline.
         """
         pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.state_to_label_mapping), X=obs_train, labels=state_train, \
-                                                       algorithm=pome_algorithm, end_state=False, max_iterations=1, state_names=self.state_to_label_mapping.keys(),             \
+                                                       algorithm=pome_algorithm, end_state=False, max_iterations=1, state_names=list(self.state_to_label_mapping.keys()), \
                                                        verbose=pome_verbose, n_jobs=pome_njobs)
 
         self.trained_model = pome_HMM
         self.create_observation_to_label_mapping() 
 
-    def predict(self, pome_algorithm_t):
+    def predict(self, obs_test, y_test, pome_algorithm_t):
         """
         Perform predictions on new sequences.
         """
         if self.selected_framework == 'pome':
             if pome_algorithm_t not in ["map", "viterbi"]:
                 raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'")
+            self._predict_pome(obs_test, y_test, pome_algorithm_t)
         else:
             raise ValueError("TODO") 
 
-            if pome_algorithm_t == "map":
+    def _predict_pome(self, obs_test, y_test, pome_algorithm_t):
+        """
+        Perform the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
+        """   
+        if pome_algorithm_t == "map":
+            predict_length = len(obs_test)
+            total_states = len(self.state_to_label_mapping)
+            predict = []  # The list of the actual labels that were predicted
+            predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label
+            count_new_unseen_local = 0           
+            for i in range(predict_length):
+                if len(obs_test[i]) > 0:
+                    try:      
+                        temp_predict = self.trained_model.predict_log_proba(obs_test[i])[-1]  # We only care about the last prediction
+                    except ValueError as err:  # Prediction failed, perform random guessing
+                        count_new_unseen_local += 1
+                        temp_predict = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
+                else:  #  Prediction would be pointless for an empty sequence
+                    temp_predict = [log_of_e(1.0 / total_states)] * total_states      # log of base e
 
+                predict_log_proba_matrix[i,:] = temp_predict
 
-                print("Training completed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.") 
-            elif pome_algorithm_t == "viterbi":
-                print("Training completed using the Viterbi algorithm. Returns a set of exact predictions not probabilities.") 
+            # Find argmax on the probability matrix; this entire process would be equivalent to simply calling predict(..., algorithm='map'), but calling it a second time would be more costly.
+            predicted = list()
+            for x in np.argmax(predict_log_proba_matrix, axis=1):  # Convert indices to the actual strings
+                predict.append(list(self.state_to_label_mapping.keys())[x])
+
+            print(predict)
+
+            print("Training completed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.") 
+        elif pome_algorithm_t == "viterbi":
+            print("Training completed using the Viterbi algorithm. Returns a set of exact predictions not probabilities.") 
+        
+
+        self.count_new_unseen.append(count_new_unseen_local)
+
 
     def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
@@ -428,9 +465,6 @@ class AdvancedHMM:
         self.B = temp_obs_matrix
         # pi
         self.pi = self.trained_model.dense_transition_matrix()[-2,:-2]  # Previous to last
-
-    #def cross_validation_splitter(self):
-
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
@@ -566,7 +600,7 @@ if __name__ == "__main__":
         # 1st Framework Training Settings
         # 1st Framework Prediction Settings
 
-        hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
+        hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1, \
                 state_labels_pandas=labels_series, observations_pandas=observations_series, golden_truth_pandas=golden_truth_series, \
                 text_instead_of_sequences=[], text_enable=False,                            \
                 n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \

@@ -7,6 +7,7 @@ import itertools
 from collections import defaultdict
 import pandas as pd
 import pomegranate as pome
+import SimpleHOHMM
 import time  # Pomegranate has it's own 'time' and can cause conflicts
 from math import log as log_of_e
 import random

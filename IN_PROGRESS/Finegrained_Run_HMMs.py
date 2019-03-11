@@ -3,7 +3,7 @@ Sentiment Analysis: (mainly Supervised) Text Classification using Hidden Markov 
 """
 
 import pandas as pd
-import AdvancedHMM
+import HMM_Framework
 
 
 dataset_name = "Finegrained Sentiment Dataset"
@@ -87,13 +87,13 @@ if False:
 elif True:
     # create Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
-    hmm = AdvancedHMM.AdvancedHMM()
-    hmm.build(architecture="A", model="State-emission HMM", framework="hohmm", k_fold=5,                                                   \
+    hmm = HMM_Framework.HMM_Framework()
+    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
+            pome_algorithm_t="viterbi",                                                                                                       \
             hohmm_smoothing=0.0, hohmm_synthesize=False                                                                                   \
             )   
     

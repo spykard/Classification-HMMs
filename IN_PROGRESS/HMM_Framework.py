@@ -1,5 +1,5 @@
 """ 
-AdvancedHMM: A framework that implements state-of-the-art Hidden Markov Models, mostly for supervised/classification tasks.
+HMM-Framework: An advanced framework that implements state-of-the-art Hidden Markov Models, mostly for supervised/classification tasks.
 """
 
 import numpy as np
@@ -22,7 +22,7 @@ from sklearn import metrics
 random_state = 22
 random.seed(22)
 
-class AdvancedHMM:
+class HMM_Framework:
     """
         observations: Observation sequence
         state_labels: Hidden State sequence
@@ -173,6 +173,8 @@ class AdvancedHMM:
             element_2 = self.unique_states
             if element_1 != element_2:
                 raise ValueError("you have selected architecture 'A' but the number of unique states is " + str(len(element_2)) + " while the number of unique truth labels is " + str(len(element_1)) + "; consider using architecture 'B'.")                  
+        elif self.selected_architecture == "B":
+            print("You have selected architecture 'B', the pure classification-based approach!")
 
     def check_shape(self, container_1, container_2):
         """
@@ -329,15 +331,20 @@ class AdvancedHMM:
                 print("--Warning: The simple counting 'labeled' algorithm is riddled with bugs and the training is going to go completely wrong, consider using 'baum-welch'.")
             if pome_njobs != 1:
                 print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
-            self._train_pome(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
-            self.pome_object_to_matrices()  # Assign to the local parameters        
+            if self.selected_architecture == "A":
+                self._train_pome_archit_a(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
+                self.pome_object_to_matrices()  # Assign to the local parameters  
+            elif self.selected_architecture == "B":
+                self._train_pome_archit_b(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)           
+        
         elif self.selected_framework == 'hohmm':   
             self._train_hohmm(state_train, obs_train, hohmm_smoothing, hohmm_synthesize)
             self.hohmm_object_to_matrices()  # Assign to the local parameters   
 
-    def _train_pome(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
+    def _train_pome_archit_a(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
-        Train a Hidden Markov Model using the Pomegranate framework as a baseline.
+        Train a Hidden Markov Model using the Pomegranate framework as a baseline. 
+        Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """
         pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states), X=obs_train, labels=state_train,                       \
                                                        algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
@@ -347,6 +354,15 @@ class AdvancedHMM:
         self.trained_model = pome_HMM
         self.create_state_to_label_mapping()
         self.create_observation_to_label_mapping() 
+
+    def _train_pome_archit_b(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
+        """
+        Train a Hidden Markov Model using the Pomegranate framework as a baseline.
+        Architecture B is used, where multiple HMMs are built, in a pure classification-based approach.
+        """
+        train_subsets_per_class
+
+        self.trained_model.append()  # In this scenario, we want to store a list of trained models, not just 1.
 
     def _train_hohmm(self, state_train, obs_train, hohmm_smoothing, hohmm_synthesize):
         """
@@ -366,24 +382,31 @@ class AdvancedHMM:
         if self.selected_framework == 'pome':
             if pome_algorithm_t not in ["map", "viterbi"]:
                 raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'")
-            return(self._predict_pome(obs_test, pome_algorithm_t))
+            if self.selected_architecture == "A":
+                return(self._predict_pome_archit_a(obs_test, pome_algorithm_t))
+            elif self.selected_architecture == "B":
+                return(self._predict_pome_archit_b(obs_test, pome_algorithm_t))                
+        
         elif self.selected_framework == 'hohmm':
             return(self._predict_hohmm(obs_test))
 
-    def _predict_pome(self, obs_test, pome_algorithm_t):
+    def _predict_pome_archit_a(self, obs_test, pome_algorithm_t):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
         """   
         predict_length = len(obs_test)
         total_states = len(self.unique_states)
         predict = []  # The list of the actual labels that were predicted 
-        count_new_unseen_local = 0        
+        count_new_unseen_local = 0 
+
+        reverse_state_to_label_mapping = {v: k for k, v in self.state_to_label_mapping.items()}  # Reverse the mapping so we end up with {0: "pos", 1: "neg",...}
+
         if pome_algorithm_t == "map":
             predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label to be stored         
             for i in range(predict_length):
                 if len(obs_test[i]) > 0:
                     try:      
-                        temp_predict = self.trained_model.predict(obs_test[i], algorithm='map')[-1]  # We only care about the last prediction
+                        temp_predict = self.trained_model.predict(obs_test[i], algorithm='map')[-1]     # We only care about the last prediction
                         temp_predict_log_proba = self.trained_model.predict_log_proba(obs_test[i])[-1]  # Using argmax to not call predict twice is wrong because for random guessing all 3 probabilities are equal
                     except ValueError:  # Prediction failed, perform random guessing
                         count_new_unseen_local += 1
@@ -393,7 +416,7 @@ class AdvancedHMM:
                     temp_predict = random.randint(0, total_states - 1)
                     temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e
 
-                predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
+                predict.append(reverse_state_to_label_mapping[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
 
             self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
@@ -411,14 +434,20 @@ class AdvancedHMM:
                 else:  #  Prediction would be pointless for an empty sequence
                     temp_predict = random.randint(0, total_states - 1) 
 
-                predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
-                predict_matrix[i] = list(self.state_to_label_mapping.keys())[temp_predict]
+                predict.append(reverse_state_to_label_mapping[temp_predict])
+                predict_matrix[i] = reverse_state_to_label_mapping[temp_predict]
 
             self.cross_val_prediction_matrix.append(predict_matrix)
             self.count_new_unseen.append(count_new_unseen_local)   
 
         return(predict)
-        
+
+    def _predict_pome_archit_b(self, obs_test, pome_algorithm_t):
+        """ 
+        We try to fine the model that was most likely to have generated each of the instances at hand.
+        """
+        print("hei")
+
     def _predict_hohmm(self, obs_test):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.

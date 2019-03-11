@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn import metrics
 
 
 random_state = 22
@@ -55,7 +56,8 @@ class AdvancedHMM:
         self.cross_val_metrics = defaultdict(list)  # {Name: [], 
                                                     # F1-score: [], 
                                                     # Accuracy: [], 
-                                                    # Metrics_String: []], 
+                                                    # Metrics_String: [], 
+                                                    # Confusion_Matrix: [],
                                                     # Time_Complexity: []}
         self.cross_val_prediction_matrix = []       # The final predictions for all the folds of cross validation
         self.count_new_unseen = []                  # Count the number of instances where we encountered new unseen observations
@@ -273,7 +275,7 @@ class AdvancedHMM:
             self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
             # Prediction Phase
             predict = self.predict(obs_test, y_test, pome_algorithm_t)
-            self.result_metrics()
+            self.result_metrics(y_test, predict, time_counter)
 
         # Verbose to inform the user
         print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
@@ -287,7 +289,7 @@ class AdvancedHMM:
             print("Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.")
         elif pome_algorithm_t == "viterbi":
             print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities.") 
-        print("Prediction failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
+        print("Predictions failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
 
         # self.clean_up()
 
@@ -474,6 +476,50 @@ class AdvancedHMM:
         self.B = temp_obs_matrix
         # pi
         self.pi = self.trained_model.dense_transition_matrix()[-2,:-2]  # Previous to last
+
+    def result_metrics(self, golden_truth, prediction, time_counter):
+        """
+        Assigns a local variable (dict) with the resulting metrics of the current fold of the cross validation.
+        """
+        # Metrics
+        accuracy = metrics.accuracy_score(golden_truth, prediction)
+        rest_as_string = metrics.classification_report(golden_truth, prediction, output_dict=False)  # Used as a string
+        rest_as_dict = metrics.classification_report(golden_truth, prediction, output_dict=True)  # Used as an information source
+        confusion_matrix = metrics.confusion_matrix(golden_truth, prediction)     
+        #confusion_matrix_as_string = '\n'.join([''.join(str(i)) for i in confusion_matrix])
+        #print(confusion_matrix_as_string)
+
+        self.cross_val_metrics["Name"].append(self.selected_model)
+        self.cross_val_metrics["F1-score"].append(rest_as_dict['weighted avg']['f1-score'])
+        self.cross_val_metrics["Accuracy"].append(accuracy)
+        self.cross_val_metrics["Metrics_String"].append("- - - - - RESULT METRICS - " + self.selected_model + " - - - -\nExact Accuracy: " + str(accuracy) + "\n" + rest_as_string)
+        self.cross_val_metrics["Confusion_Matrix"].append(confusion_matrix)
+        self.cross_val_metrics["Time_Complexity"].append(time.time() - time_counter)                         
+
+    def print_best_results(self):
+        """   
+        Prints the best results across all folds of the cross validation    
+        """
+        if len(self.cross_val_metrics["Name"]) > 0:
+            print("\n", "- " * 18, "Conclusion across", str(self.k_fold), "\b-fold Cross Validation", "- " * 18,)
+            index = np.argmax(self.cross_val_metrics["F1-score"])
+            print("-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index], "\n", self.cross_val_metrics["Confusion_Matrix"][index], sep='')
+            index = np.argmax(self.cross_val_metrics["Accuracy"])
+            print("\n-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index], "\n", self.cross_val_metrics["Confusion_Matrix"][index], sep='')
+        else:
+            raise ValueError("cannot print best results; it seems that no predictions have been performed.")               
+
+    def print_average_results(self, decimals=5):
+        """   
+        Prints the average results across all folds of the cross validation    
+        """
+        if len(self.cross_val_metrics["Name"]) > 0:
+            print("\n", "- " * 18, "Conclusion across", str(self.k_fold), "\b-fold Cross Validation", "- " * 18,)
+            print("-Average F1-score:", np.around(np.mean(self.cross_val_metrics["F1-score"]), decimals=decimals))
+            print("-Average Accuracy:", np.around(np.mean(self.cross_val_metrics["Accuracy"]), decimals=decimals))
+        else:
+            raise ValueError("cannot print average results; it seems that no predictions have been performed.")               
+ 
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """

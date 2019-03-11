@@ -38,7 +38,8 @@ emptySequences = df.loc[df.loc[:,'Sequences'].map(len) < 1].index.values
 df = df.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
 
 # 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
-df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+if False:
+    df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
 # 4. Print dataset information
 print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
@@ -71,14 +72,15 @@ if True:
     hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
-            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,              \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,              \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
             pome_algorithm_t="map"                                                      \
             )
     hmm.print_average_results()
 
 
-# ALREADY NOTICE THAT ON GAUSSIAN MIXTURE, USING DUMMY FLAG ON n_grams=3 IMPROVES PERFORMANCE
+# ALREADY NOTICED THAT ON GAUSSIAN MIXTURE, USING DUMMY FLAG ON n_grams=3 IMPROVES PERFORMANCE (no shuffling)
+# ALSO NOT USING SHUFFLING LEADS TO MUCH BETTER PERFORMANCE ON n_grams=3
 
 elif False:
     # create Model

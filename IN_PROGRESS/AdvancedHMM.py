@@ -375,7 +375,7 @@ class AdvancedHMM:
         Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
         """   
         predict_length = len(obs_test)
-        total_states = len(self.state_to_label_mapping)
+        total_states = len(self.unique_states)
         predict = []  # The list of the actual labels that were predicted 
         count_new_unseen_local = 0        
         if pome_algorithm_t == "map":
@@ -404,9 +404,9 @@ class AdvancedHMM:
                         temp_predict = self.trained_model.predict(obs_test[i], algorithm='viterbi')[-1]  # We only care about the last prediction
                     except ValueError:  # Prediction failed, perform random guessing
                         count_new_unseen_local += 1
-                        temp_predict = [random.randint(0, total_states - 1)] 
+                        temp_predict = random.randint(0, total_states - 1) 
                 else:  #  Prediction would be pointless for an empty sequence
-                    temp_predict = [random.randint(0, total_states - 1)] 
+                    temp_predict = random.randint(0, total_states - 1) 
 
                 predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
             self.cross_val_prediction_matrix.append(temp_predict)
@@ -419,14 +419,24 @@ class AdvancedHMM:
         Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.
         """     
         predict_length = len(obs_test) 
+        total_states = len(self.unique_states)
+        predict = []  # The list of the actual labels that were predicted 
+        count_new_unseen_local = 0          
         for i in range(predict_length):
-            if len(obs_test[i]) > 0:                
-                x = self.trained_model.decode(obs_test[i])  # We only care about the last prediction
-           
-            print(x)
-            quit()    
-        return(self.trained_model.decode(obs))   
+            if len(obs_test[i]) > 0:  
+                try:              
+                    temp_predict = self.trained_model.decode(obs_test[i])[-1]  # We only care about the last prediction
+                except ValueError:  # Prediction failed, perform random guessing
+                    count_new_unseen_local += 1
+                    temp_predict = random.randint(0, total_states - 1) 
+            else:  #  Prediction would be pointless for an empty sequence
+                temp_predict = random.randint(0, total_states - 1)
 
+            predict.append(temp_predict)  # This framework outputs the label name not an index
+        self.cross_val_prediction_matrix.append(temp_predict)
+        self.count_new_unseen.append(count_new_unseen_local)
+        
+        return(predict)   
 
     def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):
         """

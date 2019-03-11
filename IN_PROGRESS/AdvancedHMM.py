@@ -11,6 +11,10 @@ import time  # Pomegranate has it's own 'time' and can cause conflicts
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
+from sklearn.model_selection import RepeatedStratifiedKFold
+
+
+random_state = 22
 
 class AdvancedHMM:
     """
@@ -23,6 +27,7 @@ class AdvancedHMM:
     def __init__(self):
         self.state_labels = []
         self.observations = []
+        self.golden_truth = []
         self.A = None
         self.B = None
         self.pi = None
@@ -60,7 +65,7 @@ class AdvancedHMM:
         self.text_data = []        
         self.trained_model = None
 
-    def check_input_type(self, state_labels_pandas, observations_pandas, text_instead_of_sequences, text_enable):
+    def check_input_type(self, state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable):
         """
         Make sure that the input data are of the correct type: pandas Series. Also perform the assignment to the local variables.
         """
@@ -87,6 +92,11 @@ class AdvancedHMM:
                 else:
                     self.observations = observations_pandas.values 
 
+        if (isinstance(golden_truth_pandas, pd.Series) != True):
+            raise ValueError("please make sure that you are inputting the parameter 'golden_truth_pandas' in the form of a pandas Series, i.e. select a column of a DataFrame.")
+        else:           
+            self.golden_truth = golden_truth_pandas.values 
+
     def verify_and_autodetect(self):
         """
         (1) Ensure that the input data are of the same shape.
@@ -112,6 +122,9 @@ class AdvancedHMM:
             if len(self.observations) > 0:
                 if len(self.text_data) != len(self.observations):
                     raise ValueError("you want to use the second input container but it is of length " + str(len(self.observations)) + " while the text one is of length " + str(len(self.text_data)) + ".")         
+
+        if len(self.golden_truth) != len(self.observations):
+            raise ValueError("the golden truth list is of length " + str(len(self.golden_truth)) + " while the observation container is of length " + str(len(self.observations)) + ".")    
 
         if self.selected_architecture not in self.architectures:
             raise ValueError("selected architecture does not exist.")
@@ -172,8 +185,7 @@ class AdvancedHMM:
             if len(self.trained_model.states) > 0:         
                 temp_dict = self.trained_model.states[0].distribution.parameters[0]  # Just the 1st no need for more
                 for i, unique_o in enumerate(temp_dict.keys()):
-                    self.observation_to_label_mapping[unique_o] = i 
-                print("Observation to label mapping completed ('pome'-based).")                    
+                    self.observation_to_label_mapping[unique_o] = i                    
             else:
                 raise ValueError("observations index to label mapping failed, the observation container appears to be empty.")                     
         else:
@@ -191,7 +203,8 @@ class AdvancedHMM:
         print(self.pi)
 
     def build(self, architecture, model, framework, k_fold, 
-              state_labels_pandas=[], observations_pandas=[], text_instead_of_sequences=[], text_enable=False, 
+              state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=[],
+              text_instead_of_sequences=[], text_enable=False, 
               n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
               pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,
               pome_algorithm_t="map"):
@@ -206,6 +219,7 @@ class AdvancedHMM:
 
                 state_labels_pandas: pandas Series that contains the data that will be used as labels for the states.
                 observations_pandas: pandas Series that contains the data that will be used as observations.
+                golden_truth_pandas: pandas Series that contains the actual truth labels of all instances.
 
                 text_instead_of_sequences: a completely different operating mode, where the user inputs text documents; 
                                            in this scenario the first two arguments don't have to be used.
@@ -231,7 +245,7 @@ class AdvancedHMM:
         self.selected_framework = framework        
         self.k_fold = k_fold
 
-        self.check_input_type(state_labels_pandas, observations_pandas, text_instead_of_sequences, text_enable)
+        self.check_input_type(state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable)
         self.verify_and_autodetect()
 
         if text_enable == False:
@@ -242,12 +256,32 @@ class AdvancedHMM:
         self.convert_to_ngrams(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
         self.create_state_to_label_mapping()
 
-        # Training Phase
-        self.train(pome_algorithm, pome_verbose, pome_njobs)
-        # Prediction Phase
-        self.predict(pome_algorithm_t)
+        if self.selected_architecture == "A":
+            print("Since you selected architecture 'A', you aren't utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
 
-    def train(self, pome_algorithm, pome_verbose, pome_njobs):
+        cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
+        for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
+            state_train, obs_train, _ = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]
+            state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
+
+            # Training Phase
+            self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
+            # Prediction Phase
+            self.predict(state_test, obs_test, y_test, pome_algorithm_t)
+
+        # Verbose to inform the user
+        print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
+        if pome_algorithm == "baum-welch":
+            print(k_fold, "\b-fold cross validation completed using the Baum-Welch algorithm for training. Since this algorithm is originally meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
+        elif pome_algorithm == "viterbi":
+            print(k_fold, "\b-fold cross validation completed using the Viterbi algorithm for training. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
+        elif pome_algorithm == "labeled":
+            print(k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
+
+
+        # self.clean_up()
+
+    def train(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs):
         """
         Train a set of models using k-fold cross-validation
         """
@@ -260,28 +294,21 @@ class AdvancedHMM:
                 print("--Warning: The simple counting 'labeled' algorithm is riddled with bugs and the training is going to go completely wrong, consider using 'baum-welch'.")
             if pome_njobs != 1:
                 print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
-            self._train_pome(pome_algorithm, pome_verbose, pome_njobs)
+            self._train_pome(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
+            self.pome_object_to_matrices()  # Assign to the local parameters        
         else:
             raise ValueError("TODO")  
 
-    def _train_pome(self, pome_algorithm, pome_verbose, pome_njobs):
+    def _train_pome(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs):
         """
         Train a Hidden Markov Model using the Pomegranate framework as a baseline.
         """
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.state_to_label_mapping), X=self.observations, labels=self.state_labels, \
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.state_to_label_mapping), X=obs_train, labels=state_train, \
                                                        algorithm=pome_algorithm, end_state=False, max_iterations=1, state_names=self.state_to_label_mapping.keys(),             \
                                                        verbose=pome_verbose, n_jobs=pome_njobs)
 
-        if pome_algorithm == "baum-welch":
-            print("Training completed using the Baum-Welch algorithm. Since this algorithm is originally meant for un/semi-supervised scenarios 'max_iterations' was set to 1.") 
-        elif pome_algorithm == "viterbi":
-            print("Training completed using the Viterbi algorithm. Consider using 'baum-welch' since it is better. Additionaly, it is worth noting that both these algorithms are originally meant for un/semi-supervised scenarios.")   
-        elif pome_algorithm == "labeled":
-            print("Training completed using the Labeled algorithm.")         
-
         self.trained_model = pome_HMM
         self.create_observation_to_label_mapping() 
-        self.pome_object_to_matrices() 
 
     def predict(self, pome_algorithm_t):
         """
@@ -402,6 +429,9 @@ class AdvancedHMM:
         # pi
         self.pi = self.trained_model.dense_transition_matrix()[-2,:-2]  # Previous to last
 
+    #def cross_validation_splitter(self):
+
+
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
     Given two lists of performance metrics and one list of strings, constructs a high quality vertical comparison chart.
@@ -520,25 +550,28 @@ def general_mixture_model_label_generator(sequences, individual_labels):
 # hmm = AdvancedHMM()
 # hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, )
 
+if __name__ == "__main__":
+    if False:
+        labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
+        observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
+        golden_truth = ["pos", "neg"]
+        labels_series = pd.Series(labels)
+        observations_series = pd.Series(observations)
+        golden_truth_series = pd.Series(golden_truth)
+        hmm = AdvancedHMM()
+        # General Settings
+        # Data
+        # Text Scenario
+        # n-gram Settings
+        # 1st Framework Training Settings
+        # 1st Framework Prediction Settings
 
-labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
-observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
-labels_series = pd.Series(labels)
-observations_series = pd.Series(observations)
-hmm = AdvancedHMM()
-# General Settings
-# Data
-# Text Scenario
-# n-gram Settings
-# 1st Framework Training Settings
-# 1st Framework Prediction Settings
+        hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
+                state_labels_pandas=labels_series, observations_pandas=observations_series, golden_truth_pandas=golden_truth_series, \
+                text_instead_of_sequences=[], text_enable=False,                            \
+                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
+                pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
+                pome_algorithm_t="map"                                                      \
+                )
 
-hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1,   \
-          state_labels_pandas=labels_series, observations_pandas=observations_series, \
-          text_instead_of_sequences=[], text_enable=False,                            \
-          n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
-          pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
-          pome_algorithm_t="map"                                                      \
-          )
-
-# self.cross_val_prediction_matrix
+        # self.cross_val_prediction_matrix

@@ -63,20 +63,22 @@ if False:
 #       Text Scenario
 #       n-gram Settings
 #       1st Framework Training Settings
-#       1st Framework Prediction Settings
+#       1st Framework Prediction Settings (Achitecture A)
 #       2nd Framework Training Settings
+#       Any Framework Prediction Settings (Architecture B)
 
 if False:
-    # create Model
+    # Model
     general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = AdvancedHMM.AdvancedHMM()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, \
+    hmm.build(architecture="A", model="General Mixture Model", framework="hohmm", k_fold=5, \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_smoothing=0.0, hohmm_synthesize=False
+            hohmm_smoothing=0.0, hohmm_synthesize=False,
+            achitect_b_algorithm="forward" \
             )
     hmm.print_average_results()
 
@@ -85,7 +87,7 @@ if False:
 # ALSO NOT USING SHUFFLING LEADS TO MUCH BETTER PERFORMANCE ON n_grams=3
 
 elif True:
-    # create Model
+    #  Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()
     hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
@@ -93,14 +95,17 @@ elif True:
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="viterbi",                                                                                                       \
-            hohmm_smoothing=0.0, hohmm_synthesize=False                                                                                   \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
+            architecture_b_algorithm="forward"                                                                                             \
             )   
     
     # POME HAS EVALUATOR! log_probability()
     # HOHMM HAS EVALUATOR! evaluate()
     hmm.print_average_results()
+    #hmm.print_probability_parameters()
     #print(hmm.cross_val_prediction_matrix)
+
 
 
 # self.cross_val_prediction_matrix

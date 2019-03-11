@@ -57,6 +57,14 @@ if False:
     df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
 # MAIN
+# AdvancedHMM.build
+#       General Settings
+#       Data
+#       Text Scenario
+#       n-gram Settings
+#       1st Framework Training Settings
+#       1st Framework Prediction Settings
+
 if True:
     # create Model
     # general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
@@ -66,12 +74,14 @@ if True:
     hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
+            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,              \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
             pome_algorithm_t="map"                                                      \
             )
-    #hmm.print_probability_parameters()
     hmm.print_average_results()
+
+    # self.cross_val_prediction_matrix
+
 elif False:
     # create Model
     print("lel")

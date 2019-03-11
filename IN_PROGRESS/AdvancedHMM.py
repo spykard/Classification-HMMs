@@ -291,7 +291,7 @@ class AdvancedHMM:
             print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities.") 
         print("Predictions failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
 
-        # self.clean_up()
+        self.clean_up()
 
     def train(self, state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs):
         """
@@ -486,8 +486,6 @@ class AdvancedHMM:
         rest_as_string = metrics.classification_report(golden_truth, prediction, output_dict=False)  # Used as a string
         rest_as_dict = metrics.classification_report(golden_truth, prediction, output_dict=True)  # Used as an information source
         confusion_matrix = metrics.confusion_matrix(golden_truth, prediction)     
-        #confusion_matrix_as_string = '\n'.join([''.join(str(i)) for i in confusion_matrix])
-        #print(confusion_matrix_as_string)
 
         self.cross_val_metrics["Name"].append(self.selected_model)
         self.cross_val_metrics["F1-score"].append(rest_as_dict['weighted avg']['f1-score'])
@@ -630,37 +628,3 @@ def general_mixture_model_label_generator(sequences, individual_labels):
         transformed_labels.append([individual_labels[i]] * len(seq))
 
     return(pd.Series(transformed_labels))
-
-
-# labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
-# observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
-# labels_series = pd.Series(labels)
-# observations_series = pd.Series(observations)
-# hmm = AdvancedHMM()
-# hmm.build(architecture="A", model="State-emission HMM", k_fold=1, state_labels_pandas=labels_series, observations_pandas=observations_series, )
-
-if __name__ == "__main__":
-    if False:
-        labels = [["dummy1", "pos", "neg", "neg", "dummy1"], ["dummy1", "pos"]]
-        observations = [["dummy1", "good", "bad", "bad", "whateveromegalul"], ["dummy1", "good"]]
-        golden_truth = ["pos", "neg"]
-        labels_series = pd.Series(labels)
-        observations_series = pd.Series(observations)
-        golden_truth_series = pd.Series(golden_truth)
-        hmm = AdvancedHMM()
-        # General Settings
-        # Data
-        # Text Scenario
-        # n-gram Settings
-        # 1st Framework Training Settings
-        # 1st Framework Prediction Settings
-
-        hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=1, \
-                state_labels_pandas=labels_series, observations_pandas=observations_series, golden_truth_pandas=golden_truth_series, \
-                text_instead_of_sequences=[], text_enable=False,                            \
-                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,           \
-                pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
-                pome_algorithm_t="map"                                                      \
-                )
-
-        # self.cross_val_prediction_matrix

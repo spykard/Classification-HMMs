@@ -259,7 +259,7 @@ class AdvancedHMM:
         else:
             self.length = len(self.text_data)
 
-        self.convert_to_ngrams(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
+        self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
         self.create_state_to_label_mapping()
 
         if self.selected_architecture == "A":
@@ -267,9 +267,10 @@ class AdvancedHMM:
             if set(self.golden_truth) != set(self.state_to_label_mapping.keys()):
                 raise ValueError("you have selected architecture 'A' but the number of unique states is different/higher than the number of unique truth labels; consider using architecture 'B'.")                  
 
+
         cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
-            state_train, obs_train, _ = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]
+            state_train, obs_train, _ = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             _, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
             time_counter = time.time()
@@ -350,10 +351,10 @@ class AdvancedHMM:
                         temp_predict_log_proba = self.trained_model.predict_log_proba(obs_test[i])[-1]  # Using argmax to not call predict twice is wrong because for random guessing all 3 probabilities are equal
                     except ValueError:  # Prediction failed, perform random guessing
                         count_new_unseen_local += 1
-                        temp_predict = [random.randint(0, total_states - 1)] 
+                        temp_predict = random.randint(0, total_states - 1)
                         temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
                 else:  #  Prediction would be pointless for an empty sequence
-                    temp_predict = [random.randint(0, total_states - 1)] 
+                    temp_predict = random.randint(0, total_states - 1)
                     temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e
 
                 predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
@@ -377,19 +378,10 @@ class AdvancedHMM:
 
         return(predict)
         
-    def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
+    def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):
         """
-        Convert the contents of containers to an n-gram representation.
-
-        Parameters:
-                n: n-gram order
-                target: a string that sets the container to be used, "states", "obs" or "both".
-                prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
-                           'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
-                           'False' disables it and returns an empty list for such cases.
-                dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
-                            e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
-                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
+        (1) Execute the n-gram conversion on the correct container, as defined by 'target'.
+        (2) Perform some validation tasks.
         """
         if n < 2:
             print("N-gram conversion is disabled.")
@@ -398,11 +390,39 @@ class AdvancedHMM:
             raise ValueError("invalid selection of target for the n-gram process.")
         if self.selected_framework != "pome":
             if target != "obs":
-                raise ValueError("you should be attempting to perform n-grams on the states only when using the 'pome' framework.")   
+                raise ValueError("you should be attempting to perform n-grams on the states only when using the 'pome' framework.")
 
-        if (len(self.state_labels) > 0) and (len(self.observations) > 0):
+        if target == "states":
+            self._convert_to_ngrams(n, self.state_labels, "states", prev_flag, dummy_flag)
+        elif target == "obs":
+            self._convert_to_ngrams(n, self.observations, "obs", prev_flag, dummy_flag)
+        elif target == "both":
+            self._convert_to_ngrams(n, self.state_labels, "states", prev_flag, dummy_flag)
+            self._convert_to_ngrams(n, self.observations, "obs", prev_flag, dummy_flag)
+        print("N-gram conversion to", n, "\b-gram was sucessful. Container type remained as ndarray<list>.")
+
+        if self.check_shape(self.state_labels, self.observations) == False:
+            print("--Warning: one of the containers is now shorter than the other on the y axis, consider using the flags or using 'both' as target.")
+            self._ngrams_balance_shape()
+
+    def _convert_to_ngrams(self, n, container, target, prev_flag, dummy_flag):
+        """
+        Convert the contents of a single container to an n-gram representation.
+
+        Parameters:
+                n: n-gram order.
+                container: the container of data, on which to perform the conversion.
+                target: a string setting that can take the following values, "states", "obs" or "both".
+                prev_flag: a boolean value that decides the behavior when a sequence is shorter than the n-gram order.
+                           'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
+                           'False' disables it and returns an empty list for such cases.
+                dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
+                            e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
+                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
+        """
+        if (len(container) > 0):
             ngrams_temp = []
-            for seq in self.observations:
+            for seq in container:
                 current_seq = list()
                 if len(seq) >= n:
                     if dummy_flag == True:
@@ -420,14 +440,12 @@ class AdvancedHMM:
 
                 ngrams_temp.append(current_seq)  
 
-            self.observations = ngrams_temp
-            print("N-gram conversion to", n, "\b-gram was sucessful. Container type was also changed from ndarray<list> to list<list>.")
+            if target == "states":
+                self.state_labels = np.array(ngrams_temp)
+            elif target == "obs":
+                self.observations = np.array(ngrams_temp)
         else:
-            raise ValueError("n-gram conversion failed, one or both of the state/observations containers appear to be empty.")          
-
-        if self.check_shape(self.state_labels, self.observations) == False:
-            print("--Warning: one of the containers is now shorter than the other on the y axis, consider using the flags or using 'both' as target.")
-            self._ngrams_balance_shape()
+            raise ValueError("n-gram conversion failed, the input container appears to be empty.")          
 
     def _ngrams_balance_shape(self):
         """
@@ -457,7 +475,7 @@ class AdvancedHMM:
         if count_wipe > 0:
             print("---Wiped", count_wipe, "rows/instances. Caused by prev_flag=False.")
         if count_shorten > 0:
-            print("---Shorterned", count_shorten, "rows/instances. Caused by dummy_flag=False. This is probably not the best idea, but we are all consenting adults here.")
+            print("---Shortened", count_shorten, "rows/instances. Caused by dummy_flag=False. This is probably not the best idea, but we are all consenting adults here.")
         if self.check_shape(self.state_labels, self.observations) == False:
             raise ValueError("one of the containers is still shorter than the other on the y axis.")               
         else:
@@ -473,7 +491,7 @@ class AdvancedHMM:
         # B
         remaining_states = self.trained_model.states[:-2]               # All except last 2
         temp_obs_matrix = np.zeros((len(self.state_to_label_mapping), len(self.observation_to_label_mapping)))
-        for i, row in enumerate(remaining_states):          
+        for i, row in enumerate(remaining_states):         
             temp_obs_matrix[i, :] = list(row.distribution.parameters[0].values())     
         self.B = temp_obs_matrix
         # pi
@@ -625,8 +643,6 @@ def general_mixture_model_label_generator(sequences, individual_labels):
 
     transformed_labels = list()
     for i, seq in enumerate(sequences):
-        #getlength = len(data_train_transformed[i])
-        #state_name = "s" + str(documentSentiments.index(x))
         transformed_labels.append([individual_labels[i]] * len(seq))
 
     return(pd.Series(transformed_labels))

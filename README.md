@@ -63,12 +63,12 @@ Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setu
 
 ## Architecture A
 
-Even if it looks like it, it is not really a classification method.
+Even if it looks like it, it is not really a classification method and is not suited for classification tasks.
 ![Method A](Documentation%20Images/General%20HMM%20Method%201.png?raw=true)
 
 ## Architecture B
 
-Pure classification.
+Pure classification-based approach.
 ![Method B](Documentation%20Images/General%20HMM%20Method%202.png?raw=true)
 
 <br><br/>

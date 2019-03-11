@@ -9,6 +9,7 @@ import pandas as pd
 import pomegranate as pome
 import time  # Pomegranate has it's own 'time' and can cause conflicts
 from math import log as log_of_e
+import random
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
@@ -16,6 +17,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 
 
 random_state = 22
+random.seed(22)
 
 class AdvancedHMM:
     """
@@ -266,10 +268,12 @@ class AdvancedHMM:
             state_train, obs_train, _ = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]
             _, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
+            time_counter = time.time()
             # Training Phase
             self.train(state_train, obs_train, pome_algorithm, pome_verbose, pome_njobs)
             # Prediction Phase
-            self.predict(obs_test, y_test, pome_algorithm_t)
+            predict = self.predict(obs_test, y_test, pome_algorithm_t)
+            self.result_metrics()
 
         # Verbose to inform the user
         print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
@@ -283,7 +287,7 @@ class AdvancedHMM:
             print("Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.")
         elif pome_algorithm_t == "viterbi":
             print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities.") 
-        print("Prediction failed because of new unseen observations on a total of:", self.count_new_unseen, "instances.")
+        print("Prediction failed because of new unseen observations on a total of:", np.mean(np.array(self.count_new_unseen)), "instances.")
 
         # self.clean_up()
 
@@ -291,8 +295,6 @@ class AdvancedHMM:
         """
         Train a set of models using k-fold cross-validation
         """
-        time_counter = time.time()
-
         if self.selected_framework == 'pome':
             if pome_algorithm not in ["baum-welch", "viterbi", "labeled"]:
                 raise ValueError("please set the 'pome_algorithm' parameter to one of the following: 'baum-welch', 'viterbi', 'labeled'")
@@ -323,7 +325,7 @@ class AdvancedHMM:
         if self.selected_framework == 'pome':
             if pome_algorithm_t not in ["map", "viterbi"]:
                 raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'")
-            self._predict_pome(obs_test, y_test, pome_algorithm_t)
+            return(self._predict_pome(obs_test, y_test, pome_algorithm_t))
         else:
             raise ValueError("TODO") 
 
@@ -331,39 +333,46 @@ class AdvancedHMM:
         """
         Perform the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
         """   
+        predict_length = len(obs_test)
+        total_states = len(self.state_to_label_mapping)
+        predict = []  # The list of the actual labels that were predicted 
+        count_new_unseen_local = 0        
         if pome_algorithm_t == "map":
-            predict_length = len(obs_test)
-            total_states = len(self.state_to_label_mapping)
-            predict = []  # The list of the actual labels that were predicted
-            predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label
-            count_new_unseen_local = 0           
+            predict_log_proba_matrix = np.zeros((predict_length, total_states))  # The matrix of log probabilities for each label          
             for i in range(predict_length):
                 if len(obs_test[i]) > 0:
                     try:      
-                        temp_predict = self.trained_model.predict_log_proba(obs_test[i])[-1]  # We only care about the last prediction
-                    except ValueError as err:  # Prediction failed, perform random guessing
+                        temp_predict = self.trained_model.predict(obs_test[i], algorithm='map')[-1]  # We only care about the last prediction
+                        temp_predict_log_proba = self.trained_model.predict_log_proba(obs_test[i])[-1]  # Using argmax to not call predict twice is wrong because for random guessing all 3 probabilities are equal
+                    except ValueError:  # Prediction failed, perform random guessing
                         count_new_unseen_local += 1
-                        temp_predict = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
+                        temp_predict = [random.randint(0, total_states - 1)] 
+                        temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
                 else:  #  Prediction would be pointless for an empty sequence
-                    temp_predict = [log_of_e(1.0 / total_states)] * total_states      # log of base e
+                    temp_predict = [random.randint(0, total_states - 1)] 
+                    temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e
 
-                predict_log_proba_matrix[i,:] = temp_predict
+                predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
+                predict_log_proba_matrix[i,:] = temp_predict_log_proba
+            self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
+            self.count_new_unseen.append(count_new_unseen_local)     
+        elif pome_algorithm_t == "viterbi":      
+            for i in range(predict_length):
+                if len(obs_test[i]) > 0:
+                    try:      
+                        temp_predict = self.trained_model.predict(obs_test[i], algorithm='viterbi')[-1]  # We only care about the last prediction
+                    except ValueError:  # Prediction failed, perform random guessing
+                        count_new_unseen_local += 1
+                        temp_predict = [random.randint(0, total_states - 1)] 
+                else:  #  Prediction would be pointless for an empty sequence
+                    temp_predict = [random.randint(0, total_states - 1)] 
 
-            # Find argmax on the probability matrix; this entire process would be equivalent to simply calling predict(..., algorithm='map'), but calling it a second time would be more costly.
-            predicted = list()
-            for x in np.argmax(predict_log_proba_matrix, axis=1):  # Convert indices to the actual strings
-                predict.append(list(self.state_to_label_mapping.keys())[x])
+                predict.append(list(self.state_to_label_mapping.keys())[temp_predict])
+            self.cross_val_prediction_matrix.append(temp_predict)
+            self.count_new_unseen.append(count_new_unseen_local)   
 
-            print(predict)
-
-            print("Training completed using the Maximum a Posteriori algorithm. Returns a set of log probabilities.") 
-        elif pome_algorithm_t == "viterbi":
-            print("Training completed using the Viterbi algorithm. Returns a set of exact predictions not probabilities.") 
+        return(predict)
         
-
-        self.count_new_unseen.append(count_new_unseen_local)
-
-
     def convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
         Convert the contents of containers to an n-gram representation.

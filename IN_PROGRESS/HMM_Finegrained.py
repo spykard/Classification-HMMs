@@ -65,14 +65,12 @@ if False:
 #       1st Framework Training Settings
 #       1st Framework Prediction Settings
 
-if True:
+if False:
     # create Model
-    # general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
-    
-    #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
+    general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = AdvancedHMM.AdvancedHMM()
-    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
-            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, \
+            state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,              \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
@@ -80,8 +78,17 @@ if True:
             )
     hmm.print_average_results()
 
-    # self.cross_val_prediction_matrix
-
-elif False:
+elif True:
     # create Model
-    print("lel")
+    #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
+    hmm = AdvancedHMM.AdvancedHMM()
+    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
+            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+            text_instead_of_sequences=[], text_enable=False,                            \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,              \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
+            pome_algorithm_t="map"                                                      \
+            )
+    hmm.print_average_results()
+
+# self.cross_val_prediction_matrix

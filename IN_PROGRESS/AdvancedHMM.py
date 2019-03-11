@@ -263,7 +263,9 @@ class AdvancedHMM:
         self.create_state_to_label_mapping()
 
         if self.selected_architecture == "A":
-            print("Since you selected architecture 'A', you aren't utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
+            print("Since you selected architecture 'A', you are probably not utilizing the actual truth labels of the training set and the state sequences of the test set, in this supervised task.")
+            if set(self.golden_truth) != set(self.state_to_label_mapping.keys()):
+                raise ValueError("you have selected architecture 'A' but the number of unique states is different/higher than the number of unique truth labels; consider using architecture 'B'.")                  
 
         cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):

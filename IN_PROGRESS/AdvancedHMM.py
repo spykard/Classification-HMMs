@@ -10,6 +10,7 @@ import pomegranate as pome
 import time  # Pomegranate has it's own 'time' and can cause conflicts
 from math import log as log_of_e
 import random
+import copy
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
@@ -45,9 +46,9 @@ class AdvancedHMM:
         self.selected_model = ""
         self.frameworks = ["pome", "hohmm"]
         self.selected_framework = ""
+        self.multivariate = False
 
         self.trained_model = None  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
-        self.multivariate = False
         self.state_to_label_mapping = {}  # {"pos": 0, "neg": 1,...}
         self.observation_to_label_mapping = {}   # {"good": 0, ambitious: 1, ...}
 
@@ -69,7 +70,13 @@ class AdvancedHMM:
         self.state_labels = []
         self.observations = []
         self.text_data = []        
+
+    def reset(self):
+        """
+        Important. Resets some important variables after each cross validation fold.
+        """  
         self.trained_model = None
+        self.observation_to_label_mapping = {}
 
     def check_input_type(self, state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable):
         """
@@ -80,28 +87,28 @@ class AdvancedHMM:
             if (isinstance(state_labels_pandas, pd.Series) != True) or (isinstance(observations_pandas, pd.Series) != True):
                 raise ValueError("please make sure that you are inputting the parameters 'state_labels_pandas' and 'observations_pandas' in the form of a pandas Series, i.e. select a column of a DataFrame.")
             else:
-                self.state_labels = state_labels_pandas.values  # or tolist() to get list instead of ndarray
-                self.observations = observations_pandas.values 
+                self.state_labels = copy.deepcopy(state_labels_pandas.values)  # or tolist() to get list instead of ndarray; Should be Deep Copy in case the same array is given on both inputs, be careful
+                self.observations = copy.deepcopy(observations_pandas.values)
         else:
             if (isinstance(text_instead_of_sequences, pd.Series) != True):  # just text parameter
                 raise ValueError("please make sure that you are inputting the parameter 'text_instead_of_sequences' in the form of a pandas Series, i.e. select a column of a DataFrame.")
             else:
-                self.text_data = text_instead_of_sequences.values           
+                self.text_data = copy.deepcopy(text_instead_of_sequences.values)         
             if len(state_labels_pandas) > 0:  # text + state_labels parameters
                 if (isinstance(state_labels_pandas, pd.Series) != True):
                     raise ValueError("text parameter was given correctly but please make sure that you are inputting the parameters 'state_labels_pandas' in the form of a pandas Series, i.e. select a column of a DataFrame.")
                 else:
-                    self.state_labels = state_labels_pandas.values
+                    self.state_labels = copy.deepcopy(state_labels_pandas.values)
             if len(observations_pandas) > 0:  # text + observations parameters
                 if (isinstance(observations_pandas, pd.Series) != True):
                     raise ValueError("text parameter was given correctly but please make sure that you are inputting the parameter 'observations_pandas' in the form of a pandas Series, i.e. select a column of a DataFrame.")               
                 else:
-                    self.observations = observations_pandas.values 
+                    self.observations = copy.deepcopy(observations_pandas.values)
 
         if (isinstance(golden_truth_pandas, pd.Series) != True):
             raise ValueError("please make sure that you are inputting the parameter 'golden_truth_pandas' in the form of a pandas Series, i.e. select a column of a DataFrame.")
         else:           
-            self.golden_truth = golden_truth_pandas.values 
+            self.golden_truth = copy.deepcopy(golden_truth_pandas.values) 
 
     def verify_and_autodetect(self):
         """
@@ -280,6 +287,8 @@ class AdvancedHMM:
             predict = self.predict(obs_test, y_test, pome_algorithm_t)
             self.result_metrics(y_test, predict, time_counter)
 
+            self.reset()
+
         # Verbose to inform the user
         print("Observation to label mapping completed ('pome'-based). x", k_fold, "times")             
         if pome_algorithm == "baum-welch":
@@ -393,19 +402,19 @@ class AdvancedHMM:
                 raise ValueError("you should be attempting to perform n-grams on the states only when using the 'pome' framework.")
 
         if target == "states":
-            self._convert_to_ngrams(n, self.state_labels, "states", prev_flag, dummy_flag)
+            self._convert_to_ngrams(n, "states", prev_flag, dummy_flag)
         elif target == "obs":
-            self._convert_to_ngrams(n, self.observations, "obs", prev_flag, dummy_flag)
+            self._convert_to_ngrams(n, "obs", prev_flag, dummy_flag)
         elif target == "both":
-            self._convert_to_ngrams(n, self.state_labels, "states", prev_flag, dummy_flag)
-            self._convert_to_ngrams(n, self.observations, "obs", prev_flag, dummy_flag)
+            self._convert_to_ngrams(n, "states", prev_flag, dummy_flag)
+            self._convert_to_ngrams(n, "obs", prev_flag, dummy_flag)
         print("N-gram conversion to", n, "\b-gram was sucessful. Container type remained as ndarray<list>.")
 
         if self.check_shape(self.state_labels, self.observations) == False:
             print("--Warning: one of the containers is now shorter than the other on the y axis, consider using the flags or using 'both' as target.")
             self._ngrams_balance_shape()
 
-    def _convert_to_ngrams(self, n, container, target, prev_flag, dummy_flag):
+    def _convert_to_ngrams(self, n, target, prev_flag, dummy_flag):
         """
         Convert the contents of a single container to an n-gram representation.
 
@@ -420,22 +429,28 @@ class AdvancedHMM:
                             e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
                                  However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.
         """
+        if target == "states":        
+            container = self.state_labels  # Shallow copy not Deep, be careful
+        elif target == "obs":
+            container = self.observations
+        
         if (len(container) > 0):
             ngrams_temp = []
             for seq in container:
+                seq_deep = copy.deepcopy(seq)   # Insert is going to be used, better make a deep copy
                 current_seq = list()
-                if len(seq) >= n:
+                if len(seq_deep) >= n:
                     if dummy_flag == True:
                         for i in range(n-1):  # Append one or more dummies at the start of the sequence
-                            seq.insert(i, "dummy"+str(i+1))
-                    for grams in ngramsgenerator(seq, n):
+                            seq_deep.insert(i, "dummy"+str(i))
+                    for grams in ngramsgenerator(seq_deep, n):
                         current_seq.append("".join(grams))  
 
                 elif prev_flag == True:
                     if dummy_flag == True:
-                        for i in range(len(seq)-1):
-                            seq.insert(i, "dummy"+str(i+1))
-                    for grams in ngramsgenerator(seq, len(seq)):
+                        for i in range(len(seq_deep)-1):
+                            seq_deep.insert(i, "dummy"+str(i))
+                    for grams in ngramsgenerator(seq_deep, len(seq_deep)):
                         current_seq.append("".join(grams))                    
 
                 ngrams_temp.append(current_seq)  
@@ -458,13 +473,15 @@ class AdvancedHMM:
         for i in range(self.length):
             length_1 = len(self.state_labels[i])
             length_2 = len(self.observations[i])
-
             if length_1 == 0:
                 self.observations[i] = []
                 count_wipe += 1
             elif length_2 == 0:
                 self.state_labels[i] = []
                 count_wipe += 1
+
+            length_1 = len(self.state_labels[i])
+            length_2 = len(self.observations[i])
             if length_1 > length_2:
                 self.state_labels[i] = self.state_labels[i][-length_2:]  # Remove the first elements of the list
                 count_shorten += 1

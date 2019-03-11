@@ -24,7 +24,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos"]:
+                if temp[0] in ["neg", "neu", "pos", "mix"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]
@@ -37,10 +37,13 @@ df = pd.DataFrame({'Labels': labels, 'Data': data, 'Sequences': sequences})
 emptySequences = df.loc[df.loc[:,'Sequences'].map(len) < 1].index.values
 df = df.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
 
-# 3. Print dataset information
+# 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
+df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+
+# 4. Print dataset information
 print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
-# 4. Balance the Dataset by Undersampling
+# 5. Balance the Dataset by Undersampling
 if False:
     set_label = "neu"
     set_desired = 75
@@ -51,10 +54,6 @@ if False:
     df = pd.concat([df[~mask], df_todo], ignore_index=True)
     df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
-''' CHECK HOW THIS AFFECTS PERFORMANCE '''
-# 5. Shuffle the Dataset, it seems to be too perfectly ordered
-if False:
-    df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
 # MAIN
 # AdvancedHMM.build
@@ -65,7 +64,7 @@ if False:
 #       1st Framework Training Settings
 #       1st Framework Prediction Settings
 
-if False:
+if True:
     # create Model
     general_mixture_model_labels = AdvancedHMM.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = AdvancedHMM.AdvancedHMM()
@@ -78,17 +77,21 @@ if False:
             )
     hmm.print_average_results()
 
-elif True:
+
+# ALREADY NOTICE THAT ON GAUSSIAN MIXTURE, USING DUMMY FLAG ON n_grams=3 IMPROVES PERFORMANCE
+
+elif False:
     # create Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
     hmm = AdvancedHMM.AdvancedHMM()
     hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                            \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,              \
+            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,              \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1,              \
             pome_algorithm_t="map"                                                      \
             )
     hmm.print_average_results()
+
 
 # self.cross_val_prediction_matrix

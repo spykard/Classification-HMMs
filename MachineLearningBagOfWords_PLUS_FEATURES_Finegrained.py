@@ -328,7 +328,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     tfidf_matrix = vectorizer.fit_transform(data_train)
     tfidf_dense = tfidf_matrix.toarray()  # dense ndarray
     print(type(tfidf_dense), tfidf_dense.shape)
-    print(tfidf_dense)
+    print(tfidf_dense.nonzero())
 
     #b = np.array([[100, 200], [100, 200], [100, 200], [100, 200], [100, 200], [100, 200]])
     #b = b[:, None]
@@ -339,12 +339,14 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     pos_feature_train = pos_feature_train.values[:, None]  
     print(tfidf_dense.shape)
     tfidf_dense = np.hstack((tfidf_dense, neg_feature_train, neu_feature_train, pos_feature_train))  # or column_stack   
+    #tfidf_dense = np.hstack((neg_feature_train, neu_feature_train, pos_feature_train))  # or column_stack  
     print(tfidf_dense.shape)
     #quit()
 
-    #clf = ComplementNB()
-    clf = LinearSVC(penalty='l2', max_iter=1000, dual=True)
-    clf = DecisionTreeClassifier()
+    clf = ComplementNB()
+    #clf = LinearSVC(penalty='l2', max_iter=1000, dual=True)
+    #clf = DecisionTreeClassifier()
+    
     clf.fit(tfidf_dense, labels_train)
 
 
@@ -357,8 +359,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     pos_feature_test = pos_feature_test.values[:, None]  
     print(tfidf_dense_test.shape)
     tfidf_dense_test = np.hstack((tfidf_dense_test, neg_feature_test, neu_feature_test, pos_feature_test))  # or column_stack   
+    #tfidf_dense_test = np.hstack((neg_feature_test, neu_feature_test, pos_feature_test))  # or column_stack 
     print(tfidf_dense_test.shape)
 
+    print(tfidf_dense_test.nonzero())
 
     predicted = clf.predict(tfidf_dense_test)
 
@@ -380,12 +384,12 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
 
     #Print_Result_Metrics(0, labels_test, predicted, None, 0.1, 0, "ComplementNB")  
 
-    if cross_validation_enable == False:
+    if False:
         break  # Disable Cross Validation
 
 #print(clf.feature_importances_)
 
-Print_Result_CrossVal_Best(k)
+#Print_Result_CrossVal_Best(k)
 print("F1 avg", np.around(np.mean(metric_results_f1)*100.0, decimals=3))
 print("Acc avg", np.around(np.mean(metric_results_acc)*100.0, decimals=3))
 print("F1 max", np.around(max(metric_results_f1)*100.0, decimals=3))

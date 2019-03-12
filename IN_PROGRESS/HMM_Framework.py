@@ -275,7 +275,7 @@ class HMM_Framework:
               n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
               pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,
               pome_algorithm_t="map",
-              hohmm_smoothing=0.0, hohmm_synthesize=False,
+              hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,
               architecture_b_algorithm="formula"
               ):
         """
@@ -312,6 +312,7 @@ class HMM_Framework:
 
                 pome_algorithm_t: refers to a setting for the prediction phase, can be either "map" or "viterbi".
         
+                hohmm_high_order: refers to the order of the HMM for HOHMM training; on Pomegranate high-order can be achieved through the n-gram settings.
                 hohmm_smoothing: refers to a setting for HOHMM training, adds the given float to both state transitions and observations.
                 hohmm_synthesize: refers to a setting for HOHMM training, ensures to generate all permutations of states; avoids OOV and ensures model is fully ergodic.
 
@@ -343,7 +344,7 @@ class HMM_Framework:
             time_counter = time.time()
             # Training Phase
             self.set_unique_states_subset(state_train)
-            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize)
+            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm)
             self.result_metrics(y_test, predict, time_counter)
@@ -353,7 +354,7 @@ class HMM_Framework:
         self.verbose_final(pome_algorithm, pome_algorithm_t, architecture_b_algorithm)
         self.clean_up()
 
-    def train(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize):
+    def train(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize):
         """
         Train a set of models using k-fold cross-validation
         """
@@ -372,10 +373,10 @@ class HMM_Framework:
         
         elif self.selected_framework == 'hohmm':   
             if self.selected_architecture == "A":
-                self._train_hohmm_archit_a(state_train, obs_train, None, hohmm_smoothing, hohmm_synthesize)
+                self._train_hohmm_archit_a(state_train, obs_train, None, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
                 self.hohmm_object_to_matrices()  # Assign to the local parameters   
             elif self.selected_architecture == "B":
-                self._train_hohmm_archit_b(state_train, obs_train, y_train, hohmm_smoothing, hohmm_synthesize)  # Local parameters remain empty in this scenario          
+                self._train_hohmm_archit_b(state_train, obs_train, y_train, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)  # Local parameters remain empty in this scenario          
 
     def _train_pome_archit_a(self, state_train, obs_train, _, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
@@ -409,19 +410,19 @@ class HMM_Framework:
                                                         )
             self.trained_model.append(pome_HMM)  # In this scenario, we want to store a list of trained models, not just 1.
 
-    def _train_hohmm_archit_a(self, state_train, obs_train, _, hohmm_smoothing, hohmm_synthesize):
+    def _train_hohmm_archit_a(self, state_train, obs_train, _, hohmm_high_order, hohmm_smoothing, hohmm_synthesize):
         """
         Train a Hidden Markov Model using the HOHMM framework as a baseline. 
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """    
         _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
         _hohmm_builder.add_batch_training_examples(list(obs_train), list(state_train))  # The builder does not accept objects of type ndarray<list>
-        _trained_hohmm = _hohmm_builder.build(highest_order=1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
+        _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
         self.trained_model = _trained_hohmm
         self.create_state_to_label_mapping()
         self.create_observation_to_label_mapping() 
 
-    def _train_hohmm_archit_b(self, state_train, obs_train, y_train, hohmm_smoothing, hohmm_synthesize):
+    def _train_hohmm_archit_b(self, state_train, obs_train, y_train, hohmm_high_order, hohmm_smoothing, hohmm_synthesize):
         """
         Train a Hidden Markov Model using the HOHMM framework as a baseline.
         Architecture B is used, where multiple HMMs are built, in a purely classification-based approach.
@@ -433,7 +434,7 @@ class HMM_Framework:
         for j in index_sets:
             _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
             _hohmm_builder.add_batch_training_examples(list(obs_train[j]), list(state_train[j]))  # The builder does not accept objects of type ndarray<list>
-            _trained_hohmm = _hohmm_builder.build(highest_order=1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
+            _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
             self.trained_model.append(_trained_hohmm)
 
     def predict(self, state_test, obs_test, pome_algorithm_t, architecture_b_algorithm):
@@ -774,16 +775,18 @@ class HMM_Framework:
         self.cross_val_metrics["Confusion_Matrix"].append(confusion_matrix)
         self.cross_val_metrics["Time_Complexity"].append(time.time() - time_counter)                         
 
-    def print_best_results(self):
+    def print_best_results(self, decimals=5):
         """   
         Prints the best results across all folds of the cross validation    
         """
         if len(self.cross_val_metrics["Name"]) > 0:
             print("\n", "- " * 18, "Conclusion across", str(self.k_fold), "\b-fold Cross Validation", "- " * 18,)
-            index = np.argmax(self.cross_val_metrics["F1-score"])
-            print("-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index], "\n", self.cross_val_metrics["Confusion_Matrix"][index], sep='')
-            index = np.argmax(self.cross_val_metrics["Accuracy"])
-            print("\n-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index], "\n", self.cross_val_metrics["Confusion_Matrix"][index], sep='')
+            index_1 = np.argmax(self.cross_val_metrics["F1-score"])
+            print("-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index_1], "\n", self.cross_val_metrics["Confusion_Matrix"][index_1], sep='')
+            index_2 = np.argmax(self.cross_val_metrics["Accuracy"])
+            print("\n-Best Accuracy score:\n", self.cross_val_metrics["Metrics_String"][index_2], "\n", self.cross_val_metrics["Confusion_Matrix"][index_2], sep='')
+            print("\n-Best F1-score:", np.around(self.cross_val_metrics["F1-score"][index_1]*100.0, decimals=decimals))
+            print("-Best Accuracy:", np.around(self.cross_val_metrics["Accuracy"][index_2]*100.0, decimals=decimals))
         else:
             raise ValueError("cannot print best results; it seems that no predictions have been performed.")               
 
@@ -793,8 +796,8 @@ class HMM_Framework:
         """
         if len(self.cross_val_metrics["Name"]) > 0:
             print("\n", "- " * 18, "Conclusion across", str(self.k_fold), "\b-fold Cross Validation", "- " * 18,)
-            print("-Average F1-score:", np.around(np.mean(self.cross_val_metrics["F1-score"]), decimals=decimals))
-            print("-Average Accuracy:", np.around(np.mean(self.cross_val_metrics["Accuracy"]), decimals=decimals))
+            print("-Average F1-score:", np.around(np.mean(self.cross_val_metrics["F1-score"])*100.0, decimals=decimals))
+            print("-Average Accuracy:", np.around(np.mean(self.cross_val_metrics["Accuracy"])*100.0, decimals=decimals))
         else:
             raise ValueError("cannot print average results; it seems that no predictions have been performed.")               
  

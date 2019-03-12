@@ -62,9 +62,9 @@ if False:
 #       Data
 #       Text Scenario
 #       n-gram Settings
-#       1st Framework Training Settings
+#       1st Framework Training Settings (High-Order done through the n-grams Settings)
 #       1st Framework Prediction Settings (Achitecture A)
-#       2nd Framework Training Settings
+#       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
 if False:
@@ -77,9 +77,9 @@ if False:
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
             architecture_b_algorithm="forward"                                                                                             \
-            )    
+            )     
     
     hmm.print_average_results()
 
@@ -91,21 +91,20 @@ elif True:
     #  Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
+    hmm.build(architecture="B", model="State-emission HMM", framework="hohmm", k_fold=5,                                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
             architecture_b_algorithm="forward"                                                                                             \
             )   
-    
-    # POME HAS EVALUATOR! log_probability()
-    # HOHMM HAS EVALUATOR! evaluate()
+
     # NEW FEATURE FOR 'FORMULA' parameter 'formula_magic_smoothing' that doesn't crash when out-of-vocabulary
-    hmm.print_average_results()
-    #hmm.print_best_results()
+    hmm.print_best_results(decimals=3)    
+    hmm.print_average_results(decimals=3)
+
     #print(hmm.cross_val_prediction_matrix)
 
 

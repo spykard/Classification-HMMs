@@ -51,6 +51,7 @@ class HMM_Framework:
 
         self.trained_model = []  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.unique_states = set()
+        self.unique_states_subset = set()
         self.state_to_label_mapping = {}        # {"pos": 0, "neg": 1, ...}
         self.state_to_label_mapping_rev = {}    # {0: "pos", 1: "neg", ...}
         self.observation_to_label_mapping = {}  # {"good": 0, ambitious: 1, ...}
@@ -201,7 +202,18 @@ class HMM_Framework:
             for seq in self.state_labels:
                 self.unique_states.update(set(seq))
         else:
-            raise ValueError("state index to label mapping failed, the state container appears to be empty.")  
+            raise ValueError("couldn't find states, the state container appears to be empty.")  
+
+    def set_unique_states_subset(self, subset):
+        """
+        Find all unique state labels that occur in a specific subset.
+        """
+        self.unique_states_subset = set()  # Reset it
+        if (len(subset) > 0):       
+            for seq in subset:
+                self.unique_states_subset.update(set(seq))
+        else:
+            raise ValueError("couldn't find states, the state container appears to be empty.") 
 
     def create_state_to_label_mapping(self):
         """
@@ -209,7 +221,7 @@ class HMM_Framework:
         The mapping depends on the framework that was chosen, see README for more information.
         """       
         if self.selected_framework == "pome":
-            for i, unique_s in enumerate(sorted(list(self.unique_states))):
+            for i, unique_s in enumerate(sorted(list(self.unique_states_subset))):
                 self.state_to_label_mapping[unique_s] = i 
         elif self.selected_framework == "hohmm":
             for i, unique_s in enumerate(self.trained_model.get_parameters()["all_states"]):
@@ -330,6 +342,7 @@ class HMM_Framework:
 
             time_counter = time.time()
             # Training Phase
+            self.set_unique_states_subset(state_train)
             self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize)
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm)
@@ -369,9 +382,9 @@ class HMM_Framework:
         Train a Hidden Markov Model using the Pomegranate framework as a baseline. 
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states), X=obs_train, labels=state_train,                                \
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train, labels=state_train,                                \
                                                        algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
-                                                       max_iterations=1, state_names=sorted(list(self.unique_states)),                                                                  \
+                                                       max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                  \
                                                        verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                        )
         self.trained_model = pome_HMM
@@ -388,9 +401,10 @@ class HMM_Framework:
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:
-            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states), X=obs_train[j], labels=state_train[j],                          \
+            self.set_unique_states_subset(state_train[j])
+            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train[j], labels=state_train[j],                          \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
-                                                        max_iterations=1, state_names=sorted(list(self.unique_states)),                                                                  \
+                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                  \
                                                         verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                         )
             self.trained_model.append(pome_HMM)  # In this scenario, we want to store a list of trained models, not just 1.
@@ -453,7 +467,7 @@ class HMM_Framework:
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """   
         predict_length = len(obs_test)
-        total_states = len(self.unique_states)
+        total_states = len(self.unique_states_subset)
         predict = []  # The list of label predictions
         count_new_oov_local = 0 
 
@@ -543,7 +557,7 @@ class HMM_Framework:
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """    
         predict_length = len(obs_test) 
-        total_states = len(self.unique_states)
+        total_states = len(self.unique_states_subset)
         predict = []  # The list of label predictions 
         count_new_oov_local = 0         
         predict_matrix = np.empty((predict_length, 1), dtype=object)  # The matrix of predictions to be stored             

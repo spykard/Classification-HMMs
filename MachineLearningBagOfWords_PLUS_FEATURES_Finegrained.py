@@ -286,7 +286,8 @@ k_fold = RepeatedStratifiedKFold(5, n_repeats=1, random_state=22)
 #   (3) ('feature_selection', SelectFromModel(estimator=LinearSVC(), threshold=-np.inf, max_features=5000)),  # 0.860 accuracy 
 #   (4) ('feature_selection', SelectFromModel(estimator=LinearSVC(penalty='l1', dual=False), threshold=-np.inf, max_features=5000)),  # 0.824 accuracy | Technically L1 is better than L2
 
-average = []
+metric_results_f1 = []
+metric_results_acc = []
 
 ### (1) LET'S BUILD : Complement Naive Bayes
 cross_validation_best = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
@@ -323,7 +324,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     #Run_Classifier(0, 0, 1, pipeline, {}, data_train, data_test, labels_train, labels_test, None, stopwords_complete_lemmatized, '(Complement Naive Bayes)')
 
     # Training    
-    vectorizer = TfidfVectorizer(max_df=0.90, min_df=2, ngram_range=(1, 1), stop_words=stopwords_complete_lemmatized)
+    vectorizer = TfidfVectorizer(max_df=0.92, min_df=2, ngram_range=(1, 1), stop_words="english", use_idf=True, tokenizer=LemmaTokenizer())
     tfidf_matrix = vectorizer.fit_transform(data_train)
     tfidf_dense = tfidf_matrix.toarray()  # dense ndarray
     print(type(tfidf_dense), tfidf_dense.shape)
@@ -341,8 +342,9 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print(tfidf_dense.shape)
     #quit()
 
-    clf = ComplementNB()
-    #clf = DecisionTreeClassifier(max_features=None)
+    #clf = ComplementNB()
+    clf = LinearSVC(penalty='l2', max_iter=1000, dual=True)
+    clf = DecisionTreeClassifier()
     clf.fit(tfidf_dense, labels_train)
 
 
@@ -372,7 +374,8 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print(confusion_matrix)
     print()
 
-    average.append(other_metrics_as_dict['weighted avg']['f1-score'])
+    metric_results_f1.append(other_metrics_as_dict['weighted avg']['f1-score'])
+    metric_results_acc.append(accuracy)
 
 
     #Print_Result_Metrics(0, labels_test, predicted, None, 0.1, 0, "ComplementNB")  
@@ -380,8 +383,13 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     if cross_validation_enable == False:
         break  # Disable Cross Validation
 
+#print(clf.feature_importances_)
+
 Print_Result_CrossVal_Best(k)
-print(np.mean(average))
+print("F1 avg", np.around(np.mean(metric_results_f1)*100.0, decimals=3))
+print("Acc avg", np.around(np.mean(metric_results_acc)*100.0, decimals=3))
+print("F1 max", np.around(max(metric_results_f1)*100.0, decimals=3))
+print("Acc max", np.around(max(metric_results_acc)*100.0, decimals=3))
 
 ###
 quit()

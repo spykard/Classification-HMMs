@@ -324,12 +324,14 @@ class HMM_Framework:
                 framework: string denoting a choice by the user.
                 k_fold: the number of folds to be used in the cross-validation.
 
-                state_labels_pandas: pandas Series that contains the data that will be used as labels for the states.
+                state_labels_pandas: pandas Series that contains the data the known sequence of state labels.
                 observations_pandas: pandas Series that contains the data that will be used as observations.
                 golden_truth_pandas: pandas Series that contains the actual truth labels of all instances.
 
-                text_instead_of_sequences: a completely different operating mode, where the user inputs text documents; 
+                text_instead_of_sequences: a completely different operating mode, where the user inputs text documents;
+                                           an example would be words to be used for a multivariate (multi-observation) HMM.
                                            in this scenario the first two arguments don't have to be used.
+                                           TODO
                 text_enable: enables the use of the 'text_instead_of_sequences' parameter.
 
                 n_grams: n-gram order
@@ -338,8 +340,8 @@ class HMM_Framework:
                            'True' enables the calculation of those shorter n-grams, leading to more unique states/observations.
                            'False' disables it and returns an empty list for such cases.
                 n_dummy_flag: a boolean value that decides whether the length of the sequence should be maintained with the help of a dummy set.
-                            e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
-                                 However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.  
+                              e.g. on a State-emission HMM, set it to 'False' since both the states and observations get shortened.
+                              However, in other scenarios where only one of the two is affected, it will end up with a shorter length per sequence.  
 
                 pome_algorithm: refers to a setting for Pomegranate training, can be either "baum-welch", "viterbi" or "labeled". 
                 pome_verbose: refers to a setting for Pomegranate training, can be either True or False.

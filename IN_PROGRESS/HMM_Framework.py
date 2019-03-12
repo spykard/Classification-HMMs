@@ -775,17 +775,17 @@ class HMM_Framework:
         self.cross_val_metrics["Confusion_Matrix"].append(confusion_matrix)
         self.cross_val_metrics["Time_Complexity"].append(time.time() - time_counter)                         
 
-    def print_best_results(self, decimals=5):
+    def print_best_results(self, detailed=True, decimals=5):
         """   
         Prints the best results across all folds of the cross validation    
         """
         if len(self.cross_val_metrics["Name"]) > 0:
             print("\n", "- " * 18, "Conclusion across", str(self.k_fold), "\b-fold Cross Validation", "- " * 18,)
-            index_1 = np.argmax(self.cross_val_metrics["F1-score"])
-            print("-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index_1], "\n", self.cross_val_metrics["Confusion_Matrix"][index_1], sep='')
-            index_2 = np.argmax(self.cross_val_metrics["Accuracy"])
-            print("\n-Best Accuracy score:\n", self.cross_val_metrics["Metrics_String"][index_2], "\n", self.cross_val_metrics["Confusion_Matrix"][index_2], sep='')
-            print("\n-Best F1-score:", np.around(self.cross_val_metrics["F1-score"][index_1]*100.0, decimals=decimals))
+            index_1, index_2 = np.argmax(self.cross_val_metrics["F1-score"]), np.argmax(self.cross_val_metrics["Accuracy"])
+            if detailed == True:            
+                print("-Best F1-score:\n", self.cross_val_metrics["Metrics_String"][index_1], "\n", self.cross_val_metrics["Confusion_Matrix"][index_1], sep='')
+                print("\n-Best Accuracy score:\n", self.cross_val_metrics["Metrics_String"][index_2], "\n", self.cross_val_metrics["Confusion_Matrix"][index_2], "\n", sep='')
+            print("-Best F1-score:", np.around(self.cross_val_metrics["F1-score"][index_1]*100.0, decimals=decimals))
             print("-Best Accuracy:", np.around(self.cross_val_metrics["Accuracy"][index_2]*100.0, decimals=decimals))
         else:
             raise ValueError("cannot print best results; it seems that no predictions have been performed.")               

@@ -34,9 +34,9 @@ class HMM_Framework:
         self.state_labels = []
         self.observations = []
         self.golden_truth = []
-        self.A = None
-        self.B = None
-        self.pi = None
+        self.A = []
+        self.B = []
+        self.pi = []
 
         self.text_data = []
         self.text_enable = False        
@@ -52,9 +52,9 @@ class HMM_Framework:
         self.trained_model = []  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.unique_states = set()
         self.unique_states_subset = set()
-        self.state_to_label_mapping = {}        # {"pos": 0, "neg": 1, ...}
-        self.state_to_label_mapping_rev = {}    # {0: "pos", 1: "neg", ...}
-        self.observation_to_label_mapping = {}  # {"good": 0, ambitious: 1, ...}
+        self.state_to_label_mapping = []        # Dict: {"pos": 0, "neg": 1, ...}
+        self.state_to_label_mapping_rev = []    # Dict: {0: "pos", 1: "neg", ...}
+        self.observation_to_label_mapping = []  # Dict: {"good": 0, ambitious: 1, ...}
         self.hmm_to_label_mapping = {}          # Used for Architecture 'B', {Model 0: "pos", Model 1: "neg", ...}
 
         # Evaluation
@@ -81,9 +81,10 @@ class HMM_Framework:
         Important. Resets some important variables after each cross validation fold.
         """  
         self.trained_model = []
-        self.state_to_label_mapping = {}
-        self.state_to_label_mapping_rev = {}
-        self.observation_to_label_mapping = {}
+        self.unique_states_subset = set()
+        self.state_to_label_mapping = []
+        self.state_to_label_mapping_rev = []
+        self.observation_to_label_mapping = []
 
     def check_input_type(self, state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable):
         """
@@ -218,35 +219,71 @@ class HMM_Framework:
     def create_state_to_label_mapping(self):
         """
         Maps the strings of states (e.g. 'pos') from the input sequence, to indices 1,2,...n that correspond to the states/matrix that the training produces.
-        The mapping depends on the framework that was chosen, see README for more information.
-        """       
-        if self.selected_framework == "pome":
-            for i, unique_s in enumerate(sorted(list(self.unique_states_subset))):
-                self.state_to_label_mapping[unique_s] = i 
-        elif self.selected_framework == "hohmm":
-            for i, unique_s in enumerate(self.trained_model.get_parameters()["all_states"]):
-                self.state_to_label_mapping[unique_s] = i        
-        self.state_to_label_mapping_rev = {v: k for k, v in self.state_to_label_mapping.items()}  # Reverse the mapping so we end up with {0: "pos", 1: "neg",...}
+        The mapping depends on the framework that was chosen, e.g. Pomegranate uses them in a simple sorted manner.
+        """    
+        if self.selected_architecture == "A":
+            self.state_to_label_mapping = {}  # Simple Dict, list of Dicts is not needed
+            self.state_to_label_mapping_rev = {}
+            if self.selected_framework == "pome":
+                for i, unique_s in enumerate(sorted(list(self.unique_states_subset))):
+                    self.state_to_label_mapping[unique_s] = i 
+            elif self.selected_framework == "hohmm":
+                for i, unique_s in enumerate(self.trained_model.get_parameters()["all_states"]):
+                    self.state_to_label_mapping[unique_s] = i        
+            self.state_to_label_mapping_rev = {v: k for k, v in self.state_to_label_mapping.items()}  # Reverse the mapping so we end up with {0: "pos", 1: "neg",...}
+        elif self.selected_architecture == "B":
+            for current_model in self.trained_model:
+                temp_mapper = {}
+                temp_mapper_rev = {}
+                if self.selected_framework == "pome":
+                    for i, unique_s in enumerate(sorted(list(self.unique_states_subset))):
+                        temp_mapper[unique_s] = i 
+                elif self.selected_framework == "hohmm":
+                    for i, unique_s in enumerate(current_model.get_parameters()["all_states"]):
+                        temp_mapper[unique_s] = i        
+                temp_mapper_rev = {v: k for k, v in temp_mapper.items()}  # Reverse the mapping so we end up with {0: "pos", 1: "neg",...}   
+                self.state_to_label_mapping.append(temp_mapper)  
+                self.state_to_label_mapping_rev.append(temp_mapper_rev)     
 
     def create_observation_to_label_mapping(self):
         """
         Maps the strings of observations (e.g. 'good') from the input sequence, to indices 1,2,...n that correspond to the matrix that the training produces.
-        The mapping depends on the framework that was chosen, see README for more information.
+        The mapping depends on the framework that was chosen.
         """
-        if self.selected_framework == "pome":
-            if len(self.trained_model.states) > 2:  # None-start and None-end always exist       
-                temp_dict = self.trained_model.states[0].distribution.parameters[0]  # Just the 1st no need for more
-                for i, unique_o in enumerate(temp_dict.keys()):
-                    self.observation_to_label_mapping[unique_o] = i                    
+        if self.selected_architecture == "A":  
+            self.observation_to_label_mapping = {}  # Simple Dict, list of Dicts is not needed                 
+            if self.selected_framework == "pome":
+                if len(self.trained_model.states) > 2:  # None-start and None-end always exist       
+                    temp_dict = self.trained_model.states[0].distribution.parameters[0]  # Just the 1st no need for more
+                    for i, unique_o in enumerate(temp_dict.keys()):
+                        self.observation_to_label_mapping[unique_o] = i                    
+                else:
+                    raise ValueError("observations index to label mapping failed, the state trained object appears to be empty.")                     
             else:
-                raise ValueError("observations index to label mapping failed, the state trained object appears to be empty.")                     
-        else:
-            gets_obs = self.trained_model.get_parameters()["all_obs"]
-            if len(gets_obs) > 0:       
-                for i, unique_o in enumerate(gets_obs):
-                    self.observation_to_label_mapping[unique_o] = i 
-            else:
-                raise ValueError("observations index to label mapping failed, the observation traiend object appears to be empty.")                             
+                gets_obs = self.trained_model.get_parameters()["all_obs"]
+                if len(gets_obs) > 0:       
+                    for i, unique_o in enumerate(gets_obs):
+                        self.observation_to_label_mapping[unique_o] = i 
+                else:
+                    raise ValueError("observations index to label mapping failed, the observation trained object appears to be empty.")
+        elif self.selected_architecture == "B":
+            for current_model in self.trained_model:
+                temp_mapper = {}
+                if self.selected_framework == "pome":
+                    if len(current_model.states) > 2:  # None-start and None-end always exist       
+                        temp_dict = current_model.states[0].distribution.parameters[0]  # Just the 1st no need for more
+                        for i, unique_o in enumerate(temp_dict.keys()):
+                            temp_mapper[unique_o] = i                    
+                    else:
+                        raise ValueError("observations index to label mapping failed, the state trained object appears to be empty.")                     
+                else:
+                    gets_obs = current_model.get_parameters()["all_obs"]
+                    if len(gets_obs) > 0:       
+                        for i, unique_o in enumerate(gets_obs):
+                            temp_mapper[unique_o] = i 
+                    else:
+                        raise ValueError("observations index to label mapping failed, the observation trained object appears to be empty.")
+                self.observation_to_label_mapping.append(temp_mapper)                          
 
     def create_hmm_to_label_mapping(self, unique_golden_truths):
         """
@@ -262,11 +299,11 @@ class HMM_Framework:
         """
         Prints the probability matrices of the trained Hidden Markov Model.
         """
-        print("# Transition probability matrix")
+        print("# Transition probability matrix. One for each model that was trained.")
         print(self.A)
-        print("# Observation probability matrix")
+        print("# Observation probability matrix. One for each model that was trained.")
         print(self.B)
-        print("# Initial probabilities")
+        print("# Initial probabilities. One for each model that was trained.")
         print(self.pi)
 
     def build(self, architecture, model, framework, k_fold, 
@@ -367,16 +404,26 @@ class HMM_Framework:
                 print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
             if self.selected_architecture == "A":
                 self._train_pome_archit_a(state_train, obs_train, None, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
-                self.pome_object_to_matrices()  # Assign to the local parameters  
+                self.create_state_to_label_mapping()
+                self.create_observation_to_label_mapping() 
+                self.pome_object_to_matrices_archit_a()  # Assign to the local parameters  
             elif self.selected_architecture == "B":
-                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)  # Local parameters remain empty in this scenario          
-        
+                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)  # TO DO Local parameters remain empty in this scenario          
+                self.create_state_to_label_mapping()
+                self.create_observation_to_label_mapping() 
+                self.pome_object_to_matrices_archit_b()  # Assign to the local parameters
+
         elif self.selected_framework == 'hohmm':   
             if self.selected_architecture == "A":
                 self._train_hohmm_archit_a(state_train, obs_train, None, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
-                self.hohmm_object_to_matrices()  # Assign to the local parameters   
+                self.create_state_to_label_mapping()
+                self.create_observation_to_label_mapping() 
+                self.hohmm_object_to_matrices_archit_a()  # Assign to the local parameters   
             elif self.selected_architecture == "B":
-                self._train_hohmm_archit_b(state_train, obs_train, y_train, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)  # Local parameters remain empty in this scenario          
+                self._train_hohmm_archit_b(state_train, obs_train, y_train, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)  # Local parameters remain empty in this scenario  
+                self.create_state_to_label_mapping()
+                self.create_observation_to_label_mapping()         
+                self.hohmm_object_to_matrices_archit_b()  # Assign to the local parameters  
 
     def _train_pome_archit_a(self, state_train, obs_train, _, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
@@ -389,8 +436,6 @@ class HMM_Framework:
                                                        verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                        )
         self.trained_model = pome_HMM
-        self.create_state_to_label_mapping()
-        self.create_observation_to_label_mapping() 
 
     def _train_pome_archit_b(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
@@ -419,8 +464,6 @@ class HMM_Framework:
         _hohmm_builder.add_batch_training_examples(list(obs_train), list(state_train))  # The builder does not accept objects of type ndarray<list>
         _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
         self.trained_model = _trained_hohmm
-        self.create_state_to_label_mapping()
-        self.create_observation_to_label_mapping() 
 
     def _train_hohmm_archit_b(self, state_train, obs_train, y_train, hohmm_high_order, hohmm_smoothing, hohmm_synthesize):
         """
@@ -730,9 +773,9 @@ class HMM_Framework:
         else:
             print("--Containers are now of exact same shape")
 
-    def pome_object_to_matrices(self):
+    def pome_object_to_matrices_archit_a(self):
         """
-        Assigns the A, B and pi matrices with the values form a Pomegranate trained object/model. They should be ndarrays.
+        Assigns the A, B and pi matrices with the values from a Pomegranate trained object/model (Architecture A). They should be ndarrays.
         """
         # Note that last state is 'None-End' and previous to last is 'None-Start'
         # A
@@ -746,9 +789,15 @@ class HMM_Framework:
         # pi
         self.pi = self.trained_model.dense_transition_matrix()[-2,:-2]  # Previous to last
 
-    def hohmm_object_to_matrices(self):
+    def pome_object_to_matrices_archit_b(self):
         """
-        Assigns the A, B and pi matrices with the values form a HOHMM trained object/model. They should be ndarrays.
+        Assigns the A, B and pi matrices with the values from multiple Pomegranate trained objects/models (Architecture B). They should be ndarrays.
+        """
+        print("TODO")
+
+    def hohmm_object_to_matrices_archit_a(self):
+        """
+        Assigns the A, B and pi matrices with the values from a HOHMM trained object/model (Architecture A). They should be ndarrays.
         """
         get_params = self.trained_model.get_parameters()
         # A
@@ -757,6 +806,12 @@ class HMM_Framework:
         self.B = np.array(get_params["B"])
         # pi
         self.pi = np.array(get_params["pi"])
+
+    def hohmm_object_to_matrices_archit_b(self):
+        """
+        Assigns the A, B and pi matrices with the values from multiple HOHMM trained object/model (Architecture B). They should be ndarrays.
+        """
+        print("TODO")
 
     def result_metrics(self, golden_truth, prediction, time_counter):
         """

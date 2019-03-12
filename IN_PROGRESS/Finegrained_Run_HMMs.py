@@ -24,7 +24,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos", "mix"]:
+                if temp[0] in ["neg", "neu", "pos"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]
@@ -91,10 +91,10 @@ elif True:
     #  Model
     #  Just for State-emission HMM, remember to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="State-emission HMM", framework="hohmm", k_fold=5,                                                   \
+    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            n_grams=2, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                                \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_smoothing=0.0, hohmm_synthesize=False,                                                                                   \
@@ -105,7 +105,7 @@ elif True:
     # HOHMM HAS EVALUATOR! evaluate()
     # NEW FEATURE FOR 'FORMULA' parameter 'formula_magic_smoothing' that doesn't crash when out-of-vocabulary
     hmm.print_average_results()
-    #hmm.print_probability_parameters()
+    hmm.print_best_results()
     #print(hmm.cross_val_prediction_matrix)
 
 

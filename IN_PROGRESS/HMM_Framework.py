@@ -178,9 +178,9 @@ class HMM_Framework:
                 raise ValueError("you have selected architecture 'A' and 'State-emission HMM' but the number of unique states is " + str(len(element_2)) + " while the number of unique truth labels is " + str(len(element_1)) + "; consider using architecture 'B'.")                  
         elif self.selected_architecture == "B":
             if architecture_b_algorithm == "forward":
-                print("You have selected architecture 'B', the pure classification-based approach!. The 'forward' algorithm has some shortcomings which will be printed at the end, in this supervised task. Consider using 'formula'.")
+                print("You have selected architecture 'B', the purely classification-based approach!. The 'forward' algorithm has some shortcomings which will be printed at the end, in this supervised task. Consider using 'formula'.")
             elif architecture_b_algorithm == "formula":
-                print("You have selected architecture 'B', the pure classification-based approach!. The 'formula' algorithm is the ideal choice for supervised tasks.")
+                print("You have selected architecture 'B', the purely classification-based approach!. The 'formula' algorithm is the ideal choice for supervised tasks.")
 
     def check_shape(self, container_1, container_2):
         """
@@ -337,7 +337,7 @@ class HMM_Framework:
 
             self.reset()
 
-        self.verbose_final(pome_algorithm, pome_algorithm_t)
+        self.verbose_final(pome_algorithm, pome_algorithm_t, architecture_b_algorithm)
         self.clean_up()
 
     def train(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_smoothing, hohmm_synthesize):
@@ -359,10 +359,10 @@ class HMM_Framework:
         
         elif self.selected_framework == 'hohmm':   
             if self.selected_architecture == "A":
-                self._train_hohmm(state_train, obs_train, hohmm_smoothing, hohmm_synthesize)
+                self._train_hohmm_archit_a(state_train, obs_train, None, hohmm_smoothing, hohmm_synthesize)
                 self.hohmm_object_to_matrices()  # Assign to the local parameters   
             elif self.selected_architecture == "B":
-                print("TODO")
+                self._train_hohmm_archit_b(state_train, obs_train, y_train, hohmm_smoothing, hohmm_synthesize)  # Local parameters remain empty in this scenario          
 
     def _train_pome_archit_a(self, state_train, obs_train, _, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
@@ -381,7 +381,7 @@ class HMM_Framework:
     def _train_pome_archit_b(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
         """
         Train a Hidden Markov Model using the Pomegranate framework as a baseline.
-        Architecture B is used, where multiple HMMs are built, in a pure classification-based approach.
+        Architecture B is used, where multiple HMMs are built, in a purely classification-based approach.
         """
         unique_golden_truths = np.unique(y_train)
         self.create_hmm_to_label_mapping(unique_golden_truths)
@@ -395,16 +395,32 @@ class HMM_Framework:
                                                         )
             self.trained_model.append(pome_HMM)  # In this scenario, we want to store a list of trained models, not just 1.
 
-    def _train_hohmm(self, state_train, obs_train, hohmm_smoothing, hohmm_synthesize):
+    def _train_hohmm_archit_a(self, state_train, obs_train, _, hohmm_smoothing, hohmm_synthesize):
         """
         Train a Hidden Markov Model using the HOHMM framework as a baseline. 
-        """      
+        Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
+        """    
         _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
         _hohmm_builder.add_batch_training_examples(list(obs_train), list(state_train))  # The builder does not accept objects of type ndarray<list>
-        _trained_hohmm = _hohmm_builder.build(highest_order = 1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
+        _trained_hohmm = _hohmm_builder.build(highest_order=1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
         self.trained_model = _trained_hohmm
         self.create_state_to_label_mapping()
         self.create_observation_to_label_mapping() 
+
+    def _train_hohmm_archit_b(self, state_train, obs_train, y_train, hohmm_smoothing, hohmm_synthesize):
+        """
+        Train a Hidden Markov Model using the HOHMM framework as a baseline.
+        Architecture B is used, where multiple HMMs are built, in a purely classification-based approach.
+        """
+        unique_golden_truths = np.unique(y_train)
+        self.create_hmm_to_label_mapping(unique_golden_truths)
+
+        index_sets = [np.where(i == y_train) for i in unique_golden_truths]
+        for j in index_sets:
+            _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
+            _hohmm_builder.add_batch_training_examples(list(obs_train[j]), list(state_train[j]))  # The builder does not accept objects of type ndarray<list>
+            _trained_hohmm = _hohmm_builder.build(highest_order=1, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
+            self.trained_model.append(_trained_hohmm)
 
     def predict(self, state_test, obs_test, pome_algorithm_t, architecture_b_algorithm):
         """
@@ -423,11 +439,18 @@ class HMM_Framework:
                     raise ValueError("please set the 'architecture_b_algorithm' parameter to one of the following: 'forward', 'formula'.")                
         
         elif self.selected_framework == 'hohmm':
-            return(self._predict_hohmm(obs_test))
+            if self.selected_architecture == "A":            
+                return(self._predict_hohmm_archit_a(obs_test))
+            elif self.selected_architecture == "B":
+                if architecture_b_algorithm in ["forward", "formula"]:
+                    return(self._predict_hohmm_archit_b(state_test, obs_test, architecture_b_algorithm)) 
+                else:              
+                    raise ValueError("please set the 'architecture_b_algorithm' parameter to one of the following: 'forward', 'formula'.")                 
 
     def _predict_pome_archit_a(self, _, obs_test, pome_algorithm_t):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
+        Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """   
         predict_length = len(obs_test)
         total_states = len(self.unique_states)
@@ -441,11 +464,11 @@ class HMM_Framework:
                     try:      
                         temp_predict = self.trained_model.predict(obs_test[i], algorithm='map')[-1]     # We only care about the last prediction
                         temp_predict_log_proba = self.trained_model.predict_log_proba(obs_test[i])[-1]  # Using 'argmax' to not call predict twice is wrong because for random guessing all 3 probabilities are equal
-                    except ValueError:  # Prediction failed, perform random guessing
+                    except ValueError:  # Prediction failed probably because of out-of-vocabulary value, perform random guessing
                         count_new_oov_local += 1
                         temp_predict = random.randint(0, total_states - 1)
                         temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
-                else:  #  Prediction would be pointless for an empty sequence
+                else:  #  Empty sequence, perform random guessing
                     temp_predict = random.randint(0, total_states - 1)
                     temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e
 
@@ -476,9 +499,10 @@ class HMM_Framework:
         return(predict)
 
     def _predict_pome_archit_b(self, state_test, obs_test, architecture_b_algorithm):
-        """ 
-        We try to find the model that was most likely to have generated each of the instances at hand.
         """
+        Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
+        Architecture B is used, where multiple HMMs are built, in a purely classification-based approach. Tries to find the model that was most likely to have generated each of the instances at hand.
+        """ 
         predict_length = len(obs_test)
         total_models = len(self.hmm_to_label_mapping)
         predict = []  # The list of label predictions 
@@ -491,13 +515,13 @@ class HMM_Framework:
                 for j in range(total_models):         
                     _current_temp_log_proba = self.trained_model[j].log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
                                                                                                                               # Normalization already performed by Pomegranate
-                    if _current_temp_log_proba == 0.0:                  # Maybe an out-of-vocabulary new observation, maybe a smarter solution would be normalized(log_of_e(1.0 / total_states))
+                    if _current_temp_log_proba == 0.0:                  # Possibly an out-of-vocabulary new observation, maybe a smarter solution would be normalized(log_of_e(1.0 / total_states))
                         print("--Warning: Unstable Prediction")         # It is unstable because it can be both out-of-vocabulary and perfect match, can't be sure.
                         count_new_oov_local += 1
-                        temp_predict_log_proba = np.NINF                              
+                        _current_temp_log_proba = np.NINF                              
                     temp_predict_log_proba.append(_current_temp_log_proba)
 
-                if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have three equal predictions, where argmax wouldn't work
+                if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
                     temp_predict = random.randint(0, total_models - 1)
                 else:
                     temp_predict = np.argmax(temp_predict_log_proba)
@@ -513,10 +537,11 @@ class HMM_Framework:
 
         return(predict)
 
-    def _predict_hohmm(self, obs_test):
+    def _predict_hohmm_archit_a(self, obs_test):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.
-        """     
+        Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
+        """    
         predict_length = len(obs_test) 
         total_states = len(self.unique_states)
         predict = []  # The list of label predictions 
@@ -525,11 +550,11 @@ class HMM_Framework:
         for i in range(predict_length):
             if len(obs_test[i]) > 0:  
                 try:              
-                    temp_predict = self.trained_model.decode(obs_test[i])[-1]  # We only care about the last prediction
-                except ValueError:  # Prediction failed, perform random guessing
+                    temp_predict = self.trained_model.decode(obs_test[i])[-1]  # We only care about the last prediction; should be of <list> type for HOHMM to work
+                except ValueError:  # Prediction failed probably because of out-of-vocabulary value, perform random guessing
                     count_new_oov_local += 1
                     temp_predict = random.randint(0, total_states - 1) 
-            else:  #  Prediction would be pointless for an empty sequence
+            else:  #  Empty sequence, perform random guessing
                 temp_predict = random.randint(0, total_states - 1)
 
             predict.append(temp_predict)  # This framework outputs the label name not an index
@@ -539,6 +564,45 @@ class HMM_Framework:
         self.count_new_oov.append(count_new_oov_local)
 
         return(predict)   
+
+    def _predict_hohmm_archit_b(self, state_test, obs_test, architecture_b_algorithm):
+        """
+        Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.
+        Architecture B is used, where multiple HMMs are built, in a purely classification-based approach. Tries to find the model that was most likely to have generated each of the instances at hand.
+        """ 
+        predict_length = len(obs_test)
+        total_models = len(self.hmm_to_label_mapping)
+        predict = []  # The list of label predictions 
+        count_new_oov_local = 0 
+
+        if architecture_b_algorithm == "forward":
+            predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored         
+            for i in range(predict_length):                                      # For every trained model 
+                temp_predict_log_proba =  []
+                for j in range(total_models):         
+                    try:
+                        _current_temp_log_proba = log_of_e(self.trained_model[j].evaluate(obs_test[i]))  # Unsure if normalization is performed
+                    except ValueError:  # Catches both empty sequences and out-of-vocabulary scenarios
+                        if len(obs_test[i]) > 0:
+                            count_new_oov_local += 1
+                        _current_temp_log_proba = np.NINF                                                       
+                    temp_predict_log_proba.append(_current_temp_log_proba)
+
+                if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
+                    temp_predict = random.randint(0, total_models - 1)
+                else:
+                    temp_predict = np.argmax(temp_predict_log_proba)
+
+                predict.append(self.hmm_to_label_mapping[temp_predict])
+                predict_log_proba_matrix[i,:] = temp_predict_log_proba
+
+            self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
+            self.count_new_oov.append(count_new_oov_local) 
+
+        else:
+            raise ValueError("TODO!")            
+
+        return(predict)
 
     def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):
         """
@@ -720,7 +784,7 @@ class HMM_Framework:
         else:
             raise ValueError("cannot print average results; it seems that no predictions have been performed.")               
  
-    def verbose_final(self, pome_algorithm, pome_algorithm_t):
+    def verbose_final(self, pome_algorithm, pome_algorithm_t, architecture_b_algorithm):
         """
         Verbose after the entire training and prediction is completed in order to inform the user.
         """
@@ -742,22 +806,24 @@ class HMM_Framework:
                 elif pome_algorithm_t == "viterbi":
                     print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities, stored in 'cross_val_prediction_matrix'.") 
             elif self.selected_architecture == "B": 
-                if pome_algorithm_t == "forward":                
+                if architecture_b_algorithm == "forward":                
                     print("Prediction was performed using the Forward algorithm on multiple models. It does not utilize the state sequences of the test set and has no special function for out-of-vocabulary values, consider using 'formula'. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
-                elif pome_algorithm_t == "formula": 
+                elif architecture_b_algorithm == "formula": 
                     print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
         if self.selected_framework == "hohmm": 
-            ## ! TO DO ## 
             if self.selected_architecture == "A":
                 print("State to label mapping completed ('hohmm'-based). x", self.k_fold, "times")  
                 print("Observation to label mapping completed ('hohmm'-based). x", self.k_fold, "times") 
             elif self.selected_architecture == "B":        
                 print("HMM model to label mapping completed. x", self.k_fold, "times")  
             print(self.k_fold, "\b-fold cross validation completed using the Labeled algorithm for training.") 
-            print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities, stored in 'cross_val_prediction_matrix'.")                
-        
-
-
+            if self.selected_architecture == "A":                        
+                print("Prediction was performed using the Viterbi algorithm. Returns a set of exact predictions, not probabilities, stored in 'cross_val_prediction_matrix'.")                
+            elif self.selected_architecture == "B": 
+                if architecture_b_algorithm == "forward":                
+                    print("Prediction was performed using the Forward algorithm on multiple models. It does not utilize the state sequences of the test set and has no special function for out-of-vocabulary values, consider using 'formula'. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
+                elif architecture_b_algorithm == "formula": 
+                    print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")             
         print("Predictions failed because of out-of-vocabulary new observations on a total of:", np.mean(np.array(self.count_new_oov)), "instances.")
 
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):

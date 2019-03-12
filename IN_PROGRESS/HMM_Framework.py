@@ -313,7 +313,7 @@ class HMM_Framework:
               pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,
               pome_algorithm_t="map",
               hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,
-              architecture_b_algorithm="formula"
+              architecture_b_algorithm="formula", formula_magic_smoothing=0.0
               ):
         """
         The main function of the framework. Execution starts from here.
@@ -356,6 +356,7 @@ class HMM_Framework:
                 hohmm_synthesize: refers to a setting for HOHMM training, ensures to generate all permutations of states; avoids OOV and ensures model is fully ergodic.
 
                 architecture_b_algorithm: refers to a setting for training of any framework when using architecture="B", can be either "forward", "formula"".
+                formula_magic_smoothing: refers to a setting for Architecture 'B', where problematic observations (such as out-of-vocabulary values) in the prediction phase are 'treated' in an intelligent way.
         """
         self.selected_architecture = architecture
         self.selected_model = model
@@ -385,7 +386,7 @@ class HMM_Framework:
             self.set_unique_states_subset(state_train)
             self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
             # Prediction Phase
-            predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm)
+            predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
             self.result_metrics(y_test, predict, time_counter)
 
             self.reset()
@@ -482,7 +483,7 @@ class HMM_Framework:
             _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
             self.trained_model.append(_trained_hohmm)
 
-    def predict(self, state_test, obs_test, pome_algorithm_t, architecture_b_algorithm):
+    def predict(self, state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing):
         """
         Perform predictions on new sequences.
         """
@@ -494,7 +495,7 @@ class HMM_Framework:
                     raise ValueError("please set the 'pome_algorithm_t' parameter to one of the following: 'map', 'viterbi'.")
             elif self.selected_architecture == "B":
                 if architecture_b_algorithm in ["forward", "formula"]:
-                    return(self._predict_pome_archit_b(state_test, obs_test, architecture_b_algorithm)) 
+                    return(self._predict_pome_archit_b(state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing)) 
                 else:              
                     raise ValueError("please set the 'architecture_b_algorithm' parameter to one of the following: 'forward', 'formula'.")                
         
@@ -503,7 +504,7 @@ class HMM_Framework:
                 return(self._predict_hohmm_archit_a(obs_test))
             elif self.selected_architecture == "B":
                 if architecture_b_algorithm in ["forward", "formula"]:
-                    return(self._predict_hohmm_archit_b(state_test, obs_test, architecture_b_algorithm)) 
+                    return(self._predict_hohmm_archit_b(state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing)) 
                 else:              
                     raise ValueError("please set the 'architecture_b_algorithm' parameter to one of the following: 'forward', 'formula'.")                 
 
@@ -558,7 +559,7 @@ class HMM_Framework:
 
         return(predict)
 
-    def _predict_pome_archit_b(self, state_test, obs_test, architecture_b_algorithm):
+    def _predict_pome_archit_b(self, state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the Pomegranate framework.
         Architecture B is used, where multiple HMMs are built, in a purely classification-based approach. Tries to find the model that was most likely to have generated each of the instances at hand.
@@ -625,7 +626,7 @@ class HMM_Framework:
 
         return(predict)   
 
-    def _predict_hohmm_archit_b(self, state_test, obs_test, architecture_b_algorithm):
+    def _predict_hohmm_archit_b(self, state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing):
         """
         Performs the prediction phase when the Hidden Markov Model is based on the HOHMM framework.
         Architecture B is used, where multiple HMMs are built, in a purely classification-based approach. Tries to find the model that was most likely to have generated each of the instances at hand.
@@ -795,7 +796,20 @@ class HMM_Framework:
         """
         Assigns the A, B and pi matrices with the values from multiple Pomegranate trained objects/models (Architecture B). They should be ndarrays.
         """
-        print("TODO")
+        self.A = []  # Reset it for each fold of the cross validation, since we are using append constantly
+        self.B = []
+        self.pi = []
+        for i, current_model in enumerate(self.trained_model):
+            # A
+            self.A.append(current_model.dense_transition_matrix()[:-2,:-2])  # All except last 2
+            # B
+            remaining_states = current_model.states[:-2]               # All except last 2
+            temp_obs_matrix = np.zeros((len(self.state_to_label_mapping[i]), len(self.observation_to_label_mapping[i])))
+            for i, row in enumerate(remaining_states):         
+                temp_obs_matrix[i, :] = list(row.distribution.parameters[0].values())     
+            self.B.append(temp_obs_matrix)
+            # pi
+            self.pi.append(current_model.dense_transition_matrix()[-2,:-2])  # Previous to last
 
     def hohmm_object_to_matrices_archit_a(self):
         """
@@ -813,7 +827,17 @@ class HMM_Framework:
         """
         Assigns the A, B and pi matrices with the values from multiple HOHMM trained object/model (Architecture B). They should be ndarrays.
         """
-        print("TODO")
+        self.A = []  # Reset it for each fold of the cross validation, since we are using append constantly
+        self.B = []
+        self.pi = []
+        for current_model in self.trained_model:
+            get_params = current_model.get_parameters()
+            # A
+            self.A.append(np.array(get_params["A"]))
+            # B
+            self.B.append(np.array(get_params["B"]))
+            # pi
+            self.pi.append(np.array(list(get_params["pi"][0].values())))
 
     def result_metrics(self, golden_truth, prediction, time_counter):
         """

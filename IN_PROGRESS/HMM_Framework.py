@@ -424,7 +424,7 @@ class HMM_Framework:
                 self.create_observation_to_label_mapping() 
                 self.pome_object_to_matrices_archit_a()  # Assign to the local parameters  
             elif self.selected_architecture == "B":
-                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)  # TO DO Local parameters remain empty in this scenario          
+                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)        
                 self.create_state_to_label_mapping()
                 self.create_observation_to_label_mapping() 
                 self.pome_object_to_matrices_archit_b()  # Assign to the local parameters
@@ -742,7 +742,7 @@ class HMM_Framework:
                 #         current_pi = current_states[0].split('-')
                 #         current_temp_score = 1.0
                 #         for pi_index in range(detect_high_order):
-                #             # (1.1) Transitions from start to one or more states at the start of the sequence (pi), e.g. seq=["pos-neg", "pos-pos", ...], mean we need to do start->"pos" and start->"pos-neg"
+                #             # (1.1) Transitions from start to one or more states at the start of the sequence (pi), e.g. seq=["pos-neg", "pos-pos", ...], means we should do start->"pos" and start->"pos-neg"
                 #             temp = '-'.join(current_pi[0:pi_index+1])
                 #             current_temp_score *= self.pi[pi_index][temp]
 

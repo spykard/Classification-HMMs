@@ -51,6 +51,7 @@ class HMM_Framework:
         self.trained_model = []  # The object that is outputed after training on the current cross validation fold; depends on the framework that was used
         self.unique_states = set()
         self.unique_states_subset = set()
+        self.unique_observations_subset = set()
         self.state_to_label_mapping = []        # Dict: {"pos": 0, "neg": 1, ...}
         self.state_to_label_mapping_rev = []    # Dict: {0: "pos", 1: "neg", ...}
         self.observation_to_label_mapping = []  # Dict: {"good": 0, ambitious: 1, ...}
@@ -215,6 +216,17 @@ class HMM_Framework:
                 self.unique_states_subset.update(set(seq))
         else:
             raise ValueError("couldn't find states, the state container appears to be empty.") 
+
+    def set_unique_observations_subset(self, subset):
+        """
+        Find all unique observations that occur in a specific subset.
+        """
+        self.unique_observations_subset = set()  # Reset it
+        if (len(subset) > 0):       
+            for seq in subset:
+                self.unique_observations_subset.update(set(seq))
+        else:
+            raise ValueError("couldn't find observations, the state container appears to be empty.") 
 
     def create_state_to_label_mapping(self):
         """
@@ -384,6 +396,7 @@ class HMM_Framework:
             time_counter = time.time()
             # Training Phase
             self.set_unique_states_subset(state_train)
+            self.set_unique_observations_subset(obs_train)
             self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
@@ -620,6 +633,7 @@ class HMM_Framework:
                             except KeyError:
                                 # Out-of-vocabulary value
                                 count_new_oov_local += 1
+                                _obsprob_temp = formula_magic_smoothing
 
                             # (2.2)
                             _trans_prob_temp = self.A[j][previous_state_index, current_state_index]

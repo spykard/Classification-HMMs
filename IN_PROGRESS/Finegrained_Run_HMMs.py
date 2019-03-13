@@ -88,11 +88,11 @@ elif True:
     hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                           \
+            n_grams=2, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                           \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                                                             \
+            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                                                             \
             )   
 
 

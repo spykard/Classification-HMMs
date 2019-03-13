@@ -645,7 +645,7 @@ class HMM_Framework:
                 predict_log_proba_matrix[k,:] = temp_predict_log_proba                  
 
                 # Debug
-                print(temp_predict_log_proba, self.hmm_to_label_mapping)
+                # print(temp_predict_log_proba, self.hmm_to_label_mapping)
                 # print(predict)
                 # print(predict_log_proba_matrix)   
                 # quit() 

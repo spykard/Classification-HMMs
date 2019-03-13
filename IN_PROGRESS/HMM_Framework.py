@@ -9,7 +9,6 @@ import pandas as pd
 import pomegranate as pome
 import SimpleHOHMM
 import time  # Pomegranate has it's own 'time' and can cause conflicts
-from math import log as log_of_e
 import random
 import copy
 import matplotlib.pyplot as plt
@@ -434,9 +433,9 @@ class HMM_Framework:
         Train a Hidden Markov Model using the Pomegranate framework as a baseline. 
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train, labels=state_train,                                \
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train, labels=state_train,                         \
                                                        algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
-                                                       max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                  \
+                                                       max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                           \
                                                        verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                        )
         self.trained_model = pome_HMM
@@ -451,10 +450,9 @@ class HMM_Framework:
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:
-            self.set_unique_states_subset(state_train[j])
-            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train[j], labels=state_train[j],                          \
+            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train[j], labels=state_train[j],                      \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
-                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                  \
+                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                 \
                                                         verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                         )
             self.trained_model.append(pome_HMM)  # In this scenario, we want to store a list of trained models, not just 1.
@@ -529,10 +527,10 @@ class HMM_Framework:
                     except ValueError:  # Prediction failed probably because of out-of-vocabulary value, perform random guessing
                         count_new_oov_local += 1
                         temp_predict = random.randint(0, total_states - 1)
-                        temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e                
+                        temp_predict_log_proba = [np.log(1.0 / total_states)] * total_states  # log of base e                
                 else:  #  Empty sequence, perform random guessing
                     temp_predict = random.randint(0, total_states - 1)
-                    temp_predict_log_proba = [log_of_e(1.0 / total_states)] * total_states  # log of base e
+                    temp_predict_log_proba = [np.log(1.0 / total_states)] * total_states  # log of base e
 
                 predict.append(self.state_to_label_mapping_rev[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
@@ -574,10 +572,10 @@ class HMM_Framework:
         if architecture_b_algorithm == "forward":
             for i in range(predict_length): 
                 temp_predict_log_proba =  []
-                for j in range(total_models):  # For every trained model        
-                    _current_temp_log_proba = self.trained_model[j].log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
+                for current_model in self.trained_model:  # For every trained model        
+                    _current_temp_log_proba = current_model.log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
                                                                                                                               # Normalization already performed by Pomegranate
-                    if _current_temp_log_proba == 0.0:                  # Possibly an out-of-vocabulary new observation, maybe a smarter solution would be normalized(log_of_e(1.0 / total_states))
+                    if _current_temp_log_proba == 0.0:                  # Possibly an out-of-vocabulary new observation, maybe a smarter solution would be normalized(np.log(1.0 / total_states))
                         print("--Warning: Unstable Prediction")         # It is unstable because it can be both out-of-vocabulary and perfect match, can't be sure.
                         count_new_oov_local += 1
                         _current_temp_log_proba = np.NINF                              
@@ -594,9 +592,63 @@ class HMM_Framework:
             self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
             self.count_new_oov.append(count_new_oov_local) 
 
-        else:
-        # Formula: score = π(state1) * ObservProb(o1|state1) * P(o2|o1) * ObservProb(o2|state2) * P(o3|o2) * ...  divided by Sequence_Length to normalize
-        seq_length = 
+        elif architecture_b_algorithm == "formula":
+        # Formula: score = π(state1) * ObservProb(o1|state1) * P(state2|state1) * ObservProb(o2|state2) * P(state3|state2) * ...  * P(staten|staten-1) * ObservProb(on|staten) , divided by the sequence length to normalize
+            for k in range(predict_length): 
+                temp_predict_log_proba = []
+                current_states = state_test[k]
+                current_observations = obs_test[k]
+                seq_length = len(current_states)
+
+                #print(self.observation_to_label_mapping, self.state_to_label_mapping)
+
+                if len(current_observations) > 0:  
+                    for j in range(total_models):  # For every trained model, j is the index of current model across all containers
+                        # (1) Transition from start to first state (pi)
+                        index = self.state_to_label_mapping[j][current_states[0]]
+                        current_temp_score = self.pi[j][index]  
+
+                        # (2) Everything that is between the first and last
+                        for i in range(1, seq_length):  # This line is different between Pomegranate and HOHMM because the latter has a specific behavior for higher orders; it has multidimensional pi
+                            # (2.1)
+                            previous_state_index = self.state_to_label_mapping[j][current_states[i-1]] 
+                            current_state_index = self.state_to_label_mapping[j][current_states[i]] 
+                            try:
+                                current_obs_index = self.observation_to_label_mapping[j][current_observations[i]]
+                                _obsprob_temp = self.B[j][current_state_index, current_obs_index]  # Observations are on columns
+                            except KeyError:
+                                # Out-of-vocabulary value
+                                count_new_oov_local += 1
+                            
+                            # (2.2)
+                            _trans_prob_temp = self.A[j][previous_state_index, current_state_index]
+                            
+                            # Score Update
+                            current_temp_score = current_temp_score * _obsprob_temp * _trans_prob_temp
+
+                        # Create a vector that contains the scores for all models
+                        temp_predict_log_proba.append(current_temp_score / float(len(current_observations)))  # divided by the sequence length to normalize
+
+                    # Comparison
+                    if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
+                        temp_predict = random.randint(0, total_models - 1)
+                    else:
+                        temp_predict = np.argmax(temp_predict_log_proba)
+
+                    predict.append(self.hmm_to_label_mapping[temp_predict])
+                    predict_log_proba_matrix[k,:] = temp_predict_log_proba                    
+
+
+                    print(np.log(0.0), np.log(0.232))
+                    print(temp_predict_log_proba, self.hmm_to_label_mapping)
+                    print(predict)
+                    print(predict_log_proba_matrix)
+                    quit()
+
+
+                #else:  #  Prediction would be pointless for an empty sequence
+
+
             #self.count_formula_problems         
 
         return(predict)
@@ -645,7 +697,7 @@ class HMM_Framework:
                 temp_predict_log_proba =  []
                 for j in range(total_models):  # For every trained model         
                     try:
-                        _current_temp_log_proba = log_of_e(self.trained_model[j].evaluate(obs_test[i]))  # Unsure if normalization is performed
+                        _current_temp_log_proba = np.log(self.trained_model[j].evaluate(obs_test[i]))  # Unsure if normalization is performed
                     except ValueError:  # Catches both empty sequences and out-of-vocabulary scenarios
                         if len(obs_test[i]) > 0:
                             count_new_oov_local += 1
@@ -926,7 +978,7 @@ class HMM_Framework:
                 elif architecture_b_algorithm == "formula": 
                     print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")             
         print("Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of:", np.mean(np.array(self.count_new_oov)), "instances.")
-        if architecture_b_algorithm == "formula":
+        if self.selected_architecture == "B" and architecture_b_algorithm == "formula":
             print("Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of:", np.mean(np.array(self.count_formula_problems)), "instances.")
              
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):

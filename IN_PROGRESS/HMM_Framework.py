@@ -462,9 +462,9 @@ class HMM_Framework:
         self.create_hmm_to_label_mapping(unique_golden_truths)
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
-        for j in index_sets:
-            self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
-            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train[j], labels=state_train[j],                      \
+        for j in index_sets:            
+            state_new, obs_new = self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
+            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_new, labels=state_new,                      \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
                                                         max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                 \
                                                         verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
@@ -491,9 +491,9 @@ class HMM_Framework:
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:
-            self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
+            state_new, obs_new = self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
             _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
-            _hohmm_builder.add_batch_training_examples(list(obs_train[j]), list(state_train[j]))  # The builder does not accept objects of type ndarray<list>
+            _hohmm_builder.add_batch_training_examples(list(obs_new), list(state_new))  # The builder does not accept objects of type ndarray<list>
             _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
             self.trained_model.append(_trained_hohmm)
 
@@ -927,11 +927,15 @@ class HMM_Framework:
         difference_s = self.unique_states_subset.difference(validate_x)
         if len(difference_s) > 0:
             print("--Warning: The input dataset is way too small or imbalanced to facilitate splitting it with Architecture B. Adding the states that are missing using new instances...")
+            state_subset = list(state_subset)  # Inefficient but I want to maintain type of ndarray<list>
+            obs_subset = list(obs_subset)            
             for missing in difference_s:
                 state_subset.append([missing])
                 obs_subset.append(random.sample(self.unique_observations_subset, 1))  # Add a random instance to the other container
+            state_subset = np.array(state_subset) 
+            obs_subset = np.array(obs_subset)           
 
-        # States
+        # Observations
         validate_x = set()     
         for seq in obs_subset:
             validate_x.update(set(seq))
@@ -939,9 +943,15 @@ class HMM_Framework:
         difference_o = self.unique_observations_subset.difference(validate_x)
         if len(difference_s) > 0:
             print("--Warning: The input dataset is way too small or imbalanced to facilitate splitting it with Architecture B. Adding the observations that are missing using new instances...")
+            state_subset = list(state_subset)  # Inefficient but I want to maintain type of ndarray<list>
+            obs_subset = list(obs_subset)            
             for missing in difference_o:
                 obs_subset.append([missing])
                 state_subset.append(random.sample(self.unique_states_subset, 1))  # Add a random instance to the other container
+            state_subset = np.array(state_subset) 
+            obs_subset = np.array(obs_subset) 
+
+        return(state_subset, obs_subset)
 
     def result_metrics(self, golden_truth, prediction, time_counter):
         """

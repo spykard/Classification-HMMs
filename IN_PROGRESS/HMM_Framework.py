@@ -613,8 +613,6 @@ class HMM_Framework:
                 current_observations = obs_test[k]
                 seq_length = len(current_states)
 
-                #print(self.observation_to_label_mapping, self.state_to_label_mapping)
-
                 if len(current_observations) > 0:  
                     for j in range(total_models):  # For every trained model, j is the index of current model across all containers
                         # (1.1) Transition from start to first state (pi)
@@ -711,6 +709,7 @@ class HMM_Framework:
         predict = []  # The list of label predictions 
         predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored         
         count_new_oov_local = 0 
+        count_formula_problems_local = 0
 
         if architecture_b_algorithm == "forward":
             for i in range(predict_length):                                     
@@ -732,11 +731,90 @@ class HMM_Framework:
                 predict.append(self.hmm_to_label_mapping[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
 
-            self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
-            self.count_new_oov.append(count_new_oov_local) 
+        elif architecture_b_algorithm == "formula":
+        # IMPOSSIBLE FOR HIGH-ORDERS BECAUSE (self.B[j]) for HOHMM remains the same for all orders   
+            # detect_high_order = len(self.pi)
+            # object_hohmm = SimpleHOHMM.HiddenMarkovModelBuilder()
+            # new_state_test = object_hohmm._make_higher_order_states(state_sequences=state_test, order=detect_high_order) 
+                # if len(current_observations) > 0:  
+                #     for j in range(total_models):  # For every trained model, j is the index of current model across all containers
+                #         # ! HOHMM takes a different approach than Pomegranate when it comes to pi and higher-order
+                #         current_pi = current_states[0].split('-')
+                #         current_temp_score = 1.0
+                #         for pi_index in range(detect_high_order):
+                #             # (1.1) Transitions from start to one or more states at the start of the sequence (pi), e.g. seq=["pos-neg", "pos-pos", ...], mean we need to do start->"pos" and start->"pos-neg"
+                #             temp = '-'.join(current_pi[0:pi_index+1])
+                #             current_temp_score *= self.pi[pi_index][temp]
 
-        else:
-            raise ValueError("TODO!")            
+                #         current_state_index = self.state_to_label_mapping[j][current_states[0]]
+                #         current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
+
+                #         # (1.2) Probability of first observation (B)
+                #         current_temp_score *= self.B[j][current_state_index, current_obs_index]
+
+        # Formula: score = π(state1) * ObservProb(o1|state1) * P(state2|state1) * ObservProb(o2|state2) * P(state3|state2) * ...  * P(staten|staten-1) * ObservProb(on|staten) , divided by the sequence length to normalize
+            for k in range(predict_length): 
+                temp_predict_log_proba = []
+                current_states = state_test[k]
+                current_observations = obs_test[k]
+                seq_length = len(current_states)
+
+                if len(current_observations) > 0:  
+                    for j in range(total_models):  # For every trained model, j is the index of current model across all containers
+                        # (1.1) Transition from start to first state (pi)
+                        current_state_index = self.state_to_label_mapping[j][current_states[0]]
+                        current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
+                        current_temp_score = self.pi[j][0][current_states[0]] 
+                        # (1.2) Probability of first observation (B)
+                        current_temp_score *= self.B[j][current_state_index, current_obs_index]
+
+                        # (2) Everything that is between the first and last
+                        for i in range(1, seq_length):  # This line is different between Pomegranate and HOHMM because the latter has a specific behavior for higher orders; it has multidimensional pi
+                            # (2.1)
+                            previous_state_index = self.state_to_label_mapping[j][current_states[i-1]] 
+                            current_state_index = self.state_to_label_mapping[j][current_states[i]] 
+                            try:
+                                current_obs_index = self.observation_to_label_mapping[j][current_observations[i]]
+                                _obsprob_temp = self.B[j][current_state_index, current_obs_index]  # Observations are on columns
+                            except KeyError:
+                                # Out-of-vocabulary value
+                                count_new_oov_local += 1
+                                _obsprob_temp = formula_magic_smoothing
+
+                            # (2.2)
+                            _trans_prob_temp = self.A[j][previous_state_index, current_state_index]
+                            
+                            # Score Update
+                            current_temp_score = current_temp_score * _obsprob_temp * _trans_prob_temp
+
+                        # Create a vector that contains the scores for all models
+                        temp_predict_log_proba.append(np.log(current_temp_score / float(len(current_observations))))  # divided by the sequence length to normalize
+
+                    # Comparison
+                    if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
+                        temp_predict = random.randint(0, total_models - 1)
+                        count_formula_problems_local += 1
+                    else:
+                        temp_predict = np.argmax(temp_predict_log_proba)
+
+                else:  #  Prediction would be pointless for an empty sequence
+                    temp_predict = random.randint(0, total_models - 1)            
+                    temp_predict_log_proba = [np.NINF] * total_models  # or could do what I do on 'map' algorithm with log
+        
+                predict.append(self.hmm_to_label_mapping[temp_predict])
+                predict_log_proba_matrix[k,:] = temp_predict_log_proba                  
+
+                # Debug
+                # print(temp_predict_log_proba, self.hmm_to_label_mapping)
+                # print(predict)
+                # print(predict_log_proba_matrix)   
+                # quit() 
+            
+            self.count_formula_problems.append(count_formula_problems_local)    
+        
+        self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
+        self.count_new_oov.append(count_new_oov_local)
+
 
         return(predict)
 
@@ -913,7 +991,7 @@ class HMM_Framework:
             # B
             self.B.append(np.array(get_params["B"]))
             # pi - stored in a specific Dict format, used for higher order HOHMM-approaches, needed for 'formula' algorithm
-            self.pi = get_params["pi"]
+            self.pi.append(get_params["pi"])
             # self.pi.append(np.array(list(get_params["pi"][0].values())))
 
     def validate_architecture_b_consistency(self, state_subset, obs_subset):

@@ -1204,6 +1204,35 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 
     plt.show()
 
+def plot_basic(x, y, dataset_name, k_fold):
+    """
+    Given one list and a list of strings, constructs a high quality vertical comparison chart.
+    """
+    indices = np.arange(len(y))
+
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
+    fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k_fold) + "-fold Cross Validation")
+
+    p1 = ax1.bar(indices, x, align="center", width=0.35, color="navy") 
+
+    ax1.set_title(dataset_name + " - Averages across " + str(k_fold) + "-fold Cross Validation")
+    ax1.yaxis.set_major_locator(MaxNLocator(11))
+    ax1.yaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
+
+    ax1.set_ylabel("Time (sec)")   
+    
+    ax1.set_xticks(indices)
+    ax1.set_xticklabels(y)
+
+    # Rotate labels and align them horizontally to the left 
+    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=-45, ha="left", rotation_mode="anchor")
+
+    # Automatically adjust subplot parameters so that the the subplot fits in to the figure area
+    fig.tight_layout()
+
+    plt.show()
+
 def pome_graph_plot(pomegranate_model, hmm_order):
     """
     Given a trained Pomegranate model, plots the Hidden Markov Model Graph

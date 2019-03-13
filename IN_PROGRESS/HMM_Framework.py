@@ -568,13 +568,14 @@ class HMM_Framework:
         predict = []  # The list of label predictions 
         predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored
         count_new_oov_local = 0 
+        count_formula_problems_local = 0
 
         if architecture_b_algorithm == "forward":
             for i in range(predict_length): 
                 temp_predict_log_proba =  []
                 for current_model in self.trained_model:  # For every trained model        
                     _current_temp_log_proba = current_model.log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
-                                                                                                                              # Normalization already performed by Pomegranate
+                                                                                                                      # Normalization already performed by Pomegranate
                     if _current_temp_log_proba == 0.0:                  # Possibly an out-of-vocabulary new observation, maybe a smarter solution would be normalized(np.log(1.0 / total_states))
                         print("--Warning: Unstable Prediction")         # It is unstable because it can be both out-of-vocabulary and perfect match, can't be sure.
                         count_new_oov_local += 1
@@ -589,9 +590,6 @@ class HMM_Framework:
                 predict.append(self.hmm_to_label_mapping[temp_predict])
                 predict_log_proba_matrix[i,:] = temp_predict_log_proba
 
-            self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
-            self.count_new_oov.append(count_new_oov_local) 
-
         elif architecture_b_algorithm == "formula":
         # Formula: score = π(state1) * ObservProb(o1|state1) * P(state2|state1) * ObservProb(o2|state2) * P(state3|state2) * ...  * P(staten|staten-1) * ObservProb(on|staten) , divided by the sequence length to normalize
             for k in range(predict_length): 
@@ -604,9 +602,12 @@ class HMM_Framework:
 
                 if len(current_observations) > 0:  
                     for j in range(total_models):  # For every trained model, j is the index of current model across all containers
-                        # (1) Transition from start to first state (pi)
-                        index = self.state_to_label_mapping[j][current_states[0]]
-                        current_temp_score = self.pi[j][index]  
+                        # (1.1) Transition from start to first state (pi)
+                        current_state_index = self.state_to_label_mapping[j][current_states[0]]
+                        current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
+                        current_temp_score = self.pi[j][current_state_index] 
+                        # (1.2) Probability of first observation (B)
+                        current_temp_score *= self.B[j][current_state_index, current_obs_index]
 
                         # (2) Everything that is between the first and last
                         for i in range(1, seq_length):  # This line is different between Pomegranate and HOHMM because the latter has a specific behavior for higher orders; it has multidimensional pi
@@ -619,7 +620,7 @@ class HMM_Framework:
                             except KeyError:
                                 # Out-of-vocabulary value
                                 count_new_oov_local += 1
-                            
+
                             # (2.2)
                             _trans_prob_temp = self.A[j][previous_state_index, current_state_index]
                             
@@ -627,29 +628,32 @@ class HMM_Framework:
                             current_temp_score = current_temp_score * _obsprob_temp * _trans_prob_temp
 
                         # Create a vector that contains the scores for all models
-                        temp_predict_log_proba.append(current_temp_score / float(len(current_observations)))  # divided by the sequence length to normalize
+                        temp_predict_log_proba.append(np.log(current_temp_score / float(len(current_observations))))  # divided by the sequence length to normalize
 
                     # Comparison
                     if len(set(temp_predict_log_proba)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
                         temp_predict = random.randint(0, total_models - 1)
+                        count_formula_problems_local += 1
                     else:
                         temp_predict = np.argmax(temp_predict_log_proba)
 
-                    predict.append(self.hmm_to_label_mapping[temp_predict])
-                    predict_log_proba_matrix[k,:] = temp_predict_log_proba                    
+                else:  #  Prediction would be pointless for an empty sequence
+                    temp_predict = random.randint(0, total_models - 1)            
+                    temp_predict_log_proba = [np.NINF] * total_models  # or could do what I do on 'map' algorithm with log
+        
+                predict.append(self.hmm_to_label_mapping[temp_predict])
+                predict_log_proba_matrix[k,:] = temp_predict_log_proba                  
 
-
-                    print(np.log(0.0), np.log(0.232))
-                    print(temp_predict_log_proba, self.hmm_to_label_mapping)
-                    print(predict)
-                    print(predict_log_proba_matrix)
-                    quit()
-
-
-                #else:  #  Prediction would be pointless for an empty sequence
-
-
-            #self.count_formula_problems         
+                # Debug
+                print(temp_predict_log_proba, self.hmm_to_label_mapping)
+                # print(predict)
+                # print(predict_log_proba_matrix)   
+                # quit() 
+            
+            self.count_formula_problems.append(count_formula_problems_local)    
+        
+        self.cross_val_prediction_matrix.append(predict_log_proba_matrix)
+        self.count_new_oov.append(count_new_oov_local)
 
         return(predict)
 

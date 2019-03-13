@@ -3,6 +3,7 @@ Sentiment Analysis: (mainly Supervised) Text Classification using Hidden Markov 
 """
 
 import pandas as pd
+import numpy as np
 import HMM_Framework
 
 
@@ -96,6 +97,6 @@ elif True:
             )   
 
 
-# print(hmm.cross_val_prediction_matrix)
+print(np.mean(hmm.cross_val_metrics["Time_Complexity"]))
 hmm.print_average_results(decimals=3)
 hmm.print_best_results(detailed=False, decimals=3) 

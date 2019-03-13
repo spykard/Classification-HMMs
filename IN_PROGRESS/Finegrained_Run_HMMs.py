@@ -24,7 +24,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos", "mix"]:
+                if temp[0] in ["neg", "neu", "pos"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]
@@ -91,8 +91,8 @@ elif True:
             n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                           \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                                                             \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                                                             \
             )   
 
 

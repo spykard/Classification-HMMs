@@ -895,8 +895,9 @@ class HMM_Framework:
         self.A = np.array(get_params["A"])
         # B
         self.B = np.array(get_params["B"])
-        # pi
-        self.pi = np.array(get_params["pi"])
+        # pi - stored in a specific Dict format, used for higher order HOHMM-approaches, needed for 'formula' algorithm
+        self.pi = get_params["pi"]
+        # self.pi = np.array(list(get_params["pi"][0].values()))
 
     def hohmm_object_to_matrices_archit_b(self):
         """
@@ -911,8 +912,9 @@ class HMM_Framework:
             self.A.append(np.array(get_params["A"]))
             # B
             self.B.append(np.array(get_params["B"]))
-            # pi
-            self.pi.append(np.array(list(get_params["pi"][0].values())))
+            # pi - stored in a specific Dict format, used for higher order HOHMM-approaches, needed for 'formula' algorithm
+            self.pi = get_params["pi"]
+            # self.pi.append(np.array(list(get_params["pi"][0].values())))
 
     def validate_architecture_b_consistency(self, state_subset, obs_subset):
         """

@@ -61,6 +61,24 @@ Success with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/python setu
 
 <br><br/>
 
+## Algorithms
+
+| Training      | Architecture  | Required Data Sequences                    |
+| ------------- |:-------------:| ------------------------------------------ |
+| Baum-Welch    | A             | observations [✓], states [X], golden truth [X] / not only supervised |
+| Baum-Welch    | B             | observations [✓], states [X], golden truth [✓] / supervised          |
+| Viterbi       | A             | observations [✓], states [X], golden truth [X] / not only supervised |
+| Viterbi       | B             | observations [✓], states [X], golden truth [✓] / supervised          |
+| Labeled       | A             | observations [✓], states [✓], golden truth [X] / not only supervised |
+| Labeled       | B             | observations [✓], states [✓], golden truth [✓] / supervised          |
+
+| Prediction           | Architecture  | Required Data Sequences                            |  
+| -------------------- |:-------------:| -------------------------------------------------- |
+| Maximum a Posteriori | A             | observations [✓], states [X], golden truth [X] / not only supervised |
+| Viterbi              | A             | observations [✓], states [X], golden truth [X] / not only supervised |
+| Forward              | B             | observations [✓], states [X], golden truth [✓] / supervised          |
+| Math Formula         | B             | observations [✓], states [✓], golden truth [✓] / supervised          |
+
 ## Architecture A
 
 Even if it looks like it, it is not really a classification method and is not suited for classification tasks.

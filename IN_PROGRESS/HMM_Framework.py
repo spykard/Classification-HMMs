@@ -67,6 +67,7 @@ class HMM_Framework:
                                                     # Time_Complexity: []}
         self.cross_val_prediction_matrix = []       # The final predictions for all the folds of cross validation
         self.count_new_oov = []                     # Count the number of instances where we encountered out-of-vocabulary new observations
+        self.count_formula_problems = []            # Count the number of instances where the 'formula' algorithm prediction failed and was forced to perform random guessing
 
     def clean_up(self):
         """
@@ -567,13 +568,13 @@ class HMM_Framework:
         predict_length = len(obs_test)
         total_models = len(self.hmm_to_label_mapping)
         predict = []  # The list of label predictions 
+        predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored
         count_new_oov_local = 0 
 
         if architecture_b_algorithm == "forward":
-            predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored         
-            for i in range(predict_length):                                      # For every trained model 
+            for i in range(predict_length): 
                 temp_predict_log_proba =  []
-                for j in range(total_models):         
+                for j in range(total_models):  # For every trained model        
                     _current_temp_log_proba = self.trained_model[j].log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
                                                                                                                               # Normalization already performed by Pomegranate
                     if _current_temp_log_proba == 0.0:                  # Possibly an out-of-vocabulary new observation, maybe a smarter solution would be normalized(log_of_e(1.0 / total_states))
@@ -594,7 +595,9 @@ class HMM_Framework:
             self.count_new_oov.append(count_new_oov_local) 
 
         else:
-            raise ValueError("TODO!")          
+        # Formula: score = π(state1) * ObservProb(o1|state1) * P(o2|o1) * ObservProb(o2|state2) * P(o3|o2) * ...  divided by Sequence_Length to normalize
+        seq_length = 
+            #self.count_formula_problems         
 
         return(predict)
 
@@ -634,13 +637,13 @@ class HMM_Framework:
         predict_length = len(obs_test)
         total_models = len(self.hmm_to_label_mapping)
         predict = []  # The list of label predictions 
+        predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored         
         count_new_oov_local = 0 
 
         if architecture_b_algorithm == "forward":
-            predict_log_proba_matrix = np.zeros((predict_length, total_models))  # The matrix of log probabilities for each label to be stored         
-            for i in range(predict_length):                                      # For every trained model 
+            for i in range(predict_length):                                     
                 temp_predict_log_proba =  []
-                for j in range(total_models):         
+                for j in range(total_models):  # For every trained model         
                     try:
                         _current_temp_log_proba = log_of_e(self.trained_model[j].evaluate(obs_test[i]))  # Unsure if normalization is performed
                     except ValueError:  # Catches both empty sequences and out-of-vocabulary scenarios
@@ -922,8 +925,10 @@ class HMM_Framework:
                     print("Prediction was performed using the Forward algorithm on multiple models. It does not utilize the state sequences of the test set and has no special function for out-of-vocabulary values, consider using 'formula'. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
                 elif architecture_b_algorithm == "formula": 
                     print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")             
-        print("Predictions failed because of out-of-vocabulary new observations on a total of:", np.mean(np.array(self.count_new_oov)), "instances.")
-
+        print("Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of:", np.mean(np.array(self.count_new_oov)), "instances.")
+        if architecture_b_algorithm == "formula":
+            print("Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of:", np.mean(np.array(self.count_formula_problems)), "instances.")
+             
 def plot_vertical(x_f1, x_acc, y, dataset_name, k_fold):
     """
     Given two lists of performance metrics and one list of strings, constructs a high quality vertical comparison chart.

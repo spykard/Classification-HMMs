@@ -19,5 +19,3 @@ f1-score average across 5-fold: 0.7085988262783882 (without "mix", which is comp
 
 
 2.1 Decision Tree - bag of words and sentence labels appended as 3 extra features
-
-Using the "feature_importance" attribute, we note that "pos" and "neg" are very high importance around 0.23, while "neu" has an importance of 0.03; this confirms that the classifier/experiment is working correctly

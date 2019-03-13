@@ -463,6 +463,7 @@ class HMM_Framework:
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:
+            self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
             pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train[j], labels=state_train[j],                      \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
                                                         max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                 \
@@ -490,6 +491,7 @@ class HMM_Framework:
 
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:
+            self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
             _hohmm_builder = SimpleHOHMM.HiddenMarkovModelBuilder()     
             _hohmm_builder.add_batch_training_examples(list(obs_train[j]), list(state_train[j]))  # The builder does not accept objects of type ndarray<list>
             _trained_hohmm = _hohmm_builder.build(highest_order=hohmm_high_order, k_smoothing=hohmm_smoothing, synthesize_states=hohmm_synthesize, include_pi=True) 
@@ -911,6 +913,35 @@ class HMM_Framework:
             self.B.append(np.array(get_params["B"]))
             # pi
             self.pi.append(np.array(list(get_params["pi"][0].values())))
+
+    def validate_architecture_b_consistency(self, state_subset, obs_subset):
+        """
+        If we have a very imbalanced or small dataset, it is obvious that trying one HMM on each subset of data will lead to inconsistent number
+        of states and observations across them. I suggest to add a new instance with the states/observations that are missing.
+        """
+        # States
+        validate_x = set()     
+        for seq in state_subset:
+            validate_x.update(set(seq))
+
+        difference_s = self.unique_states_subset.difference(validate_x)
+        if len(difference_s) > 0:
+            print("--Warning: The input dataset is way too small or imbalanced to facilitate splitting it with Architecture B. Adding the states that are missing using new instances...")
+            for missing in difference_s:
+                state_subset.append([missing])
+                obs_subset.append(random.sample(self.unique_observations_subset, 1))  # Add a random instance to the other container
+
+        # States
+        validate_x = set()     
+        for seq in obs_subset:
+            validate_x.update(set(seq))
+
+        difference_o = self.unique_observations_subset.difference(validate_x)
+        if len(difference_s) > 0:
+            print("--Warning: The input dataset is way too small or imbalanced to facilitate splitting it with Architecture B. Adding the observations that are missing using new instances...")
+            for missing in difference_o:
+                obs_subset.append([missing])
+                state_subset.append(random.sample(self.unique_states_subset, 1))  # Add a random instance to the other container
 
     def result_metrics(self, golden_truth, prediction, time_counter):
         """

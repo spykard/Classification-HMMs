@@ -617,10 +617,15 @@ class HMM_Framework:
                     for j in range(total_models):  # For every trained model, j is the index of current model across all containers
                         # (1.1) Transition from start to first state (pi)
                         current_state_index = self.state_to_label_mapping[j][current_states[0]]
-                        current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
                         current_temp_score = self.pi[j][current_state_index] 
                         # (1.2) Probability of first observation (B)
-                        current_temp_score *= self.B[j][current_state_index, current_obs_index]
+                        try:
+                            current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
+                            current_temp_score *= self.B[j][current_state_index, current_obs_index]
+                        except KeyError:
+                            # Out-of-vocabulary value
+                            count_new_oov_local += 1
+                            current_temp_score *= formula_magic_smoothing                        
 
                         # (2) Everything that is between the first and last
                         for i in range(1, seq_length):  # This line is different between Pomegranate and HOHMM because the latter has a specific behavior for higher orders; it has multidimensional pi
@@ -763,10 +768,15 @@ class HMM_Framework:
                     for j in range(total_models):  # For every trained model, j is the index of current model across all containers
                         # (1.1) Transition from start to first state (pi)
                         current_state_index = self.state_to_label_mapping[j][current_states[0]]
-                        current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
                         current_temp_score = self.pi[j][0][current_states[0]] 
                         # (1.2) Probability of first observation (B)
-                        current_temp_score *= self.B[j][current_state_index, current_obs_index]
+                        try:
+                            current_obs_index = self.observation_to_label_mapping[j][current_observations[0]] 
+                            current_temp_score *= self.B[j][current_state_index, current_obs_index]
+                        except KeyError:
+                            # Out-of-vocabulary value
+                            count_new_oov_local += 1
+                            current_temp_score *= formula_magic_smoothing                       
 
                         # (2) Everything that is between the first and last
                         for i in range(1, seq_length):  # This line is different between Pomegranate and HOHMM because the latter has a specific behavior for higher orders; it has multidimensional pi

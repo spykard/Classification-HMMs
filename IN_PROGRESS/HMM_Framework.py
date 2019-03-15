@@ -687,16 +687,16 @@ class HMM_Framework:
                     temp_predict = self.trained_model.decode(obs_test[i])[-1]  # We only care about the last prediction; should be of <list> type for HOHMM to work
                 except ValueError:  # Prediction failed probably because of out-of-vocabulary value, perform random guessing
                     count_new_oov_local += 1
-                    temp_predict = random.randint(0, total_states - 1) 
+                    temp_predict = self.state_to_label_mapping_rev[random.randint(0, total_states - 1)]
             else:  #  Empty sequence, perform random guessing
-                temp_predict = random.randint(0, total_states - 1)
+                temp_predict = self.state_to_label_mapping_rev[random.randint(0, total_states - 1)]
 
             predict.append(temp_predict)  # This framework outputs the label name not an index
             predict_matrix[i] = temp_predict
 
         self.cross_val_prediction_matrix.append(predict_matrix)
         self.count_new_oov.append(count_new_oov_local)
-
+        print(predict)
         return(predict)   
 
     def _predict_hohmm_archit_b(self, state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing):

@@ -105,7 +105,7 @@ def Create_Artificial_Labels_to_File(data_train, labels_train, vocab, pipeline):
             if token_to_string in sentiment_words and token_to_string in vocab: ## Important to also be in vocabulary
                 to_append_data.append(token_to_string)
                 # we can simply directly append the artificial label itself
-                prediction_bayes = pipeline.predict([token_to_string])[0]
+                prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
                 to_append_labels.append(prediction_bayes)
         
         all_artifically_labeled_data.append(to_append_labels)
@@ -161,7 +161,7 @@ def Create_Artificial_Labels_to_File_Test(data_test, labels_test, vocab, pipelin
             if token_to_string in sentiment_words and token_to_string in vocab: ## Important to also be in vocabulary
                 to_append_data.append(token_to_string)
                 # we can simply directly append the artificial label itself
-                prediction_bayes = pipeline.predict([token_to_string])[0]
+                prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
                 to_append_labels.append(prediction_bayes)
         
         artifically_labeled_data_test.append(to_append_labels)

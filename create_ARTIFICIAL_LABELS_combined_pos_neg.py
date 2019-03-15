@@ -222,7 +222,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
                             ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
 
                             ('tfidf', TfidfTransformer(use_idf=True)),
-                            ('feature_selection', SelectKBest(score_func=chi2, k=18000)),  # Dimensionality Reduction                  
+                            ('feature_selection', SelectKBest(score_func=chi2, k=2000)),  # Dimensionality Reduction                  
                             ('clf', ComplementNB()),])  
         
         pipeline.fit(naive_bayes_data_train, naive_bayes_labels_train)

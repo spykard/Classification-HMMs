@@ -696,7 +696,7 @@ class HMM_Framework:
 
         self.cross_val_prediction_matrix.append(predict_matrix)
         self.count_new_oov.append(count_new_oov_local)
-        print(predict)
+
         return(predict)   
 
     def _predict_hohmm_archit_b(self, state_test, obs_test, architecture_b_algorithm, formula_magic_smoothing):

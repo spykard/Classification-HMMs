@@ -61,7 +61,7 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     # 4. Shuffle the Datasets, it seems to be too perfectly ordered
-    df_dataset = df_dataset.sample(frac=0.20, random_state=22).reset_index(drop=True)
+    df_dataset = df_dataset.sample(frac=0.50, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -102,11 +102,12 @@ def Create_Artificial_Labels_to_File(data_train, labels_train, vocab, pipeline):
         for j in tokenize_it:
             #print(i)
             token_to_string = str(j)
-            if token_to_string in sentiment_words and token_to_string in vocab: ## Important to also be in vocabulary
-                to_append_data.append(token_to_string)
-                # we can simply directly append the artificial label itself
-                prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
-                to_append_labels.append(prediction_bayes)
+            if token_to_string in sentiment_words:
+                if token_to_string in vocab: ## Important to also be in vocabulary
+                    to_append_data.append(token_to_string)
+                    # we can simply directly append the artificial label itself
+                    prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
+                    to_append_labels.append(prediction_bayes)
         
         all_artifically_labeled_data.append(to_append_labels)
         all_data_corresponding_to_labels.append(to_append_data)
@@ -158,11 +159,12 @@ def Create_Artificial_Labels_to_File_Test(data_test, labels_test, vocab, pipelin
         for j in tokenize_it:
             #print(i)
             token_to_string = str(j)
-            if token_to_string in sentiment_words and token_to_string in vocab: ## Important to also be in vocabulary
-                to_append_data.append(token_to_string)
-                # we can simply directly append the artificial label itself
-                prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
-                to_append_labels.append(prediction_bayes)
+            if token_to_string in sentiment_words:            
+                if token_to_string in vocab: ## Important to also be in vocabulary
+                    to_append_data.append(token_to_string)
+                    # we can simply directly append the artificial label itself
+                    prediction_bayes = str(pipeline.predict([token_to_string])[0])  ## Convert from numpy.str_ to str
+                    to_append_labels.append(prediction_bayes)
         
         artifically_labeled_data_test.append(to_append_labels)
         data_corresponding_to_labels_test.append(to_append_data)
@@ -202,26 +204,39 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
     pickle_load = 0    
 
     if pickle_load == 0:
+
+        # Make it 80-20
+        data = data_train.append(data_test)
+        labels = labels_train.append(labels_test)
+        
+        naive_bayes_data_train, naive_bayes_data_test = np.split(data, [int(.8*len(data))])
+        naive_bayes_labels_train, naive_bayes_labels_test = np.split(labels, [int(.8*len(labels))])
+
+        #print(naive_bayes_data_train)
+        #quit()
+
+        #naive_bayes_data_test = data.sample(frac=0.50, random_state=22).reset_index(drop=True)
+
         # STEP 1 RUN NAIVE BAYES
         pipeline = Pipeline([ # Optimal
                             ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
 
                             ('tfidf', TfidfTransformer(use_idf=True)),
-                            ('feature_selection', SelectKBest(score_func=chi2, k=1600)),  # Dimensionality Reduction                  
+                            ('feature_selection', SelectKBest(score_func=chi2, k=18000)),  # Dimensionality Reduction                  
                             ('clf', ComplementNB()),])  
         
-        pipeline.fit(data_train, labels_train)
+        pipeline.fit(naive_bayes_data_train, naive_bayes_labels_train)
 
         # (3) PREDICT
-        predicted = pipeline.predict(data_test)
+        predicted = pipeline.predict(naive_bayes_data_test)
 
-        accuracy = metrics.accuracy_score(labels_test, predicted)
-        other_metrics_to_print = metrics.classification_report(labels_test, predicted, target_names=targetnames, output_dict=False)
-        confusion_matrix = metrics.confusion_matrix(labels_test, predicted)
+        accuracy = metrics.accuracy_score(naive_bayes_labels_test, predicted)
+        other_metrics_to_print = metrics.classification_report(naive_bayes_labels_test, predicted, target_names=targetnames, output_dict=False)
+        confusion_matrix = metrics.confusion_matrix(naive_bayes_labels_test, predicted)
         print('Exact Accuracy: ', accuracy)
         print(other_metrics_to_print)
         print(confusion_matrix)
-
+        quit()
         vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
         selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
         vocab = [vocab[i] for i in selected_indices]

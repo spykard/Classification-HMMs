@@ -1,0 +1,323 @@
+0. Naive Bayes
+
+Exact Accuracy:  0.8626
+              precision    recall  f1-score   support
+
+         neg       0.85      0.88      0.86      2488
+         pos       0.88      0.84      0.86      2512
+
+   micro avg       0.86      0.86      0.86      5000
+   macro avg       0.86      0.86      0.86      5000
+weighted avg       0.86      0.86      0.86      5000
+
+[[2193  295]
+ [ 392 2120]]
+
+
+1. hohmm + forward
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 123.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 83.884
+-Average Accuracy: 83.885
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8432118542250701
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2094  405]
+ [ 378 2117]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8432118542250701
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2094  405]
+ [ 378 2117]]
+
+-Best F1-score: 84.321
+-Best Accuracy: 84.321
+
+
+
+2. hohmm + formula
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 129.6 instances.
+Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of: 4.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 83.884
+-Average Accuracy: 83.885
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8432118542250701
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2094  405]
+ [ 378 2117]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8432118542250701
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2094  405]
+ [ 378 2117]]
+
+-Best F1-score: 84.321
+-Best Accuracy: 84.321
+
+
+
+3. hohmm + formula + smoothing of 0.5e-05
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 129.6 instances.
+Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of: 1.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 84.272
+-Average Accuracy: 84.274
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best F1-score: 84.678
+-Best Accuracy: 84.679
+
+
+
+4. pome + formula
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 129.6 instances.
+Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of: 1.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 84.272
+-Average Accuracy: 84.274
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best F1-score: 84.678
+-Best Accuracy: 84.679
+
+
+5. pome + formula + smoothing of 0.5e-05
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 129.6 instances.
+Predictions failed and random guessing was performed because the 'formula' encountered a problem, on a total of: 1.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 84.272
+-Average Accuracy: 84.274
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.8467854996995794
+              precision    recall  f1-score   support
+
+         neg       0.85      0.84      0.85      2498
+         pos       0.84      0.85      0.85      2495
+
+   micro avg       0.85      0.85      0.85      4993
+   macro avg       0.85      0.85      0.85      4993
+weighted avg       0.85      0.85      0.85      4993
+
+[[2095  403]
+ [ 362 2133]]
+
+-Best F1-score: 84.678
+-Best Accuracy: 84.679
+
+
+6. pome + architecture A etc.
+
+Prediction was performed using the Maximum a Posteriori algorithm. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 1.8 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 67.961
+-Average Accuracy: 67.991
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.6921690366513118
+              precision    recall  f1-score   support
+
+         neg       0.70      0.67      0.69      2498
+         pos       0.68      0.71      0.70      2495
+
+   micro avg       0.69      0.69      0.69      4993
+   macro avg       0.69      0.69      0.69      4993
+weighted avg       0.69      0.69      0.69      4993
+
+[[1679  819]
+ [ 718 1777]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.6921690366513118
+              precision    recall  f1-score   support
+
+         neg       0.70      0.67      0.69      2498
+         pos       0.68      0.71      0.70      2495
+
+   micro avg       0.69      0.69      0.69      4993
+   macro avg       0.69      0.69      0.69      4993
+weighted avg       0.69      0.69      0.69      4993
+
+[[1679  819]
+ [ 718 1777]]
+
+-Best F1-score: 69.205
+-Best Accuracy: 69.217
+
+
+7. hohmm + second-order + forward
+
+Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on a total of: 123.4 instances.
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Average F1-score: 83.787
+-Average Accuracy: 83.789
+
+ - - - - - - - - - - - - - - - - - -  Conclusion across 5-fold Cross Validation - - - - - - - - - - - - - - - - - - 
+-Best F1-score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.84120945134161
+              precision    recall  f1-score   support
+
+         neg       0.85      0.83      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2082  417]
+ [ 376 2119]]
+
+-Best Accuracy score:
+- - - - - RESULT METRICS - Classic HMM - - - -
+Exact Accuracy: 0.84120945134161
+              precision    recall  f1-score   support
+
+         neg       0.85      0.83      0.84      2499
+         pos       0.84      0.85      0.84      2495
+
+   micro avg       0.84      0.84      0.84      4994
+   macro avg       0.84      0.84      0.84      4994
+weighted avg       0.84      0.84      0.84      4994
+
+[[2082  417]
+ [ 376 2119]]
+
+-Best F1-score: 84.12
+-Best Accuracy: 84.121

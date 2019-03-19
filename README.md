@@ -1,3 +1,21 @@
+# Dependencies
+
+```
+Python >= 3.6
+```
+Required for Baum-Welch, Maximum a Posteriori, Viterbi algorithms and other baseline components:
+```
+pomegranate >= 0.11.0
+```
+Required for Labeled algorithm and an alternative high-order implementation different to my own:
+```
+SimpleHOHMM >= 0.3.0
+```
+Required for k-fold Cross-Validation module and performance metrics:
+```
+scikit-learn >= 0.20.3
+```
+
 # Hidden Markov Models
 
 ## Coding Notes - Overall

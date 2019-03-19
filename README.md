@@ -15,6 +15,14 @@ Required for k-fold Cross-Validation module and performance metrics:
 ```
 scikit-learn >= 0.20.3
 ```
+Required for plotting the performance of models:
+```
+matplotlib
+```
+Required for n-grams and high-order implementation:
+```
+nltk
+```
 
 # Hidden Markov Models
 

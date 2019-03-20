@@ -28,7 +28,7 @@ nltk
 
 ## Coding Notes - Overall
 
-* On architecture B, if we require exact probabilities per class we have to normalize the result of the math formula. [Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979) divide the multiplied probability score by the length of the sequence.
+* On architecture B's 'formula' algorithm, to get log probabilities we have to normalize the result of the math formula. [Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979) divide the multiplied probability score by the length of the sequence.
 
 ## Coding Notes - Pomegranate
 

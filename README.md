@@ -19,7 +19,7 @@ Required for plotting the performance of models:
 ```
 matplotlib
 ```
-Required for n-grams and high-order implementation:
+Required for n-grams and high-order implementations:
 ```
 nltk
 ```

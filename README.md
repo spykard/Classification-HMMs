@@ -214,3 +214,5 @@ Can be either Continuous (Method A, new formula would need to be invented for Me
 * Use Naive Bayes since they only have sentence sentiment to classify each word and that is the state - https://github.com/saumyakb/CS4740-NLP-Sentiment-Analysis-using-HMM - states: naive bayes artificial labels, observations: words
 
 * Each word is one-hot encoded and used as observations; since it is built like a classifier, clueless people run it with (n_sequences, seq_length=1) by throwing a tfidf matrix as the sequence of length 1 and it kind of works - https://github.com/larsmans/seqlearn/blob/master/seqlearn/hmm.py - states: Part-of-Speech tags, observations: one-hot encoded words
+
+* Multivariate on 6 Emotions with 2 Discrete Distributions, one for the words and one for Part-of-Speech tags - states: Artificial Labels, observations: as described

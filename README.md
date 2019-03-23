@@ -140,6 +140,7 @@ Architecture B, effectively applicable to classification tasks (a pure classific
 
 * Can be either Continuous (Method A, new formula would need to be invented for Method B) or Discrete (Method A/B).
 
+* Note: passing more than 100 words/distributions makes it crash, so it is pointless.
 * Example of Discrete: pass multiple words on each sentence (useless since too many variables and each Discrete distribution is independent from other words); a very good idea would be to pass both the word and its Part-of-Speech tag on a Spyros HMM; another idea would be to pass the 1st most relevant word on the 1st Discrete distribution, the 2nd most relevant on the 2nd and so on. 
 * Example of Continuous: pass the tfidf value of the entire sentence (but how would we do that).
 

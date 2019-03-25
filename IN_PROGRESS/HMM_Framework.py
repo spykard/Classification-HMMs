@@ -6,15 +6,15 @@ import numpy as np
 import itertools
 from collections import defaultdict
 import pandas as pd
-import pomegranate as pome
+import pomegranate as pome  # Import it in this manner to avoid conflicts with the 'time' module
 import SimpleHOHMM
-import time  # Pomegranate has it's own 'time' and can cause conflicts
+import time
 import random
 import copy
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
-from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn import metrics
 
 
@@ -394,7 +394,11 @@ class HMM_Framework:
 
         self.check_architecture_selection(architecture_b_algorithm)
 
-        cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
+        if k_fold != 0:
+            cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
+        else:  # Cross Validation is Disabled
+            cross_val = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)
+
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
@@ -430,7 +434,7 @@ class HMM_Framework:
             if pome_algorithm == "labeled":
                 print("--Warning: The simple counting 'labeled' algorithm is riddled with bugs and the training is going to go completely wrong, consider using 'baum-welch'.")
             if pome_njobs != 1:
-                print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization is enabled. Training speed will increase tremendously but accuracy will drop.")           
+                print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization/batch learning is enabled. Training speed will increase tremendously but accuracy might drop.")           
             if self.selected_architecture == "A":
                 self._train_pome_archit_a(state_train, obs_train, None, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
                 self.create_state_to_label_mapping()

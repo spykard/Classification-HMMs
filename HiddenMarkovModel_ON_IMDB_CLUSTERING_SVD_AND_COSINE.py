@@ -72,10 +72,9 @@ def Run_Preprocessing(dataset_name):
 
 def Create_Clustered_to_File(data_train, labels_train, f_tuple):
     # Training Data Transform
-    pos_clustered_labeled_data = []
-    pos_data_corresponding_to_labels = []
-    neg_clustered_labeled_data = []
-    neg_data_corresponding_to_labels = []
+    clustered_labeled_data = []
+    data_corresponding_to_labels = []
+    golden_truth = []
     instance_count = len(data_train)
     nlp = spacy.load('en_core_web_sm')
 
@@ -96,28 +95,34 @@ def Create_Clustered_to_File(data_train, labels_train, f_tuple):
                 get_ind = f_tuple[0].index(token_to_string)
                 # we can simply directly append the artificial label itself
                 prediction_kmeans = f_tuple[1][get_ind]
+                #print(prediction_kmeans)
                 to_append_labels.append(str(prediction_kmeans))
 
-        if labels_train_new[i] == "pos":
-            pos_clustered_labeled_data.append(to_append_labels)
-            pos_data_corresponding_to_labels.append(to_append_data)
-        elif labels_train_new[i] == "neg":
-            neg_clustered_labeled_data.append(to_append_labels)
-            neg_data_corresponding_to_labels.append(to_append_data)
+        clustered_labeled_data.append(to_append_labels)
+        data_corresponding_to_labels.append(to_append_data)
+        golden_truth.append(labels_train_new[i])
 
-    # Pos
-    with open('./Pickled Objects/To Train Pos HMM Clustered/Clustered_Labels_from_kMeans', 'wb') as f:
-        pickle.dump(pos_clustered_labeled_data, f)
-    with open('./Pickled Objects/To Train Pos HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'wb') as f:
-        pickle.dump(pos_data_corresponding_to_labels, f)
-    # Neg
-    with open('./Pickled Objects/To Train Neg HMM Clustered/Clustered_Labels_from_kMeans', 'wb') as f:
-        pickle.dump(neg_clustered_labeled_data, f)
-    with open('./Pickled Objects/To Train Neg HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'wb') as f:
-        pickle.dump(neg_data_corresponding_to_labels, f)
-    #        
-    #with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
-    #    pickle.dump(golden_truth, f)
+
+    with open('./Pickled Objects/Clustered_Labels_from_kMeans', 'wb') as f:
+        pickle.dump(clustered_labeled_data, f)
+    with open('./Pickled Objects/Data_corresponding_to_Labels_from_clustering', 'wb') as f:
+        pickle.dump(data_corresponding_to_labels, f)
+    with open('./Pickled Objects/Clustered_Labels_Golden_Truth', 'wb') as f:
+        pickle.dump(golden_truth, f)
+
+    # # Pos
+    # with open('./Pickled Objects/To Train Pos HMM Clustered/Clustered_Labels_from_kMeans', 'wb') as f:
+    #     pickle.dump(pos_clustered_labeled_data, f)
+    # with open('./Pickled Objects/To Train Pos HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'wb') as f:
+    #     pickle.dump(pos_data_corresponding_to_labels, f)
+    # # Neg
+    # with open('./Pickled Objects/To Train Neg HMM Clustered/Clustered_Labels_from_kMeans', 'wb') as f:
+    #     pickle.dump(neg_clustered_labeled_data, f)
+    # with open('./Pickled Objects/To Train Neg HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'wb') as f:
+    #     pickle.dump(neg_data_corresponding_to_labels, f)
+    # #        
+    # with open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'wb') as f:
+    #     pickle.dump(golden_truth, f)
 
 
 def Create_Clustered_to_File_Test(data_test, labels_test, f_tuple):
@@ -183,7 +188,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
-    pickle_load = 0 
+    pickle_load = 1 
 
     from scipy.sparse.linalg import svds
 
@@ -259,7 +264,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
             predictions = clf.labels_  # prediction results on the labels, equivalent to fit_predict
 
-        f_tuple = (vocab, predictions.shape)
+        f_tuple = (vocab, predictions)
         print(f_tuple)
 
         #print(predictions[vocab.index("fun")], predictions[vocab.index("unconvincing")], predictions[vocab.index("wasted")], predictions[vocab.index("bad")], predictions[vocab.index("masterpiece")], predictions[vocab.index("amazing")], predictions[vocab.index("great")] )
@@ -289,7 +294,7 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         f_tuple = pickle.load(open('./Pickled Objects/IMDb word-based SVD-norm k-Means 2000_features mapping list', 'rb'))
 
-    create_clusters = 0   
+    create_clusters = 1   
     if create_clusters == 1:  
 
         #print(pipeline.named_steps['clf'].cluster_centers_.shape)

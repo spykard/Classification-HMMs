@@ -32,6 +32,8 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn import metrics
 from nltk import ngrams
 
+from sklearn.preprocessing import Normalizer
+
 
 cross_validation_best = [0.0, 0.0, "", [], [], 0.0]           # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
 cross_validation_best_ensemble = [0.0, 0.0, "", [], [], 0.0]  # [Accuracy, F1-score, Model Name, Actual Labels, Predicted, Time]
@@ -63,7 +65,7 @@ def Run_Preprocessing(dataset_name):
     # df_dataset = df_dataset.sample(frac=1, random_state=22).reset_index(drop=True)
 
     # 4. Shuffle the Datasets, it seems to be too perfectly ordered
-    df_dataset = df_dataset.sample(frac=0.50, random_state=22).reset_index(drop=True)
+    df_dataset = df_dataset.sample(frac=0.10, random_state=22).reset_index(drop=True)
 
     return df_dataset
 
@@ -181,18 +183,21 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
     time_counter = my_time.time()
 
-    pickle_load = 1 
+    pickle_load = 0 
 
     from scipy.sparse.linalg import svds
 
     if pickle_load == 0:
         # STEP 1 CLUSTERING
+        # ! Using cosine similarity rather than Euclidean distance is referred to as spherical k-means.
+        # (https://www.quora.com/How-can-I-use-cosine-similarity-in-clustering-For-example-K-means-clustering)
+        # (https://pypi.org/project/spherecluster/0.1.2/)
         pipeline = Pipeline([ # Optimal
                             ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
 
-                            ('tfidf', TfidfTransformer(use_idf=True, norm='l2')),  # using normalization makes k-Means equivalent to cosine similarity k-Means
+                            ('tfidf', TfidfTransformer(use_idf=True, norm='l2')),  # ectorizer results are normalized, which makes KMeans behave as spherical k-means for better results
                             #('feature_selection', TruncatedSVD(n_components=15)),  # Has Many Issues
-                            ('feature_selection', SelectKBest(score_func=chi2, k=12000)),  # Dimensionality Reduction                  
+                            ('feature_selection', SelectKBest(score_func=chi2, k=2400)),  # Dimensionality Reduction                  
                             #('clf', KMeans(n_clusters=75 ,max_iter=1000, verbose=True)),
                             ])  
         
@@ -203,15 +208,31 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
 
         if use_scipy_or_sklearn == 1:
 
-            u, s, v = svds(output, k=2000)  # For some stupid reason for our task we need words to be rows not columns for the SVD to produce the correct U*S format
+            u, s, v = svds(output, k=200)  # For some stupid reason for our task we need words to be rows not columns for the SVD to produce the correct U*S format
             u_s = u*s
             print(u_s.shape)
 
         else:
-
-            clf = TruncatedSVD(n_components=2000)
-            newtry = clf.fit_transform(output)
+            clf = TruncatedSVD(n_components=2200)
+            newtry = clf.fit_transform(output)  # generates U*S
             print(newtry.shape)
+
+        # SVD Results are no normalized, we have to REDO the normalization (https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html)
+
+        normalizer = Normalizer(copy=False)
+        normalizer.fit_transform(newtry)  # Seems to work
+
+
+        word_count = newtry.shape[0]
+        cos_sim_dot_matrix = np.zeros((word_count, word_count))
+        for i in range(word_count):
+            for j in range(word_count):
+                cos_sim_dot_matrix[i, j] = np.dot(newtry[i, :], newtry[j, :])
+
+        #print(cos_sim_dot_matrix[1,])
+
+
+        #quit()
 
 
         vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
@@ -223,13 +244,26 @@ def HMM_NthOrder_Supervised(data_train, data_test, labels_train, labels_test, do
         #best_features = [vocab[i] for i in clf.components_[0].argsort()[::-1]]
         #print(best_features[:10])
 
-        clf = KMeans(n_clusters=75 ,max_iter=1000, verbose=True)
-        results = clf.fit(newtry)
+        spherical_for_text = 1
+        from spherecluster import SphericalKMeans
 
-        predictions = clf.labels_  # prediction results on the labels, equivalent to fit_predict
+        # This is Eucledian K-means
+        if spherical_for_text == 0:
+            clf = KMeans(n_clusters=75, max_iter=1000, verbose=True)
+            results = clf.fit(newtry)
 
-        f_tuple = (vocab, predictions)
+            predictions = clf.labels_  # prediction results on the labels, equivalent to fit_predict
+        else: # This is Spherical K-means
+            clf = SphericalKMeans(n_clusters=75, max_iter=1000, verbose=True)
+            results = clf.fit(newtry)
+
+            predictions = clf.labels_  # prediction results on the labels, equivalent to fit_predict
+
+        f_tuple = (vocab, predictions.shape)
         print(f_tuple)
+
+        #print(predictions[vocab.index("fun")], predictions[vocab.index("unconvincing")], predictions[vocab.index("wasted")], predictions[vocab.index("bad")], predictions[vocab.index("masterpiece")], predictions[vocab.index("amazing")], predictions[vocab.index("great")] )
+        #quit()
 
         with open('./Pickled Objects/IMDb word-based SVD-norm k-Means 2000_features mapping list', 'wb') as f:
             pickle.dump(f_tuple, f)

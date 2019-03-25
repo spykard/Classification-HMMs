@@ -154,5 +154,5 @@ if True:
     mapping.append(hmm.ensemble_stored["Mapping"])
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    HMM_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="voting", weights=[0.4, 0.3, 0.3])
+    HMM_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="borda", weights=[0.4, 0.3, 0.3])
 

@@ -1283,13 +1283,67 @@ def general_mixture_model_label_generator(sequences, individual_labels):
 
     return(pd.Series(transformed_labels))
 
+def borda_count(curr_fold, model_count, cross_val_prediction_matrix, mapping):
+    """
+    Implementation of Borda count, a single-winner ranking method.
+    """
+    instance_count = cross_val_prediction_matrix[0][curr_fold].shape[0]
+    prediction = []
+
+    for instance in range(instance_count):
+        ballots = []        
+        for model in range(model_count):
+            sorted_indices = list(np.argsort(cross_val_prediction_matrix[model][curr_fold][instance, :]))
+            sorted_indices.reverse()  # Reverse
+            temp = ''
+            for j in range(len(sorted_indices)):  # j is the current index and sorted_indices[j] is the current label
+                if j > 0:
+                    if sorted_indices[j-1] == sorted_indices[j]:
+                        temp += '='
+                    else:
+                        temp += '>'
+                temp += mapping[curr_fold][sorted_indices[j]]
+            ballots.append(temp)
+            # ballots = ['A>B>C>D>E',
+            #           'A>B>C>D=E',
+            #           'A>B=C>D>E', 
+            #           'B>A>C>D',
+            #            ]        
+
+        prediction.append(max(_borda_count_tally(ballots), key=_borda_count_tally(ballots).get))  # Maximum value is not always on the leftmost position of the Dict so we need to find it
+
+    return(prediction)
+
+def _borda_count_main(ballot):
+    n = len([c for c in ballot if c.isalpha()]) - 1
+    score = itertools.count(n, step = -1)
+    result = {}
+    for group in [item.split('=') for item in ballot.split('>')]:
+        s = sum(next(score) for item in group)/float(len(group))
+        for pref in group:
+            result[pref] = s
+    return result
+
+def _borda_count_tally(ballots):
+    result = defaultdict(int)
+    for ballot in ballots:
+        for pref,score in _borda_count_main(ballot).items():
+            result[pref]+=score
+    result = dict(result)
+    return result
+
 def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None):
     """
     After training multiple models using the HMM framework we can add the following objects to a list: hmm.cross_val_prediction_matrix
                                                                                                        hmm.ensemble_stored["Mapping"]
                                                                                                        hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"]
                                                                                                        where list[current_model][current_cross_val_fold]
-    Given those objects as parameters, calculates a weighted voting ensemble of all the models.
+    Given those objects as parameters, calculates a voting ensemble of all the models.
+
+    mode:   
+            sum: Weighted Voting Ensemble on probability matrices with a sum operation, also known as Soft Voting in literature
+            product: Weighted Voting Ensemble on probability matrices with a product operation, also known as Soft Voting in literature
+            borda: Borda count, a single-winner ranking method
     """
     model_count = len(cross_val_prediction_matrix)
 
@@ -1327,20 +1381,25 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
 
     # Run the Ensemble
     for curr_fold in range(cross_val_folds):
-        time_counter = time.time()              
-        for model in range(model_count):
+        time_counter = time.time()
 
+        if mode != "borda":
+            for model in range(model_count):
+                    if model == 0:
+                        ensemble_matrix = weights[0]*cross_val_prediction_matrix[0][curr_fold]
+                    else:
+                        if mode == "sum":
+                            ensemble_matrix += weights[model]*cross_val_prediction_matrix[model][curr_fold]
+                        elif mode == "product":
+                            ensemble_matrix *= weights[model]*cross_val_prediction_matrix[model][curr_fold]
 
-            if mode == "voting":
-                if model == 0:
-                    ensemble_matrix = weights[0]*cross_val_prediction_matrix[0][curr_fold]
-                else:
-                    ensemble_matrix += weights[model]*cross_val_prediction_matrix[model][curr_fold]
+            indices = np.argmax(ensemble_matrix, axis=1)
+            prediction = []
+            for i in indices:
+                prediction.append(mapping[curr_fold][i])
 
-        indices = np.argmax(ensemble_matrix, axis=1)
-        prediction = []
-        for i in indices:
-            prediction.append(mapping[curr_fold][i])
+        else:
+            prediction = borda_count(curr_fold, model_count, cross_val_prediction_matrix, mapping)
                    
         dummy_object.result_metrics(golden_truth[curr_fold], prediction, time_counter)
     

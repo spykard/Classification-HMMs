@@ -1283,7 +1283,7 @@ def general_mixture_model_label_generator(sequences, individual_labels):
 
     return(pd.Series(transformed_labels))
 
-def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth):
+def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None):
     """
     After training multiple models using the HMM framework we can add the following objects to a list: hmm.cross_val_prediction_matrix
                                                                                                        hmm.ensemble_stored["Mapping"]
@@ -1296,6 +1296,11 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth):
     # Perform certain input validation checks
     if model_count < 2:
         raise ValueError("you have inputted less then two models, the Ensemble process is pointless.")
+    if weights != None:
+        if len(weights) != model_count:
+            raise ValueError("you must give as many weights as there are models or simply 'None'.")
+    else:
+        weights = [1.0/model_count] * model_count
 
     try:
         if isinstance(cross_val_prediction_matrix[0][0], np.ndarray) != True:
@@ -1322,23 +1327,22 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth):
 
     # Run the Ensemble
     for curr_fold in range(cross_val_folds):
-        #for model in range(model_count):
-        time_counter = time.time()
-        ensemble_matrix = 0.4*cross_val_prediction_matrix[0][curr_fold] + 0.3*cross_val_prediction_matrix[1][curr_fold] + 0.3*cross_val_prediction_matrix[2][curr_fold]
-        #print(ensemble_matrix)
+        time_counter = time.time()              
+        for model in range(model_count):
+
+
+            if mode == "voting":
+                if model == 0:
+                    ensemble_matrix = weights[0]*cross_val_prediction_matrix[0][curr_fold]
+                else:
+                    ensemble_matrix += weights[model]*cross_val_prediction_matrix[model][curr_fold]
+
         indices = np.argmax(ensemble_matrix, axis=1)
         prediction = []
         for i in indices:
             prediction.append(mapping[curr_fold][i])
-        
-        #print(prediction)
-        #quit()
                    
         dummy_object.result_metrics(golden_truth[curr_fold], prediction, time_counter)
     
-    #print(dummy_object.cross_val_metrics["F1-score"])
-    #quit()
-
-
     dummy_object.print_average_results(decimals=3)
     dummy_object.print_best_results(detailed=False, decimals=3) 

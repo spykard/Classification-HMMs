@@ -339,17 +339,18 @@ class HMM_Framework:
                 architecture: string denoting a choice by the user.
                 model: string denoting a choice by the user.
                 framework: string denoting a choice by the user.
-                k_fold: the number of folds to be used in the cross-validation.
+                k_fold: the number of folds to be used in the stratified cross-validation. A value of 0 disables cross-validation and enables an 80-20 split.
 
                 state_labels_pandas: pandas Series that contains the data the known sequence of state labels.
                 observations_pandas: pandas Series that contains the data that will be used as observations.
                 golden_truth_pandas: pandas Series that contains the actual truth labels of all instances.
 
+                # (Placeholder for Future Implementations) #
                 text_instead_of_sequences: a completely different operating mode, where the user inputs text documents;
                                            an example would be words to be used for a multivariate (multi-observation) HMM.
                                            in this scenario the first two arguments don't have to be used.
-                                           TODO
                 text_enable: enables the use of the 'text_instead_of_sequences' parameter.
+                #                                          #
 
                 n_grams: n-gram order
                 n_target: a string that sets the container to be used, "states", "obs" or "both".

@@ -55,7 +55,7 @@ class HMM_Framework:
         self.state_to_label_mapping = []        # Dict: {"pos": 0, "neg": 1, ...}
         self.state_to_label_mapping_rev = []    # Dict: {0: "pos", 1: "neg", ...}
         self.observation_to_label_mapping = []  # Dict: {"good": 0, ambitious: 1, ...}
-        self.hmm_to_label_mapping = {}          # Used for Architecture 'B', {Model 0: "pos", Model 1: "neg", ...}
+        self.hmm_to_label_mapping = {}          # Used for Architecture 'B', {Model_0: "pos", Model_1: "neg", ...}
 
         # Evaluation
         self.k_fold = 0
@@ -68,6 +68,10 @@ class HMM_Framework:
         self.cross_val_prediction_matrix = []       # The final predictions for all the folds of cross validation
         self.count_new_oov = []                     # Count the number of instances where we encountered out-of-vocabulary new observations
         self.count_formula_problems = []            # Count the number of instances where the 'formula' algorithm prediction failed and was forced to perform random guessing
+
+        # Stored for future Ensembles
+        self.ensemble_stored = defaultdict(list)  # {Mapping: [], 
+                                                  # Curr_Cross_Val_Golden_Truth: []}
 
     def clean_up(self):
         """
@@ -86,6 +90,7 @@ class HMM_Framework:
         self.state_to_label_mapping = []
         self.state_to_label_mapping_rev = []
         self.observation_to_label_mapping = []
+        self.hmm_to_label_mapping = {}
 
     def check_input_type(self, state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable):
         """
@@ -401,6 +406,13 @@ class HMM_Framework:
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
             self.result_metrics(y_test, predict, time_counter)
+
+            # Store data for future Ensembles and then reset everything
+            if self.selected_architecture == "A":
+                self.ensemble_stored["Mapping"].append(self.state_to_label_mapping_rev)
+            elif self.selected_architecture == "B":
+                self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
+            self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
 
             self.reset()
 
@@ -1249,7 +1261,7 @@ def plot_basic(x, y, dataset_name, k_fold):
 
 def pome_graph_plot(pomegranate_model, hmm_order):
     """
-    Given a trained Pomegranate model, plots the Hidden Markov Model Graph
+    Given a trained Pomegranate model, plots the Hidden Markov Model Graph.
     """
     fig, ax1 = plt.subplots()
     fig.canvas.set_window_title("Hidden Markov Model Graph")
@@ -1260,7 +1272,7 @@ def pome_graph_plot(pomegranate_model, hmm_order):
 def general_mixture_model_label_generator(sequences, individual_labels):
     """
     Given a pandas Series of sequences and one label per sequence, 'multiplies' the label in order to have
-    a single constant label per sequence and outputs it as a pandas Series
+    a single constant label per sequence and outputs it as a pandas Series.
     """
     sequences = sequences.values
     individual_labels = individual_labels.values
@@ -1270,3 +1282,54 @@ def general_mixture_model_label_generator(sequences, individual_labels):
         transformed_labels.append([individual_labels[i]] * len(seq))
 
     return(pd.Series(transformed_labels))
+
+def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth):
+    """
+    After training multiple models using the HMM framework we can add the following objects to a list: hmm.cross_val_prediction_matrix
+                                                                                                       hmm.ensemble_stored["Mapping"]
+                                                                                                       hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"]
+                                                                                                       where list[current_model][current_cross_val_fold]
+    Given those objects as parameters, calculates a weighted voting ensemble of all the models.
+    """
+    model_count = len(cross_val_prediction_matrix)
+
+    # Perform certain input validation checks
+    if model_count < 2:
+        raise ValueError("you have inputted less then two models, the Ensemble process is pointless.")
+
+    try:
+        if isinstance(cross_val_prediction_matrix[0][0], np.ndarray) != True:
+            raise ValueError("the format of the prediction matrix seems to be wrong, are you certain there were multiple cross validation folds?") 
+        else:
+            cross_val_folds = len(cross_val_prediction_matrix[0])
+    except TypeError:
+        raise ValueError("the format of the prediction matrix seems to be wrong, are you certain there were multiple cross validation folds?")        
+
+    for curr_fold in range(cross_val_folds):
+        for model in range(model_count-1):
+            if np.array_equal(golden_truth[model][curr_fold], golden_truth[model+1][curr_fold]) != True:  # or we could have used python's 'all()' function
+                raise ValueError("the golden truth labels across models and across cross validation folds are not identical.")
+    golden_truth = golden_truth[0]  # Everything is OK       
+    #
+
+    # Create a HMM object just to use the 'result_metrics' function
+    dummy_object = HMM_Framework()
+    dummy_object.selected_model = "Ensemble of HMMs"
+
+    # Run the Ensemble
+    for curr_fold in range(cross_val_folds):
+        #for model in range(model_count):
+        time_counter = time.time()
+        ensemble_matrix = cross_val_prediction_matrix[1][curr_fold]
+        indices = np.argmax(ensemble_matrix, axis=1)
+        prediction = []
+        for i in indices:
+            prediction.append(mapping[1][curr_fold][i])
+        
+        #print(prediction)
+        #quit()
+                   
+        dummy_object.result_metrics(golden_truth[curr_fold], prediction, time_counter)
+    
+    dummy_object.print_average_results(decimals=3)
+    dummy_object.print_best_results(detailed=False, decimals=3) 

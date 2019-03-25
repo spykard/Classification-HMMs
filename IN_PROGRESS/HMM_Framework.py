@@ -383,7 +383,7 @@ class HMM_Framework:
         else:
             self.length = len(self.text_data)
 
-        self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag)
+        self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag, hohmm_check=(hohmm_high_order, architecture_b_algorithm))
         self.set_unique_states()
 
         self.check_architecture_selection(architecture_b_algorithm)
@@ -828,11 +828,15 @@ class HMM_Framework:
 
         return(predict)
 
-    def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag):
+    def convert_to_ngrams_wrapper(self, n, target, prev_flag, dummy_flag, hohmm_check):
         """
         (1) Execute the n-gram conversion on the correct container, as defined by 'target'.
-        (2) Perform some validation tasks.
+        (2) Perform some input data validation checks.
         """
+        if self.selected_framework == "hohmm":
+            if hohmm_check[0] > 1 and hohmm_check[1] == "formula":
+                raise ValueError("the selected 'hohmm' framework combined with 'formula' algorithm has not been implemented for high-order HMMs.")
+
         if n < 2:
             print("N-gram conversion is disabled.")
             return None

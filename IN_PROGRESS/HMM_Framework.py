@@ -1240,7 +1240,7 @@ def plot_basic(x, y, dataset_name, k_fold):
     fig.subplots_adjust(left=0.18, top=0.92, bottom=0.08)
     fig.canvas.set_window_title(dataset_name + " - Averages across " + str(k_fold) + "-fold Cross Validation")
 
-    p1 = ax1.bar(indices, x, align="center", width=0.35, color="navy") 
+    ax1.bar(indices, x, align="center", width=0.35, color="navy") 
 
     ax1.set_title(dataset_name + " - Averages across " + str(k_fold) + "-fold Cross Validation")
     ax1.yaxis.set_major_locator(MaxNLocator(11))
@@ -1309,27 +1309,36 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth):
         for model in range(model_count-1):
             if np.array_equal(golden_truth[model][curr_fold], golden_truth[model+1][curr_fold]) != True:  # or we could have used python's 'all()' function
                 raise ValueError("the golden truth labels across models and across cross validation folds are not identical.")
-    golden_truth = golden_truth[0]  # Everything is OK       
+            if mapping[model][curr_fold] != mapping[model+1][curr_fold]:
+                raise ValueError("the mapping across models and across cross validation folds is not identical.")
+    golden_truth = golden_truth[0]  # Everything is OK, we only need to keep the golden truth and mapping of any one model   
+    mapping = mapping[0]        
     #
 
     # Create a HMM object just to use the 'result_metrics' function
     dummy_object = HMM_Framework()
     dummy_object.selected_model = "Ensemble of HMMs"
+    dummy_object.k_fold = cross_val_folds
 
     # Run the Ensemble
     for curr_fold in range(cross_val_folds):
         #for model in range(model_count):
         time_counter = time.time()
-        ensemble_matrix = cross_val_prediction_matrix[1][curr_fold]
+        ensemble_matrix = 0.4*cross_val_prediction_matrix[0][curr_fold] + 0.3*cross_val_prediction_matrix[1][curr_fold] + 0.3*cross_val_prediction_matrix[2][curr_fold]
+        #print(ensemble_matrix)
         indices = np.argmax(ensemble_matrix, axis=1)
         prediction = []
         for i in indices:
-            prediction.append(mapping[1][curr_fold][i])
+            prediction.append(mapping[curr_fold][i])
         
         #print(prediction)
         #quit()
                    
         dummy_object.result_metrics(golden_truth[curr_fold], prediction, time_counter)
     
+    #print(dummy_object.cross_val_metrics["F1-score"])
+    #quit()
+
+
     dummy_object.print_average_results(decimals=3)
     dummy_object.print_best_results(detailed=False, decimals=3) 

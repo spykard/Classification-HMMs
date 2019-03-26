@@ -16,6 +16,7 @@ from matplotlib.ticker import MaxNLocator
 from nltk import ngrams as ngramsgenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn import metrics
+import Ensemble_Framework
 
 
 random_state = 22
@@ -404,11 +405,20 @@ class HMM_Framework:
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
+            if boosting == True:
+                weights = self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \
+                                                hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
+            else:
+                weights = None
+            print(weights)
+            quit()
+        
+
             time_counter = time.time()
             # Training Phase
             self.set_unique_states_subset(state_train)
             self.set_unique_observations_subset(obs_train)
-            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize)
+            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, weights)
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
             self.result_metrics(y_test, predict, time_counter)
@@ -425,7 +435,7 @@ class HMM_Framework:
         self.verbose_final(pome_algorithm, pome_algorithm_t, architecture_b_algorithm)
         self.clean_up()
 
-    def train(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize):
+    def train(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, weights):
         """
         Train a set of models using k-fold cross-validation
         """
@@ -437,12 +447,12 @@ class HMM_Framework:
             if pome_njobs != 1:
                 print("--Warning: the 'pome_njobs' parameter is not set to 1, which means parallelization/batch learning is enabled. Training speed will increase tremendously but accuracy might drop.")           
             if self.selected_architecture == "A":
-                self._train_pome_archit_a(state_train, obs_train, None, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)
+                self._train_pome_archit_a(state_train, obs_train, None, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, weights)
                 self.create_state_to_label_mapping()
                 self.create_observation_to_label_mapping() 
                 self.pome_object_to_matrices_archit_a()  # Assign to the local parameters  
             elif self.selected_architecture == "B":
-                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs)        
+                self._train_pome_archit_b(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, weights)        
                 self.create_state_to_label_mapping()
                 self.create_observation_to_label_mapping() 
                 self.pome_object_to_matrices_archit_b()  # Assign to the local parameters
@@ -459,19 +469,19 @@ class HMM_Framework:
                 self.create_observation_to_label_mapping()         
                 self.hohmm_object_to_matrices_archit_b()  # Assign to the local parameters  
 
-    def _train_pome_archit_a(self, state_train, obs_train, _, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
+    def _train_pome_archit_a(self, state_train, obs_train, _, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, weights):
         """
         Train a Hidden Markov Model using the Pomegranate framework as a baseline. 
         Architecture A is used, which is the traditional approach where a single HMM is built; even if it looks like it, it is not really suited for classification tasks.
         """
-        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train, labels=state_train,                         \
+        pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_train, labels=state_train, weights=weights,        \
                                                        algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                           \
                                                        verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                        )
         self.trained_model = pome_HMM
 
-    def _train_pome_archit_b(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs):
+    def _train_pome_archit_b(self, state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, weights):
         """
         Train a Hidden Markov Model using the Pomegranate framework as a baseline.
         Architecture B is used, where multiple HMMs are built, in a purely classification-based approach.
@@ -482,9 +492,9 @@ class HMM_Framework:
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:            
             state_new, obs_new = self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
-            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_new, labels=state_new,                      \
+            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_new, labels=state_new, weights=weights,         \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
-                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                                 \
+                                                        max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                           \
                                                         verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \
                                                         )
             self.trained_model.append(pome_HMM)  # In this scenario, we want to store a list of trained models, not just 1.
@@ -960,6 +970,90 @@ class HMM_Framework:
             raise ValueError("one of the containers is still shorter than the other on the y axis.")               
         else:
             print("--Containers are now of exact same shape")
+
+    def boosting_wrapper(self, state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing):
+        """
+        (1) Executes the mutli-class Boosting implementation from the Ensemble_Framework.py.
+        (2) Manages the training and evaluation phase since they are different compared to the traditional scenario.
+        """
+
+        discrete_or_log = "log"
+
+        """Implement a single boost using the SAMME.R which is based on probabilities and can work on multi-class.
+        Inspired by https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/ensemble/weight_boosting.py, Multi-class AdaBoost (2006)"""
+
+        iterations = 50
+        learning_rate = 1.0
+        from scipy.special import xlogy
+
+        if self.selected_framework == "pome" and self.selected_architecture == "A" and pome_algorithm_t == "viterbi":
+            print("--Warning: For 'viterbi' on Architecture A you are limited to discrete boosting since we have no log probabilities available.")
+            discrete_or_log = "discrete"
+        elif self.selected_framework == "hohmm":
+            raise ValueError("boosting is not supported for 'hohmm' yet, select 'pome'.") 
+
+        train_length = len(y_train)
+        classes = list(set(y_train))
+        n_classes = len(classes)
+
+        # Initialize weights
+        sample_weight = np.ones(train_length) / train_length
+
+        for i in range(iterations):
+            time_counter = time.time()
+            # Training Phase
+            self.set_unique_states_subset(state_train)
+            self.set_unique_observations_subset(obs_train)
+            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, sample_weight)
+            # Prediction Phase on the TRAINING DATA specifically
+            predict = self.predict(state_train, obs_train, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
+            self.result_metrics(y_train, predict, time_counter)
+
+            predict_log_proba = self.cross_val_prediction_matrix[0]
+
+            print(predict_log_proba)
+
+            # Instances incorrectly classified
+            incorrect = y_train != predict
+
+            # Error fraction
+            estimator_error = np.mean(np.average(incorrect, weights=sample_weight, axis=0))
+
+            # Stop if classification is perfect
+            if estimator_error <= 0:
+                break
+
+            print(estimator_error, self.cross_val_metrics["Accuracy"][0])
+            print(np.where(sample_weight > 0.00025013))
+
+            # Construct y coding as described in Zhu et al [2]:
+            #
+            #    y_k = 1 if c == k else -1 / (K - 1)
+            #
+            # where K == n_classes_ and c, k in [0, K) are indices along the second axis of the y coding with c being the index corresponding to the true class label.
+            y_codes = np.array([-1. / (n_classes - 1), 1.])
+            y_coding = y_codes.take(classes == y_train[:, np.newaxis])
+
+            # Displace zero probabilities so the log is defined.
+            # Also fix negative elements which may occur with negative sample weights.
+            proba = predict_log_proba  # alias for readability
+            np.clip(proba, np.finfo(proba.dtype).eps, None, out=proba)
+
+            # Boost weight using multi-class AdaBoost SAMME.R alg
+            estimator_weight = (-1. * learning_rate * ((n_classes - 1.) / n_classes) * xlogy(y_coding, proba).sum(axis=1))
+
+            # Only boost the weights if it will fit again
+            if not i == iterations - 1:
+                # Only boost positive weights
+                sample_weight *= np.exp(estimator_weight * ((sample_weight > 0) | (estimator_weight < 0)))
+
+            # Reset
+            self.cross_val_metrics = defaultdict(list)
+            self.reset()
+
+        return sample_weight
+        #Ensemble_Framework.adaboost()
+
 
     def pome_object_to_matrices_archit_a(self):
         """

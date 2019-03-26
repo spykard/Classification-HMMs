@@ -1,3 +1,3 @@
 x = [0.0, 0.0, 0.4, 8.0, 15.4, 19.0]
 y = ["1-gram HMM", "2-gram HMM", "3-gram HMM", "4-gram HMM", "5-gram HMM", "6-gram HMM"]
-HMM_Framework.plot_basic(x, y, dataset_name, 5)
+HMM_Framework.plot_basic(x, y, dataset_name, 5, "Instance Count")

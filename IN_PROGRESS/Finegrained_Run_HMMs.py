@@ -1,10 +1,11 @@
 """ 
-Sentiment Analysis: (mainly Supervised) Text Classification using Hidden Markov Models
+Sentiment Analysis: Text Classification using Hidden Markov Models
 """
 
 import pandas as pd
 import numpy as np
 import HMM_Framework
+import Ensemble_Framework
 
 
 dataset_name = "Finegrained Sentiment Dataset"
@@ -25,7 +26,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos", "mix"]:
+                if temp[0] in ["neg", "neu", "pos"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]
@@ -68,52 +69,53 @@ if False:
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-if True:
+if False:
     # Model
     general_mixture_model_labels = HMM_Framework.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                 \
+    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, boosting=False,                                \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                            \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
             architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                               \
             )     
     
+    hmm.print_average_results(decimals=3)
+    hmm.print_best_results(detailed=False, decimals=3) 
+
 elif False:
     #  Model
     #  Just for State-emission HMM, might need to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5,                                                   \
+    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=False,                                                           \
+            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
             architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                               \
             )   
 
-hmm.print_average_results(decimals=3)
-hmm.print_best_results(detailed=False, decimals=3) 
-#quit()
+    hmm.print_average_results(decimals=3)
+    hmm.print_best_results(detailed=False, decimals=3) 
 
-# Ensemble
-if True:
+elif False:
+    # n-gram Ensemble
     cross_val_prediction_matrix = []
     mapping = []
     golden_truth = []
 
-    #  Model
-    #  Just for State-emission HMM, might need to remove the "mix" label during preprocessing.
+    # Make sure that Flags are the exact same on all 3
     general_mixture_model_labels = HMM_Framework.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                 \
+    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
@@ -125,10 +127,10 @@ if True:
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                 \
+    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
@@ -140,10 +142,10 @@ if True:
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                 \
+    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                \
             state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=3, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                                \
+            n_grams=3, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
@@ -154,5 +156,58 @@ if True:
     mapping.append(hmm.ensemble_stored["Mapping"])
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    HMM_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="borda", weights=[0.4, 0.3, 0.3])
+    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.20, 0.40, 0.40])
 
+elif True:
+    # high-order Ensemble
+    cross_val_prediction_matrix = []
+    mapping = []
+    golden_truth = []
+
+    # Make sure that Settings, other than the order, are the exact same on all 3
+    hmm = HMM_Framework.HMM_Framework()
+    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
+            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+            text_instead_of_sequences=[], text_enable=False,                                                                              \
+            n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                             \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                               \
+            )  
+
+    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
+    mapping.append(hmm.ensemble_stored["Mapping"])
+    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+
+    hmm = HMM_Framework.HMM_Framework()
+    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
+            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+            text_instead_of_sequences=[], text_enable=False,                                                                              \
+            n_grams=2, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                             \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                               \
+            )   
+
+    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
+    mapping.append(hmm.ensemble_stored["Mapping"])
+    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+
+    hmm = HMM_Framework.HMM_Framework()
+    hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
+            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+            text_instead_of_sequences=[], text_enable=False,                                                                              \
+            n_grams=2, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                             \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                               \
+            )     
+
+    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
+    mapping.append(hmm.ensemble_stored["Mapping"]) 
+    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+
+    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.4, 0.3, 0.3])

@@ -1,5 +1,5 @@
 '''
-Sentiment Analysis: Text Classification using (1) Complement Naive Bayes, (2) k-Nearest Neighbors, (3) Decision Tree, (4) Random Forest, (5) Logistic Regression (Linear), (6) Linear SVM, (7) Stochastic Gradient Descent on SVM, (8) Multi-layer Perceptron
+Sentiment Analysis: Text Classification using Machine Learning algorithms (Messy Code)
 '''
 
 import matplotlib.pyplot as plt

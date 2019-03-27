@@ -67,14 +67,14 @@ if True:
     #  Model
     #  Just for State-emission HMM, might need to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=5,                                                   \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=5, boosting=False,                                                \
             state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                           \
+            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                           \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0,                \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                             \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                             \
             )   
 
 hmm.print_average_results(decimals=3)

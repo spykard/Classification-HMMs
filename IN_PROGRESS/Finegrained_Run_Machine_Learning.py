@@ -73,9 +73,9 @@ def Run_Preprocessing(dataset_name):
                         neu_count_feature[count] += 1
                     elif temp[0] == "pos":
                         pos_count_feature[count] += 1
-                    elif temp[0] == "mix":
-                        neg_count_feature[count] += 1
-                        pos_count_feature[count] += 1        
+                    # elif temp[0] == "mix":
+                    #     neg_count_feature[count] += 1
+                    #     pos_count_feature[count] += 1        
 
                     data[count] += temp[1]
 
@@ -346,22 +346,28 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     neu_feature_train = neu_feature_train.values[:, None]    
     pos_feature_train = pos_feature_train.values[:, None]  
     print(tfidf_dense.shape)
-    mode = "none"
-    if mode == "BoW_plus_Features":
-        tfidf_dense = np.hstack((tfidf_dense, neg_feature_train, neu_feature_train, pos_feature_train))  # or column_stack  
-    elif mode == "Features":
+    mode = "BoW_plus_Features"
+    if mode == "Features":
         tfidf_dense = np.hstack((neg_feature_train, neu_feature_train, pos_feature_train))  # or column_stack 
-    
+    elif mode == "BoW_plus_Features":
+        tfidf_dense = np.hstack((tfidf_dense, neg_feature_train, neu_feature_train, pos_feature_train))  # or column_stack  
+
     print(tfidf_dense.shape)
     #quit()
 
     #clf = ComplementNB() # 1
     #clf = DecisionTreeClassifier(random_state=random_state) # 2
-    #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=500, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.
+    #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.
     clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
 
     
     clf.fit(tfidf_dense, labels_train)
+
+    #Tree stuff
+    #print(clf.max_features_)
+    #from sklearn import tree
+    #tree.export_graphviz(clf, out_file='tree.dot')   
+    #quit()
 
 
     # Test

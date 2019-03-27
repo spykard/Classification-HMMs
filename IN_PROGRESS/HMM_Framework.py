@@ -410,8 +410,8 @@ class HMM_Framework:
                                                 hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
             else:
                 weights = None
-            print(weights)
-            quit()
+            #print(weights)
+            #quit()
         
 
             time_counter = time.time()
@@ -429,6 +429,9 @@ class HMM_Framework:
             elif self.selected_architecture == "B":
                 self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
             self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
+
+            #print(self.trained_model[0].states.index(self.trained_model[0].states[0]))
+            #print(self.trained_model[0].states[0].name)
 
             self.reset()
 
@@ -1330,7 +1333,7 @@ def plot_horizontal(x_f1, x_acc, y, dataset_name, k_fold):
 
     plt.show()
 
-def plot_basic(x, y, dataset_name, k_fold):
+def plot_basic(x, y, dataset_name, k_fold, y_text):
     """
     Given one list and a list of strings, constructs a high quality vertical comparison chart.
     """
@@ -1346,7 +1349,7 @@ def plot_basic(x, y, dataset_name, k_fold):
     ax1.yaxis.set_major_locator(MaxNLocator(11))
     ax1.yaxis.grid(True, linestyle='--', which="major", color="grey", alpha=.25)
 
-    ax1.set_ylabel("Time (sec)")   
+    ax1.set_ylabel(y_text)  # e.g. Time (sec)  
     
     ax1.set_xticks(indices)
     ax1.set_xticklabels(y)

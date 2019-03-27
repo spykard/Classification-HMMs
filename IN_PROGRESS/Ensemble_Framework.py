@@ -37,7 +37,7 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
 
     # Perform certain input validation checks
     if model_count < 2:
-        raise ValueError("you have inputted less then two models, the Ensemble process is pointless.")
+        print("\n--Warning: You have inputted less then two models, the Ensemble process is pointless.")
     if weights != None:
         if len(weights) != model_count:
             raise ValueError("you must give as many weights as there are models or simply 'None'.")

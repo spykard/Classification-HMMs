@@ -73,9 +73,9 @@ def Run_Preprocessing(dataset_name):
                         neu_count_feature[count] += 1
                     elif temp[0] == "pos":
                         pos_count_feature[count] += 1
-                    # elif temp[0] == "mix":
-                    #     neg_count_feature[count] += 1
-                    #     pos_count_feature[count] += 1        
+                    elif temp[0] == "mix":
+                        neg_count_feature[count] += 1
+                        pos_count_feature[count] += 1        
 
                     data[count] += temp[1]
 

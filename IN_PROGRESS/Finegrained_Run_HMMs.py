@@ -26,7 +26,7 @@ with open('./Datasets/Finegrained/finegrained.txt', 'r') as file:
             temp = [x.strip() for x in line.split("\t")]
             if len(temp[1]) > 1:
                 # "nr" label is ignored
-                if temp[0] in ["neg", "neu", "pos"]:
+                if temp[0] in ["neg", "neu", "pos", "mix"]:
                     sequences[count].append(temp[0])              
 
                 data[count] += temp[1]

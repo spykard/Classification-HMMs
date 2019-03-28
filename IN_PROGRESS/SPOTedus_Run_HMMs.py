@@ -144,7 +144,7 @@ elif False:
     hmm.print_average_results(decimals=3)
     hmm.print_best_results(detailed=False, decimals=3) 
 
-elif True:
+elif False:
     # n-gram Ensemble
     cross_val_prediction_matrix = []
     mapping = []
@@ -197,25 +197,7 @@ elif True:
     mapping.append(hmm.ensemble_stored["Mapping"])
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5,                                                \
-            state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=4, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
-            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                               \
-            )   
-
-    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
-    mapping.append(hmm.ensemble_stored["Mapping"])
-    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
-
-
-
-    #Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum")
-    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.20, 0.40, 0.40])
+    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.10, 0.40, 0.50])
 
 elif True:
     # high-order Ensemble
@@ -229,7 +211,7 @@ elif True:
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                             \
-            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.2,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
             architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                               \
@@ -237,7 +219,7 @@ elif True:
 
     cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
     mapping.append(hmm.ensemble_stored["Mapping"])
-    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"]) 
 
     hmm = HMM_Framework.HMM_Framework()
     hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
@@ -246,7 +228,7 @@ elif True:
             n_grams=2, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
             architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                               \
             )   
 
@@ -258,7 +240,7 @@ elif True:
     hmm.build(architecture="B", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
             state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                             \
+            n_grams=2, n_target="states", n_prev_flag=False, n_dummy_flag=False,                                                             \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
@@ -269,4 +251,4 @@ elif True:
     mapping.append(hmm.ensemble_stored["Mapping"]) 
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.4, 0.3, 0.3])
+    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.0, 0.45, 0.55])

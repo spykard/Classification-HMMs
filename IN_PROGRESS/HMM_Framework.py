@@ -430,9 +430,6 @@ class HMM_Framework:
                 self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
             self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
 
-            #print(self.trained_model[0].states.index(self.trained_model[0].states[0]))
-            #print(self.trained_model[0].states[0].name)
-
             self.reset()
 
         self.verbose_final(pome_algorithm, pome_algorithm_t, architecture_b_algorithm)
@@ -1362,13 +1359,13 @@ def plot_basic(x, y, dataset_name, k_fold, y_text):
 
     plt.show()
 
-def pome_graph_plot(pomegranate_model, hmm_order):
+def pome_graph_plot(pomegranate_model):
     """
     Given a trained Pomegranate model, plots the Hidden Markov Model Graph.
     """
     fig, ax1 = plt.subplots()
     fig.canvas.set_window_title("Hidden Markov Model Graph")
-    ax1.set_title(str(hmm_order) + "-th Order")
+    ax1.set_title("Hidden Markov Model")
     pomegranate_model.plot()
     plt.show()
 

@@ -100,7 +100,7 @@ if False:
 
 
 # MAIN
-# AdvancedHMM.build
+# HMM_Framework.build
 #       General Settings
 #       Data
 #       Text Scenario

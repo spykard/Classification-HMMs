@@ -57,7 +57,7 @@ def load_dataset():
 
     # 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
     if True:
-        df = df.sample(frac=0.05, random_state=random_state).reset_index(drop=True)
+        df = df.sample(frac=1.00, random_state=random_state).reset_index(drop=True)
 
     # 4. Print dataset information
     print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
@@ -137,7 +137,7 @@ def generate_cluster_labels(df, spherical_for_text=True):
 
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the overall vocabulary
 
-    svd = TruncatedSVD(n_components=300, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
+    svd = TruncatedSVD(n_components=1000, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
                                                                                               # https://stackoverflow.com/questions/12067446/how-many-principal-components-to-takeh
                                                                                               # https://stackoverflow.com/questions/48424084/number-of-components-trucated-svd
     u_s_matrix = svd.fit_transform(term_sentence_matrix)  # generates U*S
@@ -152,12 +152,12 @@ def generate_cluster_labels(df, spherical_for_text=True):
     # 2. CLUSTERING
     # This is Eucledian K-means
     if spherical_for_text == False:
-        clf = KMeans(n_clusters=20, max_iter=1000, random_state=random_state, verbose=True)
+        clf = KMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_
     # This is Spherical K-means
     else: 
-        clf = SphericalKMeans(n_clusters=20, max_iter=1000, random_state=random_state, verbose=True)
+        clf = SphericalKMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_  
     
@@ -187,9 +187,9 @@ def generate_cluster_labels(df, spherical_for_text=True):
     p3.start()
     p4.start()
 
-def load_cluster_labels():
+def load_from_files():
     """
-    Load everything from files.
+    Load everything, including the clustering information, from files.
     """
     batch_data = []
     batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_1', 'rb')))
@@ -197,7 +197,6 @@ def load_cluster_labels():
     batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_3', 'rb')))
     batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_4', 'rb')))
     batch_data = [batch for sublist in batch_data for batch in sublist]
-
 
     batch_cluster_labels = []
     batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Clustering_Labels_Batch_1', 'rb')))
@@ -213,22 +212,25 @@ def load_cluster_labels():
     batch_golden_truth.append(pickle.load(open('./Pickled Objects/Clustering_Golden_Truth_Batch_4', 'rb')))
     batch_golden_truth = [batch for sublist in batch_golden_truth for batch in sublist]
 
+    # Debug
+    # print(len(batch_data), len(batch_cluster_labels), len(batch_golden_truth))
+    # print(batch_data[0:10])
+    # print(batch_cluster_labels[0:10])
+    # print(batch_golden_truth[0:10])
 
+    print("Loaded the preprocessed (and clustered) data from files. Creating a DataFrame...\n")
 
-    print(len(batch_data), len(batch_cluster_labels), len(batch_golden_truth))
-    print(batch_data[0:10])
-    quit()
+    # 1. Convert to DataFrame
+    df_transformed = pd.DataFrame({'Clustering_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
 
-    pos_data_corresponding_to_labels = pickle.load(open('./Pickled Objects/To Train Pos HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'rb'))
-    neg_clustered_labeled_data = pickle.load(open('./Pickled Objects/To Train Neg HMM Clustered/Clustered_Labels_from_kMeans', 'rb'))
-    neg_data_corresponding_to_labels = pickle.load(open('./Pickled Objects/To Train Neg HMM Clustered/Data_corresponding_to_Labels_from_clustering', 'rb'))
+    # 2. Remove empty instances from DataFrame, actually affects accuracy
+    emptySequences = df_transformed.loc[df_transformed.loc[:,'Clustering_Labels'].map(len) < 1].index.values
+    df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
+    
+    # 3. Print dataset information
+    print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
-    clustered_labeled_data_test = pickle.load(open('./Pickled Objects/Clustered_Labels_from_kMeans_Test_Set', 'rb'))
-    data_corresponding_to_labels_test = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_clustering_Test_Set', 'rb'))
-    golden_truth_test = pickle.load(open('./Pickled Objects/Clustered_Labels_Golden_Truth_Test_Set', 'rb'))
-
-    return (df_Data, df_Clustering_Labels, df_Golden_Truth)
-
+    return df_transformed
 
 
 # MAIN
@@ -242,18 +244,18 @@ def load_cluster_labels():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-df = load_dataset()
-#generate_cluster_labels(df, spherical_for_text=True)
-load_cluster_labels()
+mode = "save"
+if mode == "save":
+    df = load_dataset()
+    generate_cluster_labels(df, spherical_for_text=True)
+elif mode == "load":
+    df = load_from_files()
 
-quit()
-
-if False:
+if True:
     # Model
-    general_mixture_model_labels = HMM_Framework.general_mixture_model_label_generator(df.loc[:,"Sequences"], df.loc[:,"Labels"])
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="General Mixture Model", framework="pome", k_fold=5, boosting=False,                                \
-            state_labels_pandas=general_mixture_model_labels, observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
+    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=0, boosting=False,                                \
+            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                            \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
@@ -263,21 +265,5 @@ if False:
             )     
     
     hmm.print_average_results(decimals=3)
-    hmm.print_best_results(detailed=False, decimals=3) 
+    hmm.print_best_results(detailed=True, decimals=3) 
 
-elif False:
-    #  Model
-    #  Just for State-emission HMM, might need to remove the "mix" label during preprocessing.
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="A", model="State-emission HMM", framework="pome", k_fold=5, boosting=False,                                   \
-            state_labels_pandas=df.loc[:,"Sequences"], observations_pandas=df.loc[:,"Sequences"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                             \
-            pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                               \
-            )   
-
-    hmm.print_average_results(decimals=3)
-    hmm.print_best_results(detailed=False, decimals=3) 

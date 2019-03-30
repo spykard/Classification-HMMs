@@ -1242,7 +1242,7 @@ class HMM_Framework:
                     print("Prediction was performed using the Forward algorithm on multiple models. It does not utilize the state sequences of the test set and has no special function for out-of-vocabulary values, consider using 'formula'. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
                 elif architecture_b_algorithm == "formula": 
                     print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")             
-        print("Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on an average of:", np.mean(np.array(self.count_new_oov)), "instances.")
+        print("Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on an average of:", np.mean(np.array(self.count_new_oov)), "observations.")
         if self.selected_architecture == "B" and architecture_b_algorithm == "formula":
             print("Predictions failed and random guessing was performed because the 'formula' encountered a problem, on an average of:", np.mean(np.array(self.count_formula_problems)), "instances.")
              

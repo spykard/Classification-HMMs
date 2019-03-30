@@ -244,7 +244,7 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "save"
+mode = "load"
 if mode == "save":
     df = load_dataset()
     generate_cluster_labels(df, spherical_for_text=True)

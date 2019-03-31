@@ -406,12 +406,13 @@ class HMM_Framework:
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
             if boosting == True:
-                weights = self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \
-                                                hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
-            else:
-                weights = None
+                self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \
+                                      hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
+            #else:
+                #weights = None
             #print(weights)
             #quit()
+            weights = None
         
 
             time_counter = time.time()
@@ -794,7 +795,7 @@ class HMM_Framework:
         # Formula: score = π(state1) * ObservProb(o1|state1) * P(state2|state1) * ObservProb(o2|state2) * P(state3|state2) * ...  * P(staten|staten-1) * ObservProb(on|staten) , divided by the sequence length to normalize
             for k in range(predict_length): 
                 # Debug
-                print(k)                                 
+                #print(k)                                 
                 temp_predict_log_proba = []
                 current_states = state_test[k]
                 current_observations = obs_test[k]
@@ -981,10 +982,135 @@ class HMM_Framework:
 
     def boosting_wrapper(self, state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing):
         """
-        (1) Executes the mutli-class Boosting implementation from the Ensemble_Framework.py.
-        (2) Manages the training and evaluation phase since they are different compared to the traditional scenario.
+        (1) Executes the Kang et al.'s Boosting implementation from the Ensemble_Framework.py.
+        (2) The approach is AdaBoost preceded by Bootstrap selection. The Bootstrap process is required to artifically drop the performance because we don't have a Decision Tree here, the performance would be 96% from the start.
+        (3) Manages the training and evaluation phase since they are different compared to the traditional scenario.
         """
+        if self.selected_framework == "pome" and self.selected_architecture == "A" and pome_algorithm_t == "viterbi":
+            raise ValueError("for 'viterbi' on Architecture A we can't perform this type of boosting since we have no log probabilities available.")
+        
+        precomputed_seeds = [22, 55, 62, 11]
+        iterations = 36
+        train_length = len(y_train)
 
+        print("\nInitiating AdaBoost with Bootstraping. Iterations:", iterations, "\n")
+
+        # 0.
+        weights_A = np.empty(iterations)  # refers to the weight of each classifier on the Final Ensemble
+
+        # 1.
+        t = 0
+        # 2. Initialize weights
+        weights_D = np.ones(train_length) / train_length  # refers to the weight of each sample on AdaBoost
+
+        # 3.
+        while t < iterations:
+            time_counter = time.time()        
+            # 3-a. Bootstrap/Bagging with replacement
+            #np.random.seed(seed=precomputed_seeds[t])    
+            np.random.seed()     
+            random_sample_ind = np.random.choice(np.arange(train_length), size=int(train_length*0.20), replace=False)  # replace refers to something else here
+                                                                                                                    # this matrix also operates as the mapping
+            random_sample_state = state_train[random_sample_ind]
+            random_sample_obs = obs_train[random_sample_ind]
+            random_y = y_train[random_sample_ind]
+
+            #train_cross_val_matrix_boost =  
+            #test_cross_val_matrix =
+            #print(np.sort(random_sample_ind))
+            #print()
+            #quit()
+            #print(state_train[0])
+            #print()
+            #print(state_train[random_sample_ind].shape)
+            #print(random_sample_state[np.where(random_sample_ind == 0)[0][0]])
+
+            # 3-b. Training Phase
+            self.set_unique_states_subset(state_train)
+            self.set_unique_observations_subset(obs_train)
+            self.train(random_sample_state, random_sample_obs, random_y, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, None)
+            
+            # 3-c. Prediction Phase on the TEST DATA 
+            predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
+            self.result_metrics(y_test, predict, time_counter)
+            # Not an Ensemble, just storing the log probability matrix #
+            if self.selected_architecture == "A":
+                self.ensemble_stored["Mapping"].append(self.state_to_label_mapping_rev)
+            elif self.selected_architecture == "B":
+                self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)   
+            self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test) 
+            cross_val_prediction_matrix = []
+            mapping = []
+            golden_truth = []        
+            cross_val_prediction_matrix.append(self.cross_val_prediction_matrix)
+            mapping.append(self.ensemble_stored["Mapping"]) 
+            golden_truth.append(self.ensemble_stored["Curr_Cross_Val_Golden_Truth"])     
+            #                                         #
+
+            # 3-c. Prediction Phase on the TRAINING DATA
+            predict = self.predict(state_train, obs_train, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
+            self.result_metrics(y_train, predict, time_counter)
+
+            # 3-d.
+            y_product = np.empty(train_length)
+            incorrect_pred = []
+            for i, comparison in enumerate(zip(y_train, predict)):
+                if comparison[0] == comparison [1]:                
+                    y_product[i] = 1.0
+                else:
+                    y_product[i] = -1.0 
+                    incorrect_pred.append(weights_D[i])
+
+            # Normally would be
+            #err = 1 - self.cross_val_metrics['Accuracy'][1]
+            err = np.sum(incorrect_pred)
+            print(err)
+
+            # 3-d. Verbose
+            print("\n[" + str(t+1) + "] Current Accuracy on the entire Train set: " + str(self.cross_val_metrics['Accuracy'][1] * 100) + " and on the Test set: " + str(self.cross_val_metrics['Accuracy'][0] * 100))
+
+            # Debug
+            #print(len(self.cross_val_prediction_matrix))
+            print(self.cross_val_prediction_matrix[0][0:20])
+            #print(weights_A)
+            print(np.exp(self.cross_val_prediction_matrix[0][0:20]))
+            quit()
+            # 3-e.
+            if err > 0.5:
+                continue
+
+            # 3-f.
+            weights_A[t] = 0.5 * np.log((1 - err) / err)
+
+            # 3-g.              
+            weights_D *= np.exp(-1.0 * weights_A[t] * y_product)
+            #print(weights_D)
+            #print(np.exp(-1.0 * weights_A[t] * y_product))
+            #print(y_product)
+            # weights_D *= np.exp(1 * y_product)
+            # print(weights_D)
+
+            # 3-h.
+            weights_D = weights_D / np.sum(weights_D)
+
+            # Reset literally everything
+            self.reset()
+            self.cross_val_metrics = defaultdict(list)
+            self.cross_val_prediction_matrix = []
+            self.count_new_oov = []
+            self.count_formula_problems = []  
+
+            # 3-i.
+            t = t + 1
+        
+        print(weights_A)
+            
+        # AT THE END
+        Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum")        
+        quit()
+
+
+    def adaboost_multiclass_classic(self, state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing):
         discrete_or_log = "log"
 
         """Implement a single boost using the SAMME.R which is based on probabilities and can work on multi-class.

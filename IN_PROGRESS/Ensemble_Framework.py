@@ -66,8 +66,6 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
         for curr_fold in range(cross_val_folds):
             for model in range(model_count-1):
                 cross_val_prediction_matrix[model][curr_fold] = np.exp(cross_val_prediction_matrix[model][curr_fold])
-    
-    print(cross_val_prediction_matrix[0][0])
 
     # Create a HMM object just to use the 'result_metrics' function
     dummy_object = HMM_Framework.HMM_Framework()

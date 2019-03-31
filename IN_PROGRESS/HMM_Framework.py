@@ -418,7 +418,7 @@ class HMM_Framework:
             # Training Phase
             self.set_unique_states_subset(state_train)
             self.set_unique_observations_subset(obs_train)
-            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, weights)
+            self.train(state_train, obs_train, y_train, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, hohmm_high_order, hohmm_smoothing, hohmm_synthesize, weights)            
             # Prediction Phase
             predict = self.predict(state_test, obs_test, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
             self.result_metrics(y_test, predict, time_counter)
@@ -429,6 +429,8 @@ class HMM_Framework:
             elif self.selected_architecture == "B":
                 self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
             self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
+
+
 
             self.reset()
 
@@ -615,6 +617,8 @@ class HMM_Framework:
 
         if architecture_b_algorithm == "forward":
             for i in range(predict_length): 
+                # Debug
+                print(i)
                 temp_predict_log_proba =  []
                 for current_model in self.trained_model:  # For every trained model        
                     _current_temp_log_proba = current_model.log_probability(np.array(obs_test[i]), check_input=True)  # 'check_input'=False breaks functionality completely
@@ -745,7 +749,9 @@ class HMM_Framework:
         count_formula_problems_local = 0
 
         if architecture_b_algorithm == "forward":
-            for i in range(predict_length):                                     
+            for i in range(predict_length):   
+                # Debug
+                print(i)                                  
                 temp_predict_log_proba =  []
                 for j in range(total_models):  # For every trained model         
                     try:
@@ -787,6 +793,8 @@ class HMM_Framework:
 
         # Formula: score = π(state1) * ObservProb(o1|state1) * P(state2|state1) * ObservProb(o2|state2) * P(state3|state2) * ...  * P(staten|staten-1) * ObservProb(on|staten) , divided by the sequence length to normalize
             for k in range(predict_length): 
+                # Debug
+                print(k)                                 
                 temp_predict_log_proba = []
                 current_states = state_test[k]
                 current_observations = obs_test[k]

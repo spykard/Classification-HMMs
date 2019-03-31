@@ -20,7 +20,7 @@ def adaboost():
 ###                                              ###
 
 ### Voting Ensembles - operate at the end of the entire process ###
-def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None):
+def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None, use_log_prob=True):
     """
     After training multiple models using the HMM framework we can add the following objects to a list: hmm.cross_val_prediction_matrix
                                                                                                        hmm.ensemble_stored["Mapping"]
@@ -61,6 +61,13 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
     golden_truth = golden_truth[0]  # Everything is OK, we only need to keep the golden truth and mapping of any one model   
     mapping = mapping[0]        
     #
+
+    if use_log_prob == False:
+        for curr_fold in range(cross_val_folds):
+            for model in range(model_count-1):
+                cross_val_prediction_matrix[model][curr_fold] = np.exp(cross_val_prediction_matrix[model][curr_fold])
+    
+    print(cross_val_prediction_matrix[0][0])
 
     # Create a HMM object just to use the 'result_metrics' function
     dummy_object = HMM_Framework.HMM_Framework()

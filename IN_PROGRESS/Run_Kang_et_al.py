@@ -15,6 +15,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 from spherecluster import SphericalKMeans
 from nltk.tokenize import word_tokenize
+import matlab.engine
 import HMM_Framework
 import Ensemble_Framework
 
@@ -58,7 +59,7 @@ def load_dataset():
 
     # 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
     if True:
-        df = df.sample(frac=.50, random_state=random_state).reset_index(drop=True)
+        df = df.sample(frac=1.0, random_state=random_state).reset_index(drop=True)
 
     # 4. Print dataset information
     print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
@@ -119,7 +120,7 @@ def batcher(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
-def generate_cluster_labels(df, spherical_for_text=True, cosine_sim_flag=False):
+def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, cluster_count=100):
     """
     Generating cluster labels for the entire data. Uses an advanced SVD and Spherical k-Means approach.
     """
@@ -139,9 +140,9 @@ def generate_cluster_labels(df, spherical_for_text=True, cosine_sim_flag=False):
 
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the overall vocabulary
 
-    svd = TruncatedSVD(n_components=800, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
-                                                                                              # https://stackoverflow.com/questions/12067446/how-many-principal-components-to-takeh
-                                                                                              # https://stackoverflow.com/questions/48424084/number-of-components-trucated-svd
+    svd = TruncatedSVD(n_components=n_components, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
+                                                                                                      # https://stackoverflow.com/questions/12067446/how-many-principal-components-to-takeh
+                                                                                                      # https://stackoverflow.com/questions/48424084/number-of-components-trucated-svd
     u_s_matrix = svd.fit_transform(term_sentence_matrix)  # generates U*S
     
     normalizer = Normalizer(norm='l2', copy=False)  # SVD Results are not normalized, we have to REDO the normalization (https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html)
@@ -155,18 +156,23 @@ def generate_cluster_labels(df, spherical_for_text=True, cosine_sim_flag=False):
 
     # 2. CLUSTERING
     # This is Eucledian K-means
-    if spherical_for_text == False:
-        clf = KMeans(n_clusters=80, max_iter=1000, random_state=random_state, verbose=True)
+    if mode == "classic":
+        clf = KMeans(n_clusters=cluster_count, max_iter=1000, random_state=random_state, verbose=True)
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_
     # This is Spherical K-means
-    else: 
-        #clf = SphericalKMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
-        from sklearn.cluster import SpectralClustering, AgglomerativeClustering
-        clf = AgglomerativeClustering(n_clusters=40, affinity='cosine', linkage='average')
+    elif mode == "spherical": 
+        clf = SphericalKMeans(n_clusters=cluster_count, max_iter=1000, random_state=random_state, verbose=True)
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_  
+    elif mode == "matlab":        
+        matrix = matlab.double(u_s_matrix.tolist())
+        eng = matlab.engine.start_matlab()
+        output = eng.kmeans(matrix, cluster_count, 'MaxIter', 1000.0, 'Distance', 'cosine', nargout=1)
+        cluster_labels = [int(x[0]) for x in output]
     
+    print(cluster_labels)
+
     final_tuple = (vocab, cluster_labels)
 
     # 3. GENERATE LABELS TO FILE
@@ -226,7 +232,7 @@ def load_from_files():
     # print(batch_cluster_labels[0:10])
     # print(batch_golden_truth[0:10])
 
-    print("Loaded the preprocessed (and clustered) data from files. Creating a DataFrame...\n")
+    print("\nLoaded the preprocessed (and clustered) data from files. Creating a DataFrame...\n")
 
     # 1. Convert to DataFrame
     df_transformed = pd.DataFrame({'Clustering_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
@@ -236,7 +242,9 @@ def load_from_files():
     df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
     
     # 3. Print dataset information
-    print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+    # BUG
+    #print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+    print("--Dataset Info:\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
     return df_transformed
 
@@ -255,7 +263,7 @@ def load_from_files():
 #mode = "load"
 #if mode == "save":
 df = load_dataset()
-generate_cluster_labels(df, spherical_for_text=False, cosine_sim_flag=True)
+generate_cluster_labels(df, mode="matlab", n_components=1200, cosine_sim_flag=True, cluster_count=100)
 #    quit()
 #elif mode == "load":
 df = load_from_files()
@@ -263,14 +271,14 @@ df = load_from_files()
 if True:
     # Model
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=0, boosting=False,                                \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=0, boosting=False,                                \
             state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                            \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                              \
             )     
     
     hmm.print_average_results(decimals=3)

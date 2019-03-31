@@ -12,6 +12,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.preprocessing import Normalizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import cosine_similarity
 from spherecluster import SphericalKMeans
 from nltk.tokenize import word_tokenize
 import HMM_Framework
@@ -57,7 +58,7 @@ def load_dataset():
 
     # 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
     if True:
-        df = df.sample(frac=1.00, random_state=random_state).reset_index(drop=True)
+        df = df.sample(frac=.50, random_state=random_state).reset_index(drop=True)
 
     # 4. Print dataset information
     print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
@@ -75,7 +76,7 @@ def load_dataset():
 
     return df
 
-def _generate_labels_to_file(data, labels, final_tuple, batch_id):
+def _generate_labels_to_file(data, labels, final_tuple, batch_id, verbose=False):
     data_corresponding_to_labels = []
     cluster_labels = []
     golden_truth = []
@@ -83,7 +84,8 @@ def _generate_labels_to_file(data, labels, final_tuple, batch_id):
     #nlp = spacy.load('en_core_web_sm')
 
     for i in range(instance_count):
-        print("Processing instance:", i+1, "of", instance_count)
+        if verbose == True:
+            print("Processing instance:", i+1, "of", instance_count)
         tokenize_it = word_tokenize(data[i])
         to_append_data = []        
         to_append_labels = []
@@ -117,7 +119,7 @@ def batcher(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
-def generate_cluster_labels(df, spherical_for_text=True):
+def generate_cluster_labels(df, spherical_for_text=True, cosine_sim_flag=False):
     """
     Generating cluster labels for the entire data. Uses an advanced SVD and Spherical k-Means approach.
     """
@@ -137,27 +139,31 @@ def generate_cluster_labels(df, spherical_for_text=True):
 
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the overall vocabulary
 
-    svd = TruncatedSVD(n_components=1000, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
+    svd = TruncatedSVD(n_components=800, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
                                                                                               # https://stackoverflow.com/questions/12067446/how-many-principal-components-to-takeh
                                                                                               # https://stackoverflow.com/questions/48424084/number-of-components-trucated-svd
     u_s_matrix = svd.fit_transform(term_sentence_matrix)  # generates U*S
     
     normalizer = Normalizer(norm='l2', copy=False)  # SVD Results are not normalized, we have to REDO the normalization (https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html)
-    normalizer.fit_transform(u_s_matrix)  
+    normalizer.fit_transform(u_s_matrix)
 
     print("Singular Value Decomposition (SVD) completed. U*S Shape:", u_s_matrix.shape, "| Explained variance of the SVD step:", svd.explained_variance_ratio_.sum() * 100, "\b%")
-    
-    # HERE TO DO DOT PRODUCT
+
+    # Cosine Similarity  
+    if cosine_sim_flag == True:       
+        u_s_matrix = cosine_similarity(u_s_matrix, u_s_matrix)
 
     # 2. CLUSTERING
     # This is Eucledian K-means
     if spherical_for_text == False:
-        clf = KMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
+        clf = KMeans(n_clusters=80, max_iter=1000, random_state=random_state, verbose=True)
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_
     # This is Spherical K-means
     else: 
-        clf = SphericalKMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
+        #clf = SphericalKMeans(n_clusters=40, max_iter=1000, random_state=random_state, verbose=True)
+        from sklearn.cluster import SpectralClustering, AgglomerativeClustering
+        clf = AgglomerativeClustering(n_clusters=40, affinity='cosine', linkage='average')
         cluster_labels = clf.fit_predict(u_s_matrix)
         #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_  
     
@@ -178,14 +184,16 @@ def generate_cluster_labels(df, spherical_for_text=True):
 
     print("\nSplit the data into", batch_count, "batches of approximate size:", df.shape[0]//4)
 
-    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], final_tuple, 1))
-    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], final_tuple, 2))
-    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], final_tuple, 3))
-    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], final_tuple, 4))        
+    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], final_tuple, 1, False))
+    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], final_tuple, 2, False))
+    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], final_tuple, 3, False))
+    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], final_tuple, 4, False))        
     p1.start()
     p2.start()
     p3.start()
     p4.start()
+
+    print("\nSaved to files successfully.")
 
 def load_from_files():
     """
@@ -244,12 +252,13 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "load"
-if mode == "save":
-    df = load_dataset()
-    generate_cluster_labels(df, spherical_for_text=True)
-elif mode == "load":
-    df = load_from_files()
+#mode = "load"
+#if mode == "save":
+df = load_dataset()
+generate_cluster_labels(df, spherical_for_text=False, cosine_sim_flag=True)
+#    quit()
+#elif mode == "load":
+df = load_from_files()
 
 if True:
     # Model
@@ -261,7 +270,7 @@ if True:
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                               \
+            architecture_b_algorithm="forward", formula_magic_smoothing=0.0                                                              \
             )     
     
     hmm.print_average_results(decimals=3)

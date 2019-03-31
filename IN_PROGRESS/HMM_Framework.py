@@ -986,12 +986,20 @@ class HMM_Framework:
         (2) The approach is AdaBoost preceded by Bootstrap selection. The Bootstrap process is required to artifically drop the performance because we don't have a Decision Tree here, the performance would be 96% from the start.
         (3) Manages the training and evaluation phase since they are different compared to the traditional scenario.
         """
+
+        # THE ENTIRE ALGORITHM FROM THE PAPER IS POINTLESS, IT DOESN'T MINIMIZE AN ERROR FUNCTION, INSTEAD IT KEEP SELECTING RANDOMLY AND MISCLASIFYING THE SAME INSTANCES. STEP 3-e. doesn't even make sense
+
         if self.selected_framework == "pome" and self.selected_architecture == "A" and pome_algorithm_t == "viterbi":
             raise ValueError("for 'viterbi' on Architecture A we can't perform this type of boosting since we have no log probabilities available.")
         
         precomputed_seeds = [22, 55, 62, 11]
-        iterations = 36
+        iterations = 10
         train_length = len(y_train)
+        final_predict_on_train_or_test = "train"        
+
+        cross_val_prediction_matrix_final = []
+        mapping = []
+        golden_truth = []          
 
         print("\nInitiating AdaBoost with Bootstraping. Iterations:", iterations, "\n")
 
@@ -1009,7 +1017,7 @@ class HMM_Framework:
             # 3-a. Bootstrap/Bagging with replacement
             #np.random.seed(seed=precomputed_seeds[t])    
             np.random.seed()     
-            random_sample_ind = np.random.choice(np.arange(train_length), size=int(train_length*0.20), replace=False)  # replace refers to something else here
+            random_sample_ind = np.random.choice(np.arange(train_length), size=int(train_length*0.28), replace=False)  # replace refers to something else here
                                                                                                                     # this matrix also operates as the mapping
             random_sample_state = state_train[random_sample_ind]
             random_sample_obs = obs_train[random_sample_ind]
@@ -1037,19 +1045,19 @@ class HMM_Framework:
             if self.selected_architecture == "A":
                 self.ensemble_stored["Mapping"].append(self.state_to_label_mapping_rev)
             elif self.selected_architecture == "B":
-                self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)   
-            self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test) 
-            cross_val_prediction_matrix = []
-            mapping = []
-            golden_truth = []        
-            cross_val_prediction_matrix.append(self.cross_val_prediction_matrix)
+                self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
+            if final_predict_on_train_or_test == "train":
+                self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_train)  
+            elif final_predict_on_train_or_test == "test":
+                self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)                      
+            cross_val_prediction_matrix_final.append(self.cross_val_prediction_matrix)
             mapping.append(self.ensemble_stored["Mapping"]) 
             golden_truth.append(self.ensemble_stored["Curr_Cross_Val_Golden_Truth"])     
             #                                         #
 
             # 3-c. Prediction Phase on the TRAINING DATA
             predict = self.predict(state_train, obs_train, pome_algorithm_t, architecture_b_algorithm, formula_magic_smoothing)
-            self.result_metrics(y_train, predict, time_counter)
+            self.result_metrics(y_train, predict, time_counter)   
 
             # 3-d.
             y_product = np.empty(train_length)
@@ -1064,17 +1072,16 @@ class HMM_Framework:
             # Normally would be
             #err = 1 - self.cross_val_metrics['Accuracy'][1]
             err = np.sum(incorrect_pred)
-            print(err)
+            print("err:", err, "outo-of-vocabulary:", self.count_new_oov, "formula problems:", self.count_formula_problems)
 
             # 3-d. Verbose
             print("\n[" + str(t+1) + "] Current Accuracy on the entire Train set: " + str(self.cross_val_metrics['Accuracy'][1] * 100) + " and on the Test set: " + str(self.cross_val_metrics['Accuracy'][0] * 100))
-
+ 
             # Debug
-            #print(len(self.cross_val_prediction_matrix))
-            print(self.cross_val_prediction_matrix[0][0:20])
+            #print(len(cross_val_prediction_matrix_final))
+            #print(self.cross_val_prediction_matrix[0][0:20])
             #print(weights_A)
-            print(np.exp(self.cross_val_prediction_matrix[0][0:20]))
-            quit()
+            #quit()
             # 3-e.
             if err > 0.5:
                 continue
@@ -1104,9 +1111,21 @@ class HMM_Framework:
             t = t + 1
         
         print(weights_A)
+        quit()
+
+        for i in range(len(cross_val_prediction_matrix_final)):
+            if final_predict_on_train_or_test == "train":  # This axis is originally meant for cross validation folds but here it is used to store train_matrix on [0] and test_matrix on [1]
+                cross_val_prediction_matrix_final[i].pop(0)
+            elif final_predict_on_train_or_test == "test":
+                cross_val_prediction_matrix_final[i].pop(1)
+
+        # print(len(cross_val_prediction_matrix_final[0]))
+        # quit()     
+        # print(len(cross_val_prediction_matrix_final[0]))
+        # print(cross_val_prediction_matrix_final[0][0].shape)
             
         # AT THE END
-        Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum")        
+        Ensemble_Framework.ensemble_run(cross_val_prediction_matrix_final, mapping, golden_truth, mode="sum", weights=list(weights_A), use_log_prob=False, detailed=True)
         quit()
 
 

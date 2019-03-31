@@ -86,10 +86,21 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
                         elif mode == "product":
                             ensemble_matrix *= weights[model]*cross_val_prediction_matrix[model][curr_fold]
 
-            indices = np.argmax(ensemble_matrix, axis=1)
             prediction = []
-            for i in indices:
-                prediction.append(mapping[curr_fold][i])
+            total_models = len(mapping[curr_fold])
+
+            # Old Way
+            #indices = np.argmax(ensemble_matrix, axis=1)  
+                      
+            for instance in range(ensemble_matrix.shape[0]):
+                curr_instance = ensemble_matrix[instance, :]
+                # Comparison
+                if len(set(curr_instance)) == 1:  # Ensure that we don't have n equal predictions, where argmax wouldn't work
+                    index = random.randint(0, total_models - 1)
+                else:
+                    index = np.argmax(curr_instance)
+
+                prediction.append(mapping[curr_fold][index])
 
         else:
             prediction = borda_count(curr_fold, model_count, cross_val_prediction_matrix, mapping)

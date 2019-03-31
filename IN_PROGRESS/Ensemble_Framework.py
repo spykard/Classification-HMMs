@@ -20,7 +20,7 @@ def adaboost():
 ###                                              ###
 
 ### Voting Ensembles - operate at the end of the entire process ###
-def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None, use_log_prob=True):
+def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None, use_log_prob=True, detailed=False):
     """
     After training multiple models using the HMM framework we can add the following objects to a list: hmm.cross_val_prediction_matrix
                                                                                                        hmm.ensemble_stored["Mapping"]
@@ -97,7 +97,7 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
         dummy_object.result_metrics(golden_truth[curr_fold], prediction, time_counter)
     
     dummy_object.print_average_results(decimals=3)
-    dummy_object.print_best_results(detailed=False, decimals=3) 
+    dummy_object.print_best_results(detailed=detailed, decimals=3) 
 
 def borda_count(curr_fold, model_count, cross_val_prediction_matrix, mapping):
     """

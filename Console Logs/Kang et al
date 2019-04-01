@@ -1,0 +1,41 @@
+Spherical k-Means, no dot function -> 87.985  (around 50% variance)
+Spherical k-Means, no dot function -> 87.433  (around 33% variance)
+Spherical k-Means, no dot function -> 86.736  (literally just 5 components)
+Spherical k-Means, no dot function -> 86.386  (literally just 2 components)
+
+
+just 10% of the dataset and 100 components
+-> 57.829
+
+50% and we go to
+-> 81.279%
+
+50% and just 5 components
+-> 80.881%
+
+
+
+10% and 100 components
+-> spherical and cos similarity input: 69.351
+-> spherical and NOT cos similarity input: 61.953
+
+
+MATLAB with cos similarity and few component and 50%
+cosine similarity option on + matrix transformed -> 78.669 | 77.569
+
+not having the matrix transformed makes literally no difference
+using difference metrics makes no difference too
+
+
+
+using 100 clusters instead of 50, and 100% of the dataset, finally brings accuracy down to 71.512 (both on pome and hohmm no matter what algorithm; hohmm is just faster)
+what if we use 1200 components instead of 500 -> accuracy falls to 70.404
+what if we use 'arpack' for SVD -> 68.296
+
+
+
+
+
+
+
+#generate_cluster_labels(df, mode="spherical", n_components=300, cosine_sim_flag=False, cluster_count=60)  # High Performance

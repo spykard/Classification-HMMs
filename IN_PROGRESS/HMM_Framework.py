@@ -340,7 +340,9 @@ class HMM_Framework:
                 architecture: string denoting a choice by the user.
                 model: string denoting a choice by the user.
                 framework: string denoting a choice by the user.
-                k_fold: the number of folds to be used in the stratified cross-validation. A value of 0 disables cross-validation and enables an 80-20 split.
+                k_fold: the number of folds to be used in the stratified cross-validation. 3 Possible mode: (1) <int> 0, disables cross-validation and enables an 80-20 split.
+                                                                                                            (2) <int> 1-n, enables cross-validation with as many folds as the number's value.
+                                                                                                            (3) <ndarray>, disables cross-validation and enables a split according to this array's indices.
                 boosting: a boolean value that decides whether boosting (Ensemble) will be used during training.
 
                 state_labels_pandas: pandas Series that contains the data the known sequence of state labels.
@@ -396,12 +398,21 @@ class HMM_Framework:
 
         self.check_architecture_selection(architecture_b_algorithm)
 
-        if k_fold != 0:
-            cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
-        else:  # Cross Validation is Disabled
-            cross_val = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)
+        if isinstance(k_fold, int):
+            if k_fold != 0:  # Mode 2
+                cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
+            else:  # Mode 1, Cross Validation is Disabled
+                cross_val = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)        
+        elif isinstance(k_fold, np.ndarray):  # Mode 3, Cross Validation is Disabled
+            select = np.in1d(range(self.golden_truth.shape[0]), np.arange(self.golden_truth.shape[0], step=2))
+            train_index = select
+            test_index = ~select
+            print(train_index)
+            print(test_index)
+        
 
-        for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
+        if True:  # Used only with IMDb dataset
+        #for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
@@ -993,7 +1004,7 @@ class HMM_Framework:
             raise ValueError("for 'viterbi' on Architecture A we can't perform this type of boosting since we have no log probabilities available.")
         
         precomputed_seeds = [22, 55, 62, 11]
-        iterations = 10
+        iterations = 40
         train_length = len(y_train)
         final_predict_on_train_or_test = "train"        
 
@@ -1017,8 +1028,8 @@ class HMM_Framework:
             # 3-a. Bootstrap/Bagging with replacement
             #np.random.seed(seed=precomputed_seeds[t])    
             np.random.seed()     
-            random_sample_ind = np.random.choice(np.arange(train_length), size=int(train_length*0.28), replace=False)  # replace refers to something else here
-                                                                                                                    # this matrix also operates as the mapping
+            random_sample_ind = np.random.choice(np.arange(train_length), size=int(train_length*0.28), p=weights_D, replace=False)  # replace refers to something else here
+                                                                                                                       # this matrix can also operate as a mapping
             random_sample_state = state_train[random_sample_ind]
             random_sample_obs = obs_train[random_sample_ind]
             random_y = y_train[random_sample_ind]

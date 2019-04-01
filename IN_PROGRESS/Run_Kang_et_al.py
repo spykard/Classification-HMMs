@@ -20,8 +20,8 @@ import HMM_Framework
 import Ensemble_Framework
 
 
-#dataset_name = "IMDb Large Movie Review Dataset"
-dataset_name = "Movie Review Subjectivity Dataset"
+dataset_name = "IMDb Large Movie Review Dataset"
+#dataset_name = "Movie Review Subjectivity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -59,7 +59,7 @@ def load_dataset():
 
     # 3. Shuffle the Dataset, just to make sure it's not too perfectly ordered
     if True:
-        df = df.sample(frac=.5, random_state=random_state).reset_index(drop=True)
+        df = df.sample(frac=.05, random_state=random_state).reset_index(drop=True)
 
     # 4. Print dataset information
     print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
@@ -260,18 +260,23 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-#mode = "load"
-#if mode == "save":
-#df = load_dataset()
-#generate_cluster_labels(df, mode="spherical", n_components=300, cosine_sim_flag=False, cluster_count=60)  # High Performance
-#    quit()
-#elif mode == "load":
-df = load_from_files()
+mode = "load"
+if mode == "save":
+    df = load_dataset()
+    generate_cluster_labels(df, mode="spherical", n_components=300, cosine_sim_flag=False, cluster_count=60)  # High Performance
+    df = load_from_files()
+elif mode == "load":
+    df = load_from_files()
+
+# IMDb only
+df_init = load_dataset()
+fold_split = df_init.index[df_init["Type"] == "train"].values
+
 
 if True:
     # Model
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=0, boosting=True,                                \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=fold_split, boosting=False,                                \
             state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=False,                                                            \
@@ -284,5 +289,5 @@ if True:
     hmm.print_average_results(decimals=3)
     hmm.print_best_results(detailed=True, decimals=3) 
 
-    print(hmm.cross_val_prediction_matrix[0])
+    #print(hmm.cross_val_prediction_matrix[0])
 

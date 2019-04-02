@@ -298,21 +298,15 @@ metric_results_acc = []
 # IMDb only
 if dataset_name == "IMDb Large Movie Review Dataset":
     train_indexes = df_dataset.index[df_dataset["Type"] == "train"].values
-    test_indexes = df_dataset.index[df_dataset["Type"] == "train"].values
+    test_indexes = df_dataset.index[df_dataset["Type"] == "test"].values
 
-    #print(fold_split)
-
-    # select = np.in1d(range(all_labels.shape[0]), fold_split)
-    # train_indexes = select
-    # test_indexes = ~select
-    # print(train_indexes)
-    # print(test_indexes)
-    
+    print(train_indexes)
+    print(test_indexes)    
     k = -1
 
-#if True:
+if True:
 ### (1) LET'S BUILD : Complement Naive Bayes
-for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
+#for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)
@@ -369,10 +363,10 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print(tfidf_matrix.shape)
     #quit()
 
-    clf = ComplementNB() # 1
+    #clf = ComplementNB() # 1
     #clf = DecisionTreeClassifier(random_state=random_state) # 2
     #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.
-    #clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
+    clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
 
     
     clf.fit(tfidf_matrix, labels_train)

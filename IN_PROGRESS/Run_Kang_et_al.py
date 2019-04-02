@@ -15,6 +15,11 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 from spherecluster import SphericalKMeans
 from nltk.tokenize import word_tokenize
+
+import string
+from re import sub
+from nltk.stem import WordNetLemmatizer
+
 import matlab.engine
 import HMM_Framework
 import Ensemble_Framework
@@ -120,6 +125,21 @@ def batcher(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
+class LemmaTokenizer(object):
+    '''    Override SciKit's default Tokenizer    '''
+    def __init__(self):
+        self.wnl = WordNetLemmatizer()
+        # This punctuation remover has the best Speed Performance
+        self.translator = str.maketrans('','', sub('\'', '', string.punctuation))
+    def __call__(self, doc):
+        # return [self.wnl.lemmatize(t.lower()) for t in word_tokenize(doc)]
+        temp = []
+        for t in word_tokenize(doc):
+            x = t.translate(self.translator) 
+            if x != '': temp.append(self.wnl.lemmatize(x.lower())) 
+
+        return temp
+
 def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, cluster_count=100):
     """
     Generating cluster labels for the entire data. Uses an advanced SVD and Spherical k-Means approach.
@@ -131,7 +151,7 @@ def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, clust
 
     # TODO: TRY MY VECTORIZER
     pipeline = Pipeline([  # Optimal
-                        ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
+                        ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
                         ('tfidf', TfidfTransformer(norm='l2', use_idf=True)),  # Vectorizer results are normalized, which makes KMeans behave as spherical k-means for better results
                         ])  
     
@@ -260,10 +280,10 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "save"
+mode = "load"
 if mode == "save":
     df = load_dataset()
-    generate_cluster_labels(df, mode="spherical", n_components=300, cosine_sim_flag=False, cluster_count=60)  # High Performance
+    generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
     df = load_from_files()
 elif mode == "load":
     df = load_from_files()
@@ -277,10 +297,10 @@ if dataset_name == "IMDb Large Movie Review Dataset":
 if True:
     # Model
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=2, boosting=False,                                \
             state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=False,                                                            \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                            \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \

@@ -404,15 +404,15 @@ class HMM_Framework:
             else:  # Mode 1, Cross Validation is Disabled
                 cross_val = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)        
         elif isinstance(k_fold, np.ndarray):  # Mode 3, Cross Validation is Disabled
-            select = np.in1d(range(self.golden_truth.shape[0]), np.arange(self.golden_truth.shape[0], step=2))
+            select = np.in1d(range(self.golden_truth.shape[0]), k_fold)
             train_index = select
             test_index = ~select
             print(train_index)
             print(test_index)
         
 
-        if True:  # Used only with IMDb dataset
-        #for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
+        #if True:  # Used only with IMDb dataset
+        for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 

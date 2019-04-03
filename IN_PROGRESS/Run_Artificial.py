@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import multiprocessing
+from collections import Counter
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import SelectKBest, chi2
@@ -94,7 +95,6 @@ def load_dataset():
 
     return df
 
-from collections import Counter
 def find_majority(votes):
     vote_count = Counter(votes)
     top_two = vote_count.most_common(2)
@@ -123,8 +123,8 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
 
         for word in tokenize_it:
             token_to_string = str(word)
-            # Lemmatize edition
-            #token_to_string = wnl.lemmatize(token_to_string.lower())
+            #token_to_string = wnl.lemmatize(token_to_string.lower())  # Lemmatize edition
+
             sentiment_polarity = TextBlob(token_to_string).sentiment.polarity
             if sentiment_polarity > 0.0:
                 sentiment_polarity = "pos"
@@ -157,8 +157,8 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
                     print(token_to_string)
                     to_append_labels.append("neu")
 
-                # if sentiment_polarity == sentiment_polarity_2:
-                #     print(sentiment_polarity, sentiment_polarity_2, token_to_string)             
+            # putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
+
         # Debug
         #print(to_append_data)
 
@@ -173,21 +173,7 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
     with open('./Pickled Objects/Artificial_Golden_Truth_Batch_' + str(batch_id), 'wb') as f:
         pickle.dump(golden_truth, f)
 
-
-    # Smart Mode
-    # sentiment_words = []
-    # pos_words = []
-    # neg_words = []
-    # for line in open('./opinion_lexicon/positive-words.txt', 'r'):
-    #     pos_words.append(line.rstrip())  # Must strip Newlines
-
-    # for line in open('./opinion_lexicon/negative-words.txt', 'r'):
-    #     neg_words.append(line.rstrip())  # Must strip Newlines  
-
-    # sentiment_words = pos_words + neg_words
-    # sentiment_words = set(sentiment_words)
-
-def BACKUPP(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
+def _generate_labels_to_file_CLASSIC(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
     data_corresponding_to_labels = []
     artificial_labels = []
     golden_truth = []

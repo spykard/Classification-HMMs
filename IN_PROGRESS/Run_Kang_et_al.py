@@ -165,7 +165,6 @@ def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, clust
     # https://www.quora.com/How-can-I-use-cosine-similarity-in-clustering-For-example-K-means-clustering
     # https://pypi.org/project/spherecluster/0.1.2/
 
-    # TODO: TRY MY VECTORIZER
     pipeline = Pipeline([  # Optimal
                         ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
                         ('tfidf', TfidfTransformer(norm='l2', use_idf=True)),  # Vectorizer results are normalized, which makes KMeans behave as spherical k-means for better results

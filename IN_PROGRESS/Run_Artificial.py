@@ -94,7 +94,100 @@ def load_dataset():
 
     return df
 
+from collections import Counter
+def find_majority(votes):
+    vote_count = Counter(votes)
+    top_two = vote_count.most_common(2)
+    if len(top_two)>1 and top_two[0][1] == top_two[1][1]:
+        # It is a tie
+        return 0
+    return top_two[0][0]
+
 def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
+    data_corresponding_to_labels = []
+    artificial_labels = []
+    golden_truth = []
+    instance_count = len(data)
+    #nlp = spacy.load('en_core_web_sm')
+    #wnl = WordNetLemmatizer()
+    from textblob import TextBlob
+    from senticnet.senticnet import SenticNet
+    sn = SenticNet()
+
+    for i in range(instance_count):
+        if verbose == True:
+            print("Processing instance:", i+1, "of", instance_count)
+        tokenize_it = word_tokenize(data[i])
+        to_append_data = []        
+        to_append_labels = []
+
+        for word in tokenize_it:
+            token_to_string = str(word)
+            # Lemmatize edition
+            #token_to_string = wnl.lemmatize(token_to_string.lower())
+            sentiment_polarity = TextBlob(token_to_string).sentiment.polarity
+            if sentiment_polarity > 0.0:
+                sentiment_polarity = "pos"
+            elif sentiment_polarity < 0.0:
+                sentiment_polarity = "neg"
+            else:
+                sentiment_polarity = "neu"                
+
+            try:
+                sentiment_polarity_2 = sn.polarity_value(token_to_string)
+                if sentiment_polarity_2 == "positive":
+                    sentiment_polarity_2 = "pos"
+                elif sentiment_polarity_2 == "negative":
+                    sentiment_polarity_2 = "neg"
+            except KeyError:
+                sentiment_polarity_2 = "neu"
+
+            if token_to_string in vocab_quick_search:
+                to_append_data.append(token_to_string)
+
+                prediction_of_classifier = str(pipeline.predict([token_to_string])[0])
+                
+                majority_vote = find_majority([sentiment_polarity, sentiment_polarity_2, prediction_of_classifier])
+                #if sentiment_polarity != 0:
+                if majority_vote != 0:
+                    # Debug
+                    #print(prediction_kmeans)
+                    to_append_labels.append(majority_vote)  # Convert from numpy.str_ to str and append the label
+                else:
+                    print(token_to_string)
+                    to_append_labels.append("neu")
+
+                # if sentiment_polarity == sentiment_polarity_2:
+                #     print(sentiment_polarity, sentiment_polarity_2, token_to_string)             
+        # Debug
+        #print(to_append_data)
+
+        data_corresponding_to_labels.append(to_append_data)
+        artificial_labels.append(to_append_labels)
+        golden_truth.append(labels[i])
+
+    with open('./Pickled Objects/Artificial_Data_Batch_' + str(batch_id), 'wb') as f:
+        pickle.dump(data_corresponding_to_labels, f)
+    with open('./Pickled Objects/Artificial_Labels_Batch_' + str(batch_id), 'wb') as f:
+        pickle.dump(artificial_labels, f)
+    with open('./Pickled Objects/Artificial_Golden_Truth_Batch_' + str(batch_id), 'wb') as f:
+        pickle.dump(golden_truth, f)
+
+
+    # Smart Mode
+    # sentiment_words = []
+    # pos_words = []
+    # neg_words = []
+    # for line in open('./opinion_lexicon/positive-words.txt', 'r'):
+    #     pos_words.append(line.rstrip())  # Must strip Newlines
+
+    # for line in open('./opinion_lexicon/negative-words.txt', 'r'):
+    #     neg_words.append(line.rstrip())  # Must strip Newlines  
+
+    # sentiment_words = pos_words + neg_words
+    # sentiment_words = set(sentiment_words)
+
+def BACKUPP(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
     data_corresponding_to_labels = []
     artificial_labels = []
     golden_truth = []
@@ -274,10 +367,10 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "load"
+mode = "save"
 if mode == "save":
     df = load_dataset()
-    generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
+    generate_artificial_labels(df, mode="classic", feature_count=1000)  # High Performance
     quit()
 elif mode == "load":
     df = load_from_files()

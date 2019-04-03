@@ -116,10 +116,10 @@ def _generate_labels_to_file(data, labels, final_tuple, batch_id, verbose=False)
             if token_to_string in final_tuple[0]:
                 to_append_data.append(token_to_string)
                 get_index = final_tuple[1].index(token_to_string)
-                prediction_kmeans = final_tuple[2][get_index]  # append the label
+                prediction_kmeans = final_tuple[2][get_index]
                 # Debug
                 #print(prediction_kmeans)
-                to_append_labels.append(str(prediction_kmeans))
+                to_append_labels.append(str(prediction_kmeans))  # append the label
         # Debug
         #print(to_append_data)
 

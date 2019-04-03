@@ -45,8 +45,9 @@ cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accu
 time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
 
 
-dataset_name = "IMDb Large Movie Review Dataset"
+#dataset_name = "IMDb Large Movie Review Dataset"
 #dataset_name = "Movie Review Subjectivity Dataset"
+dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 
@@ -75,7 +76,22 @@ def Run_Preprocessing():
                 data[count] = line.rstrip('\n')
                 labels[count] = "subj"
                 count += 1
-    
+
+    elif dataset_name == "Movie Review Polarity Dataset":
+        data = ["" for i in range(10662)]
+        labels = ["" for i in range(10662)]
+        count = 0
+        with open('./Datasets/Movie Review Polarity Dataset/Sentence Polarity version/rt-polaritydata/rt-polarity.neg', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                data[count] = line.rstrip('\n')
+                labels[count] = "neg"
+                count += 1
+        with open('./Datasets/Movie Review Polarity Dataset/Sentence Polarity version/rt-polaritydata/rt-polarity.pos', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                data[count] = line.rstrip('\n')
+                labels[count] = "pos"
+                count += 1
+
         print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
 
         df = pd.DataFrame({'Data': data, 'Labels': labels})
@@ -304,9 +320,9 @@ if dataset_name == "IMDb Large Movie Review Dataset":
     print(test_indexes)    
     k = -1
 
-if True:
+#if True:
 ### (1) LET'S BUILD : Complement Naive Bayes
-#for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
+for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_labels)):  # Split must be done before every classifier because generated object gets exhausted (destroyed)
     print("\n--Current Cross Validation Fold:", k+1)
 
     data_train = all_data.reindex(train_indexes, copy=True, axis=0)

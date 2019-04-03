@@ -77,6 +77,10 @@ def Run_Preprocessing():
                 labels[count] = "subj"
                 count += 1
 
+        print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
+
+        df = pd.DataFrame({'Data': data, 'Labels': labels})
+
     elif dataset_name == "Movie Review Polarity Dataset":
         data = ["" for i in range(10662)]
         labels = ["" for i in range(10662)]

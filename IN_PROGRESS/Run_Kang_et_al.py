@@ -158,7 +158,7 @@ class LemmaTokenizer(object):
 
 def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, cluster_count=100):
     """
-    Generating cluster labels for the entire data. Uses an advanced SVD and Spherical k-Means approach.
+    Generates cluster labels for the entire data. Uses an advanced SVD and Spherical k-Means approach.
     """
     # 1. SVD
     # Using cosine similarity rather than Euclidean distance is referred to as spherical k-Means.

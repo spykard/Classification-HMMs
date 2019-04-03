@@ -52,6 +52,10 @@ def load_dataset():
                 labels[count] = "subj"
                 count += 1
 
+        print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
+
+        df = pd.DataFrame({'Data': data, 'Labels': labels})
+
     elif dataset_name == "Movie Review Polarity Dataset":
         data = ["" for i in range(10662)]
         labels = ["" for i in range(10662)]
@@ -154,7 +158,7 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
                     #print(prediction_kmeans)
                     to_append_labels.append(majority_vote)  # Convert from numpy.str_ to str and append the label
                 else:
-                    print(token_to_string)
+                    #print(token_to_string)
                     to_append_labels.append("neu")
 
             # putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
@@ -353,7 +357,7 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "save"
+mode = "load"
 if mode == "save":
     df = load_dataset()
     generate_artificial_labels(df, mode="classic", feature_count=1000)  # High Performance

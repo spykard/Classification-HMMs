@@ -299,7 +299,6 @@ mode = "load"
 if mode == "save":
     df = load_dataset()
     generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
-    #df = load_from_files()
     quit()
 elif mode == "load":
     df = load_from_files()

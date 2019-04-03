@@ -26,7 +26,8 @@ import Ensemble_Framework
 
 
 #dataset_name = "IMDb Large Movie Review Dataset"
-dataset_name = "Movie Review Subjectivity Dataset"
+#dataset_name = "Movie Review Subjectivity Dataset"
+dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -52,6 +53,21 @@ def load_dataset():
             for line in file:
                 data[count] = line.rstrip('\n')
                 labels[count] = "subj"
+                count += 1
+
+    elif dataset_name == "Movie Review Polarity Dataset":
+        data = ["" for i in range(10662)]
+        labels = ["" for i in range(10662)]
+        count = 0
+        with open('./Datasets/Movie Review Polarity Dataset/Sentence Polarity version/rt-polaritydata/rt-polarity.neg', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                data[count] = line.rstrip('\n')
+                labels[count] = "neg"
+                count += 1
+        with open('./Datasets/Movie Review Polarity Dataset/Sentence Polarity version/rt-polaritydata/rt-polarity.pos', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                data[count] = line.rstrip('\n')
+                labels[count] = "pos"
                 count += 1
     
         print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
@@ -210,7 +226,7 @@ def generate_cluster_labels(df, mode, n_components, cosine_sim_flag=False, clust
 
     print("\nSplit the data into", batch_count, "batches of approximate size:", df.shape[0]//4)
 
-    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], final_tuple, 1, False))
+    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], final_tuple, 1, True))
     p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], final_tuple, 2, False))
     p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], final_tuple, 3, False))
     p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], final_tuple, 4, False))        
@@ -284,7 +300,8 @@ mode = "load"
 if mode == "save":
     df = load_dataset()
     generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
-    df = load_from_files()
+    #df = load_from_files()
+    quit()
 elif mode == "load":
     df = load_from_files()
 
@@ -294,13 +311,13 @@ if dataset_name == "IMDb Large Movie Review Dataset":
     fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-if True:
+if False:
     # Model
     hmm = HMM_Framework.HMM_Framework()
     hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
             state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
@@ -313,7 +330,7 @@ if True:
     #hmm.print_probability_parameters()
     #print(hmm.cross_val_prediction_matrix[0])
 
-elif False:
+elif True:
     # ensemble
     cross_val_prediction_matrix = []
     mapping = []
@@ -326,7 +343,7 @@ elif False:
             n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=1.5, hohmm_synthesize=False,                                                              \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
             architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
             )     
 
@@ -349,4 +366,4 @@ elif False:
     mapping.append(hmm.ensemble_stored["Mapping"])
     golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.4, 0.6])
+    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.6, 0.4])

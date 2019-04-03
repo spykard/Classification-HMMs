@@ -322,6 +322,7 @@ class HMM_Framework:
         print("# Observation probability matrix. One for each model that was trained.")
         #xxx = list(self.B[0][0, :])
         #second_smallest_value = sorted(list(set(xxx)))[1]  # Good way to find a value for formula_magic_smoothing, use with hohmm
+        #print(second_smallest_value)
         print(self.B)
         print("# Initial probabilities. One for each model that was trained.")
         print(self.pi)

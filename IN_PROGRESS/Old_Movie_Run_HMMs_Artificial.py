@@ -7,23 +7,23 @@ import numpy as np
 import HMM_Framework
 
 
-dataset_name = "IMDb Large Movie Review Dataset"
+dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 # 1. Dataset dependent loading - Load artificial labels
 import pickle
 
-artifically_labeled_data = pickle.load(open('./Pickled Objects/Artificial_Labels_from_Bayes', 'rb'))
-data_corresponding_to_labels = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes', 'rb'))
-golden_truth = pickle.load(open('./Pickled Objects/Artifical_Labels_Golden_Truth', 'rb'))
+artifically_labeled_data = pickle.load(open('./Pickled Objects/Artificial_Labels_3/Artificial_Labels_from_Bayes', 'rb'))
+data_corresponding_to_labels = pickle.load(open('./Pickled Objects/Artificial_Labels_3/Data_corresponding_to_Labels_from_Bayes', 'rb'))
+golden_truth = pickle.load(open('./Pickled Objects/Artificial_Labels_3/Artifical_Labels_Golden_Truth', 'rb'))
 
-artifically_labeled_data_test = pickle.load(open('./Pickled Objects/Artificial_Labels_from_Bayes_Test_Set', 'rb'))
-data_corresponding_to_labels_test = pickle.load(open('./Pickled Objects/Data_corresponding_to_Labels_from_Bayes_Test_Set', 'rb'))
-golden_truth_test = pickle.load(open('./Pickled Objects/Artifical_Labels_Golden_Truth_Test_Set', 'rb'))
+# artifically_labeled_data_test = pickle.load(open('./Pickled Objects/Artificial_Labels_2/Artificial_Labels_from_Bayes_Test_Set', 'rb'))
+# data_corresponding_to_labels_test = pickle.load(open('./Pickled Objects/Artificial_Labels_2/Data_corresponding_to_Labels_from_Bayes_Test_Set', 'rb'))
+# golden_truth_test = pickle.load(open('./Pickled Objects/Artificial_Labels_2/Artifical_Labels_Golden_Truth_Test_Set', 'rb'))
 
-artifically_labeled_data_merged = artifically_labeled_data + artifically_labeled_data_test
-data_corresponding_to_labels_merged = data_corresponding_to_labels + data_corresponding_to_labels_test
-golden_truth_merged = golden_truth + golden_truth_test
+artifically_labeled_data_merged = artifically_labeled_data
+data_corresponding_to_labels_merged = data_corresponding_to_labels
+golden_truth_merged = golden_truth
 
 print("--\n--Processed", len(golden_truth_merged), "documents", "\n--Dataset Name:", dataset_name)
 
@@ -73,8 +73,8 @@ if True:
             n_grams=1, n_target="both", n_prev_flag=False, n_dummy_flag=False,                                                           \
             pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0,                \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0                                                             \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0                                                             \
             )   
 
 hmm.print_average_results(decimals=3)

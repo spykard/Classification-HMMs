@@ -9,6 +9,7 @@ import pickle
 import multiprocessing
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.naive_bayes import ComplementNB
 from nltk.tokenize import word_tokenize
 
@@ -93,12 +94,13 @@ def load_dataset():
 
     return df
 
-def _generate_labels_to_file(data, labels, final_tuple, batch_id, verbose=False):
+def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
     data_corresponding_to_labels = []
-    cluster_labels = []
+    artificial_labels = []
     golden_truth = []
     instance_count = len(data)
     #nlp = spacy.load('en_core_web_sm')
+    #wnl = WordNetLemmatizer()
 
     for i in range(instance_count):
         if verbose == True:
@@ -106,28 +108,45 @@ def _generate_labels_to_file(data, labels, final_tuple, batch_id, verbose=False)
         tokenize_it = word_tokenize(data[i])
         to_append_data = []        
         to_append_labels = []
+
         for word in tokenize_it:
             token_to_string = str(word)
-            if token_to_string in final_tuple[0]:
+            # Lemmatize edition
+            #token_to_string = wnl.lemmatize(token_to_string.lower())
+
+            if token_to_string in vocab_quick_search:
                 to_append_data.append(token_to_string)
-                get_index = final_tuple[1].index(token_to_string)
-                prediction_kmeans = final_tuple[2][get_index]  # append the label
+                prediction_of_classifier = pipeline.predict([token_to_string])[0]
                 # Debug
                 #print(prediction_kmeans)
-                to_append_labels.append(str(prediction_kmeans))
+                to_append_labels.append(str(prediction_of_classifier))  # Convert from numpy.str_ to str and append the label
         # Debug
         #print(to_append_data)
 
         data_corresponding_to_labels.append(to_append_data)
-        cluster_labels.append(to_append_labels)
+        artificial_labels.append(to_append_labels)
         golden_truth.append(labels[i])
 
-    with open('./Pickled Objects/Clustering_Data_Batch_' + str(batch_id), 'wb') as f:
+    with open('./Pickled Objects/Artificial_Data_Batch_' + str(batch_id), 'wb') as f:
         pickle.dump(data_corresponding_to_labels, f)
-    with open('./Pickled Objects/Clustering_Labels_Batch_' + str(batch_id), 'wb') as f:
-        pickle.dump(cluster_labels, f)
-    with open('./Pickled Objects/Clustering_Golden_Truth_Batch_' + str(batch_id), 'wb') as f:
+    with open('./Pickled Objects/Artificial_Labels_Batch_' + str(batch_id), 'wb') as f:
+        pickle.dump(artificial_labels, f)
+    with open('./Pickled Objects/Artificial_Golden_Truth_Batch_' + str(batch_id), 'wb') as f:
         pickle.dump(golden_truth, f)
+
+
+    # Smart Mode
+    # sentiment_words = []
+    # pos_words = []
+    # neg_words = []
+    # for line in open('./opinion_lexicon/positive-words.txt', 'r'):
+    #     pos_words.append(line.rstrip())  # Must strip Newlines
+
+    # for line in open('./opinion_lexicon/negative-words.txt', 'r'):
+    #     neg_words.append(line.rstrip())  # Must strip Newlines  
+
+    # sentiment_words = pos_words + neg_words
+    # sentiment_words = set(sentiment_words)
 
 def batcher(a, n):
     """
@@ -151,58 +170,26 @@ class LemmaTokenizer(object):
 
         return temp
 
-def generate_artificial_labels(df, mode, n_components, cosine_sim_flag=False, cluster_count=100):
+def generate_artificial_labels(df, mode, feature_count):
     """
     Generates artificial labels for the entire data via Machine Learning classifiers.
     """
     # 1. Machine Learning classifiers
     pipeline = Pipeline([  # Optimal
-                        ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode', tokenizer=LemmaTokenizer())),  # 1-Gram Vectorizer
+                        ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
                         ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=feature_count)),  # Dimensionality Reduction                           
                         ('clf', ComplementNB()),
                         ])  
     
-    term_sentence_matrix = pipeline.fit_transform(df.loc[:, "Data"], df.loc[:, "Labels"])  # Labels are there just for API consistency, None is actually used
-    term_sentence_matrix = term_sentence_matrix.transpose()  # For our task, we don't want the SVD to be performed on the documents but on the words instead; thus we need words to be rows not columns for the SVD to produce the correct U*S format
+    pipeline.fit(df.loc[:, "Data"], df.loc[:, "Labels"])  # This is technically incorrect and should be performed only on the training set but whatever
 
-    vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the overall vocabulary
+    # 2. Get vocabulary
+    vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
+    selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
+    vocab = [vocab[i] for i in selected_indices]    
 
-    svd = TruncatedSVD(n_components=n_components, algorithm="randomized", random_state=random_state)  # There is no exact perfect number of components. We should aim for variance higher than 0.90
-                                                                                                      # https://stackoverflow.com/questions/12067446/how-many-principal-components-to-takeh
-                                                                                                      # https://stackoverflow.com/questions/48424084/number-of-components-trucated-svd
-    u_s_matrix = svd.fit_transform(term_sentence_matrix)  # generates U*S
-    
-    normalizer = Normalizer(norm='l2', copy=False)  # SVD Results are not normalized, we have to REDO the normalization (https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html)
-    normalizer.fit_transform(u_s_matrix)
-
-    print("Singular Value Decomposition (SVD) completed. U*S Shape:", u_s_matrix.shape, "| Explained variance of the SVD step:", svd.explained_variance_ratio_.sum() * 100, "\b%")
-
-    # Cosine Similarity  
-    if cosine_sim_flag == True:       
-        u_s_matrix = cosine_similarity(u_s_matrix, u_s_matrix)
-
-    # 2. CLUSTERING
-    # This is Eucledian K-means
-    if mode == "classic":
-        clf = KMeans(n_clusters=cluster_count, max_iter=1000, random_state=random_state, verbose=True)
-        cluster_labels = clf.fit_predict(u_s_matrix)
-        #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_
-    # This is Spherical K-means
-    elif mode == "spherical": 
-        clf = SphericalKMeans(n_clusters=cluster_count, max_iter=1000, random_state=random_state, verbose=True)
-        cluster_labels = clf.fit_predict(u_s_matrix)
-        #predictions = clf.labels_  # alternatively could use 'fit' and 'labels_  
-    elif mode == "matlab":        
-        matrix = matlab.double(u_s_matrix.tolist())
-        eng = matlab.engine.start_matlab()
-        output = eng.kmeans(matrix, cluster_count, 'MaxIter', 1000.0, 'Distance', 'cosine', nargout=1)
-        cluster_labels = [int(x[0]) for x in output]
-    
-    print(cluster_labels)
-
-    final_tuple = (set(vocab), vocab, cluster_labels)  # [0] vocab as a set for fast search inside it, [1] vocab as a mapping, [2] cluster labels
-
-    # 3. GENERATE LABELS TO FILE
+    # 3. Generate labels to file
     batch_count = 4
     data = df.loc[:, "Data"].tolist()
     labels = df.loc[:, "Labels"].tolist()
@@ -217,10 +204,10 @@ def generate_artificial_labels(df, mode, n_components, cosine_sim_flag=False, cl
 
     print("\nSplit the data into", batch_count, "batches of approximate size:", df.shape[0]//4)
 
-    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], final_tuple, 1, True))
-    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], final_tuple, 2, False))
-    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], final_tuple, 3, False))
-    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], final_tuple, 4, False))        
+    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], set(vocab), vocab, pipeline, 1, True))
+    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], set(vocab), vocab, pipeline, 2, False))
+    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], set(vocab), vocab, pipeline, 3, False))
+    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, pipeline, 4, False))     
     p1.start()
     p2.start()
     p3.start()
@@ -230,27 +217,27 @@ def generate_artificial_labels(df, mode, n_components, cosine_sim_flag=False, cl
 
 def load_from_files():
     """
-    Load everything, including the clustering information, from files.
+    Load everything, including the artificial label information, from files.
     """
     batch_data = []
-    batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_1', 'rb')))
-    batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_2', 'rb')))
-    batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_3', 'rb')))
-    batch_data.append(pickle.load(open('./Pickled Objects/Clustering_Data_Batch_4', 'rb')))
+    batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_1', 'rb')))
+    batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_2', 'rb')))
+    batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_3', 'rb')))
+    batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_4', 'rb')))
     batch_data = [batch for sublist in batch_data for batch in sublist]
 
     batch_cluster_labels = []
-    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Clustering_Labels_Batch_1', 'rb')))
-    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Clustering_Labels_Batch_2', 'rb')))
-    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Clustering_Labels_Batch_3', 'rb')))
-    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Clustering_Labels_Batch_4', 'rb')))
+    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_1', 'rb')))
+    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_2', 'rb')))
+    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_3', 'rb')))
+    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_4', 'rb')))
     batch_cluster_labels = [batch for sublist in batch_cluster_labels for batch in sublist]
 
     batch_golden_truth = []
-    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Clustering_Golden_Truth_Batch_1', 'rb')))
-    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Clustering_Golden_Truth_Batch_2', 'rb')))
-    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Clustering_Golden_Truth_Batch_3', 'rb')))
-    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Clustering_Golden_Truth_Batch_4', 'rb')))
+    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_1', 'rb')))
+    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_2', 'rb')))
+    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_3', 'rb')))
+    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_4', 'rb')))
     batch_golden_truth = [batch for sublist in batch_golden_truth for batch in sublist]
 
     # Debug
@@ -259,19 +246,19 @@ def load_from_files():
     # print(batch_cluster_labels[0:10])
     # print(batch_golden_truth[0:10])
 
-    print("\nLoaded the preprocessed (and clustered) data from files. Creating a DataFrame...\n")
+    print("\nLoaded the preprocessed data from files. Creating a DataFrame...\n")
 
     # 1. Convert to DataFrame
-    df_transformed = pd.DataFrame({'Clustering_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
+    df_transformed = pd.DataFrame({'Artificial_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
 
     # 2. Remove empty instances from DataFrame, actually affects accuracy
-    emptySequences = df_transformed.loc[df_transformed.loc[:,'Clustering_Labels'].map(len) < 1].index.values
+    emptySequences = df_transformed.loc[df_transformed.loc[:,'Artificial_Labels'].map(len) < 1].index.values
     df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
     
     # 3. Print dataset information
     # BUG
-    #print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
-    print("--Dataset Info:\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+    print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+    #print("--Dataset Info:\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
     return df_transformed
 
@@ -290,8 +277,7 @@ def load_from_files():
 mode = "load"
 if mode == "save":
     df = load_dataset()
-    generate_artificial_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
-    #df = load_from_files()
+    generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
     quit()
 elif mode == "load":
     df = load_from_files()
@@ -302,17 +288,17 @@ if dataset_name == "IMDb Large Movie Review Dataset":
     fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-if False:
+if True:
     # Model
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
+            state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                              \
             )     
     
     hmm.print_average_results(decimals=3)
@@ -321,7 +307,7 @@ if False:
     #hmm.print_probability_parameters()
     #print(hmm.cross_val_prediction_matrix[0])
 
-elif True:
+elif False:
     # ensemble
     cross_val_prediction_matrix = []
     mapping = []

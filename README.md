@@ -204,7 +204,7 @@ Architecture B, effectively applicable to classification tasks (a pure classific
 * Attempt different smoothing techniques (http://www.aclweb.org/anthology/P99-1023 , Section 3.2)
 * Implement 'text_instead_of_sequences' on build()
 * Make weights on the Ensemble be relative to the exact accuracy of each base classifier
-* Implement Birch before the Spherical k-Means for a better initialization
+* Implement BIRCH before the Spherical k-Means for a better initialization
 
 ## Counting
 

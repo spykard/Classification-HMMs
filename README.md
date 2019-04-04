@@ -176,7 +176,8 @@ Architecture B, effectively applicable to classification tasks (a pure classific
 
 (all) Utilizing n-grams on the observations heavily increases accuracy, see console logs and graphs.  
 (all) Using a higher n-gram means more new unseen transitions, see graphs.  
-(all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate. 
+(all) Adding the smoothing factor doesn't affect performance that much, at least on Pomegranate.  
+(all) njobs = -1 (enabling parallelization with batches) has a peculiar effect of sometimes increasing or decreasing accuracy (by around 20% in both). This might be happening because the model does not overfit/train on the training data which leads to better performance on the test data.
 (1) Can be run at any time. 
 (2) [Experimental Results of State-emission HMM.txt](Console%20Logs/Experimental%20Results%20of%20State-emission%20HMM.txt)  
 (3) Can be run at any time. 

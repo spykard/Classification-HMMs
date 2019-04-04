@@ -29,6 +29,7 @@ nltk
 ## Coding Notes - Overall
 
 * On architecture B's 'formula' algorithm, to get log probabilities we have to normalize the result of the math formula. [Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979) divide the multiplied probability score by the length of the sequence.
+* On architecture B's 'formula' algorithm, the ideal magic smoothing factor is around half of the smallest possible probability of observations, code is on "print_probability_parameters()".
 
 ## Coding Notes - Pomegranate
 

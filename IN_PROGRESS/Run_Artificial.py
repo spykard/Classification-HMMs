@@ -22,9 +22,9 @@ import HMM_Framework
 import Ensemble_Framework
 
 
-#dataset_name = "IMDb Large Movie Review Dataset"
+dataset_name = "IMDb Large Movie Review Dataset"
 #dataset_name = "Movie Review Subjectivity Dataset"
-dataset_name = "Movie Review Polarity Dataset"
+#dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -360,7 +360,7 @@ def load_from_files():
 mode = "load"
 if mode == "save":
     df = load_dataset()
-    generate_artificial_labels(df, mode="classic", feature_count=1000)  # High Performance
+    generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
     quit()
 elif mode == "load":
     df = load_from_files()
@@ -374,14 +374,14 @@ if dataset_name == "IMDb Large Movie Review Dataset":
 if True:
     # Model
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
+    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
             state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
+            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0                                                              \
+            architecture_b_algorithm="forward", formula_magic_smoothing=8.0e-06                                                              \
             )     
     
     hmm.print_average_results(decimals=3)
@@ -397,14 +397,14 @@ elif False:
     golden_truth = []
 
     hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
+            state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0001                                                              \
             )     
 
     cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
@@ -413,13 +413,13 @@ elif False:
 
     hmm = HMM_Framework.HMM_Framework()
     hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+            state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=[], text_enable=False,                                                                              \
             n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=1.5, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+            hohmm_high_order=2, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="forward", formula_magic_smoothing=0.0001                                                              \
             )     
 
     cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)

@@ -162,7 +162,7 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
                     #print(token_to_string)
                     to_append_labels.append("neu")
 
-            # putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
+            # (not ALWAYS) putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
 
         # Debug
         #print(to_append_data)
@@ -268,7 +268,7 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
 
     #pipeline.fit(data_train, labels_train)
 
-    pipeline.fit(data_test, labels_test)  # This is technically incorrect and should be performed only on the training set but whatever
+    pipeline.fit(data_train, labels_train)  # This is technically incorrect and should be performed only on the training set but whatever
 
     # 2. Get vocabulary
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary

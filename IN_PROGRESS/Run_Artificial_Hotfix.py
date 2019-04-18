@@ -162,7 +162,7 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
                     #print(token_to_string)
                     to_append_labels.append("neu")
 
-            # putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
+            # (not ALWAYS) putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
 
         # Debug
         #print(to_append_data)

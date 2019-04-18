@@ -410,14 +410,23 @@ class HMM_Framework:
             select = np.in1d(range(self.golden_truth.shape[0]), k_fold)
             train_index = select
             test_index = ~select
-            print(train_index)
-            print(test_index)
         
 
-        #if True:  # Used only with IMDb dataset
+        #if True:  # Used only with IMDb dataset and with the Artificial Approach
         for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
+
+            # # Debug
+            # print("\nStates Train:", state_train[0:3])
+            # print("\nObs Train:", obs_train[0:3])
+            # print("\nGolden Truth Train:", y_train[0:3])
+            # print("\nLENGTH Train:", len(state_train), len(obs_train), len(y_train))
+            # print("\nStates Test:", state_test[0:3])
+            # print("\nObs Test:", obs_test[0:3])
+            # print("\nGolden Truth Test:", y_test[0:3])
+            # print("\nLENGTH Test:", len(state_test), len(obs_test), len(y_test))
+            # #quit()
 
             if boosting == True:
                 self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \

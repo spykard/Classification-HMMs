@@ -13,18 +13,19 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.naive_bayes import ComplementNB
 from nltk.tokenize import word_tokenize
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 import string
 from re import sub
 from nltk.stem import WordNetLemmatizer
 
-import HMM_Framework
+import HMM_Framework_Hotfix_Artificial
 import Ensemble_Framework
 
 
-dataset_name = "IMDb Large Movie Review Dataset"
+#1dataset_name = "IMDb Large Movie Review Dataset"
 #dataset_name = "Movie Review Subjectivity Dataset"
-#dataset_name = "Movie Review Polarity Dataset"
+dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -253,7 +254,7 @@ class LemmaTokenizer(object):
 
         return temp
 
-def generate_artificial_labels(df, mode, feature_count):
+def generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count):
     """
     Generates artificial labels for the entire data via Machine Learning classifiers.
     """
@@ -264,8 +265,10 @@ def generate_artificial_labels(df, mode, feature_count):
                         ('feature_selection', SelectKBest(score_func=chi2, k=feature_count)),  # Dimensionality Reduction                           
                         ('clf', ComplementNB()),
                         ])  
-    
-    pipeline.fit(df.loc[:, "Data"], df.loc[:, "Labels"])  # This is technically incorrect and should be performed only on the training set but whatever
+
+    #pipeline.fit(data_train, labels_train)
+
+    pipeline.fit(data_total, labels_total)  # This is technically incorrect and should be performed only on the training set but whatever
 
     # 2. Get vocabulary
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
@@ -274,8 +277,12 @@ def generate_artificial_labels(df, mode, feature_count):
 
     # 3. Generate labels to file
     batch_count = 4
-    data = df.loc[:, "Data"].tolist()
-    labels = df.loc[:, "Labels"].tolist()
+    data = list(data_train)
+    labels = list(labels_train)
+
+    # print(data[0]) 
+    # print(list(data_test)[0])       
+    # quit()
 
     batch_data = []
     batch_labels = []
@@ -290,15 +297,25 @@ def generate_artificial_labels(df, mode, feature_count):
     p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], set(vocab), vocab, pipeline, 1, True))
     p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], set(vocab), vocab, pipeline, 2, False))
     p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], set(vocab), vocab, pipeline, 3, False))
-    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, pipeline, 4, False))     
+    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, pipeline, 4, False)) 
+    # Batch 5 is the Test Set    
+    p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(list(data_test), list(labels_train), set(vocab), vocab, pipeline, 5, False))
+
     p1.start()
     p2.start()
     p3.start()
     p4.start()
+    p5.start()
+
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join() 
+    p5.join()       
 
     print("\nSaved to files successfully.")
 
-def load_from_files():
+def load_from_files(fold_split):
     """
     Load everything, including the artificial label information, from files.
     """
@@ -307,6 +324,7 @@ def load_from_files():
     batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_2', 'rb')))
     batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_3', 'rb')))
     batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_4', 'rb')))
+    batch_data.append(pickle.load(open('./Pickled Objects/Artificial_Data_Batch_5', 'rb')))
     batch_data = [batch for sublist in batch_data for batch in sublist]
 
     batch_cluster_labels = []
@@ -314,6 +332,7 @@ def load_from_files():
     batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_2', 'rb')))
     batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_3', 'rb')))
     batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_4', 'rb')))
+    batch_cluster_labels.append(pickle.load(open('./Pickled Objects/Artificial_Labels_Batch_5', 'rb')))
     batch_cluster_labels = [batch for sublist in batch_cluster_labels for batch in sublist]
 
     batch_golden_truth = []
@@ -321,6 +340,7 @@ def load_from_files():
     batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_2', 'rb')))
     batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_3', 'rb')))
     batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_4', 'rb')))
+    batch_golden_truth.append(pickle.load(open('./Pickled Objects/Artificial_Golden_Truth_Batch_5', 'rb')))
     batch_golden_truth = [batch for sublist in batch_golden_truth for batch in sublist]
 
     # Debug
@@ -335,15 +355,21 @@ def load_from_files():
     df_transformed = pd.DataFrame({'Artificial_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
 
     # 2. Remove empty instances from DataFrame, actually affects accuracy
-    emptySequences = df_transformed.loc[df_transformed.loc[:,'Artificial_Labels'].map(len) < 1].index.values
-    df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
+    # WORTH NOTING THAT THIS AFFECTS THE TEST SET TOO (MATHEMATICALLY INCORRECT)
+    #emptySequences = df_transformed.loc[df_transformed.loc[:,'Artificial_Labels'].map(len) < 1].index.values
+    #df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
+
+    emptySequences = []
+
+    # KEEP THE MAPPING TO THE TRAIN-TEST SPLIT
+    fold_split_updated = np.arange(len(fold_split) - len(np.intersect1d(fold_split, emptySequences)))
     
     # 3. Print dataset information
     # BUG
     print("--Dataset Info:\n", df_transformed.describe(include="all"), "\n\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
     #print("--Dataset Info:\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
-    return df_transformed
+    return (df_transformed, fold_split_updated)
 
 
 # MAIN
@@ -357,13 +383,12 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "load"
-if mode == "save":
-    df = load_dataset()
-    generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
-    quit()
-elif mode == "load":
-    df = load_from_files()
+# mode = "load"
+# if mode == "save":
+#     df = load_dataset()
+#     generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
+#     quit()
+
 
 # IMDb only
 if dataset_name == "IMDb Large Movie Review Dataset":
@@ -371,24 +396,61 @@ if dataset_name == "IMDb Large Movie Review Dataset":
     fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-if True:
-    # Model
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
-            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=8.0e-06                                                              \
-            )     
-    
-    hmm.print_average_results(decimals=3)
-    hmm.print_best_results(detailed=False, decimals=3) 
+k_fold = 10
+fscore_final = []
 
-    #hmm.print_probability_parameters()
-    #print(hmm.cross_val_prediction_matrix[0])
+if True:
+    # 1. Load the Dataset from file
+    df = load_dataset()
+
+    # 2. Split into Train and Test
+    cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
+
+    for train_index, test_index in cross_val.split(df.loc[:, "Data"], df.loc[:, "Labels"]):
+        # The last 10% of data are dedicated to the Test Set
+        fold_split = np.arange(len(train_index))
+
+        # 3. Generate labels for current cross-validation fold
+        data_train = df.loc[:, "Data"].values[train_index]
+        data_test = df.loc[:, "Data"].values[test_index]
+        data_total = df.loc[:, "Data"].values
+        labels_train = df.loc[:, "Labels"].values[train_index]
+        labels_test = df.loc[:, "Labels"].values[test_index]
+        labels_total = df.loc[:, "Labels"].values
+
+        mode = "load"
+        if mode == "save":
+            generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2000)  # High Performance
+
+        # 4. Load the labels
+        return_tuple = load_from_files(fold_split)
+        df = return_tuple[0]
+        fold_split = return_tuple[1]
+
+        # SOME ABSURD CRAZY BUG, WHEN I SELECT THE LAST 1068 INSTANCES IT GIVES 50%, WHEN ANYTHING ELSE IT WORKS CORRECTLY
+        #fold_split = np.arange(1066, 10662)
+        #quit()
+
+        # 5. Go
+
+        # Model
+        hmm = HMM_Framework.HMM_Framework()
+        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
+                state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+                text_instead_of_sequences=[], text_enable=False,                                                                              \
+                n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
+                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+                pome_algorithm_t="map",                                                                                                       \
+                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+                architecture_b_algorithm="forward", formula_magic_smoothing=0.0001                                                             \
+                )     
+        
+        hmm.print_average_results(decimals=3)
+        hmm.print_best_results(detailed=False, decimals=3) 
+
+        #hmm.print_probability_parameters()
+        #print(hmm.cross_val_prediction_matrix[0])
+        quit()
 
 elif False:
     # ensemble

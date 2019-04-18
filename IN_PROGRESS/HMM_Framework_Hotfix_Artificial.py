@@ -389,15 +389,13 @@ class HMM_Framework:
         self.k_fold = k_fold
 
         self.check_input_type(state_labels_pandas, observations_pandas, golden_truth_pandas, text_instead_of_sequences, text_enable)
-        self.verify_and_autodetect()
+        print("Warning: Verify and Autodetect is disabled")
+        #self.verify_and_autodetect()
 
         if text_enable == False:
             self.length = len(self.observations)
         else:
             self.length = len(self.text_data)
-
-        self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag, hohmm_check=(hohmm_high_order, architecture_b_algorithm))
-        self.set_unique_states()
 
         self.check_architecture_selection(architecture_b_algorithm)
 
@@ -416,9 +414,37 @@ class HMM_Framework:
             print(train_index, len(train_index))
             print(test_index, len(test_index))
         
+        import Run_Artificial_Hotfix_Inside_Framework as RAHIF
+        self.golden_truth = copy.deepcopy(golden_truth_pandas.values) 
 
-        if True:  # Used only with IMDb dataset and with the Artificial Approach
-        #for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
+        for train_index, test_index in cross_val.split(text_instead_of_sequences, self.golden_truth):
+            print(train_index)
+
+            # X.1 Generate labels for current cross-validation fold
+            data_train = text_instead_of_sequences.values[train_index]
+            data_test = text_instead_of_sequences.values[test_index]
+            data_total = text_instead_of_sequences.values
+            labels_train = self.golden_truth[train_index]
+            labels_test = self.golden_truth[test_index]
+            labels_total = self.golden_truth
+
+            mode = "save"
+            if mode == "save":
+                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=300)  # High Performance
+
+            # X.2 Load the labels
+            return_tuple = RAHIF.load_from_files()
+            df = return_tuple[0]
+            _ = return_tuple[1]  # Was supposed to be used for removing empty sequences
+
+            #print(data_total[0:2])
+            #quit()
+
+            # X.3 Assign to local variables
+            #self.golden_truth = self.golden_truth.values
+            self.observations = copy.deepcopy(df.loc[:, "Words"].values)
+            self.state_labels = copy.deepcopy(df.loc[:, "Artificial_Labels"].values)
+
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 
@@ -434,6 +460,10 @@ class HMM_Framework:
             print("\nGolden Truth Test:", y_test[0:3])
             print("\nLENGTH Test:", len(state_test), len(obs_test), len(y_test))
             #quit()
+
+
+            self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag, hohmm_check=(hohmm_high_order, architecture_b_algorithm))
+            self.set_unique_states()
 
             if boosting == True:
                 self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \
@@ -461,7 +491,8 @@ class HMM_Framework:
                 self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
             self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
 
-
+            print(self.cross_val_metrics["F1-score"])
+            quit()
 
             self.reset()
 

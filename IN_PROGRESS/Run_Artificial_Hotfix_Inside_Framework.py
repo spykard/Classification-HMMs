@@ -268,17 +268,19 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
 
     #pipeline.fit(data_train, labels_train)
 
-    pipeline.fit(data_total, labels_total)  # This is technically incorrect and should be performed only on the training set but whatever
+    pipeline.fit(data_test, labels_test)  # This is technically incorrect and should be performed only on the training set but whatever
 
     # 2. Get vocabulary
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
+    #print(len(vocab))
+    #quit()
     selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
     vocab = [vocab[i] for i in selected_indices]    
 
     # 3. Generate labels to file
-    batch_count = 4
-    data = list(data_train)
-    labels = list(labels_train)
+    batch_count = 5
+    data = list(data_total)
+    labels = list(labels_total)
 
     # print(data[0]) 
     # print(list(data_test)[0])       
@@ -299,7 +301,8 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
     p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], set(vocab), vocab, pipeline, 3, False))
     p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, pipeline, 4, False)) 
     # Batch 5 is the Test Set    
-    p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(list(data_test), list(labels_train), set(vocab), vocab, pipeline, 5, False))
+    p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[4], batch_labels[4], set(vocab), vocab, pipeline, 5, False)) 
+    #p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(list(data_test), list(labels_train), set(vocab), vocab, pipeline, 5, False))
 
     p1.start()
     p2.start()
@@ -315,7 +318,7 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
 
     print("\nSaved to files successfully.")
 
-def load_from_files(fold_split):
+def load_from_files():
     """
     Load everything, including the artificial label information, from files.
     """
@@ -355,14 +358,15 @@ def load_from_files(fold_split):
     df_transformed = pd.DataFrame({'Artificial_Labels': batch_cluster_labels, 'Words': batch_data, 'Labels': batch_golden_truth})
 
     # 2. Remove empty instances from DataFrame, actually affects accuracy
-    # WORTH NOTING THAT THIS AFFECTS THE TEST SET TOO (MATHEMATICALLY INCORRECT)
+    # WORTH NOTING THAT THIS AFFECTS THE TEST SET TOO (MATHEMATICALLY INCORRECT) SO LET'S NOT DO IT
     #emptySequences = df_transformed.loc[df_transformed.loc[:,'Artificial_Labels'].map(len) < 1].index.values
     #df_transformed = df_transformed.drop(emptySequences, axis=0).reset_index(drop=True)  # reset_Index to make the row numbers be consecutive again
 
-    emptySequences = []
+    #emptySequences = []
 
     # KEEP THE MAPPING TO THE TRAIN-TEST SPLIT
-    fold_split_updated = np.arange(len(fold_split) - len(np.intersect1d(fold_split, emptySequences)))
+    #fold_split_updated = np.arange(len(fold_split) - len(np.intersect1d(fold_split, emptySequences)))
+    fold_split_updated = None
     
     # 3. Print dataset information
     # BUG
@@ -389,6 +393,9 @@ def load_from_files(fold_split):
 #     generate_artificial_labels(df, mode="classic", feature_count=2000)  # High Performance
 #     quit()
 
+# 1. Load the Dataset from file
+df = load_dataset()
+
 
 # IMDb only
 if dataset_name == "IMDb Large Movie Review Dataset":
@@ -396,61 +403,25 @@ if dataset_name == "IMDb Large Movie Review Dataset":
     fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-k_fold = 10
-fscore_final = []
-
 if True:
-    # 1. Load the Dataset from file
-    df = load_dataset()
+    # Model
+    hmm = HMM_Framework_Hotfix_Artificial.HMM_Framework()
+    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
+            state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=df.loc[:,"Labels"], \
+            text_instead_of_sequences=df.loc[:, "Data"], text_enable=True,                                                                              \
+            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
+            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+            pome_algorithm_t="map",                                                                                                       \
+            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+            architecture_b_algorithm="forward", formula_magic_smoothing=0.0001                                                             \
+            )     
+    
+    hmm.print_average_results(decimals=3)
+    hmm.print_best_results(detailed=False, decimals=3) 
 
-    # 2. Split into Train and Test
-    cross_val = RepeatedStratifiedKFold(n_splits=k_fold, n_repeats=1, random_state=random_state)
-
-    for train_index, test_index in cross_val.split(df.loc[:, "Data"], df.loc[:, "Labels"]):
-        # The last 10% of data are dedicated to the Test Set
-        fold_split = np.arange(len(train_index))
-
-        # 3. Generate labels for current cross-validation fold
-        data_train = df.loc[:, "Data"].values[train_index]
-        data_test = df.loc[:, "Data"].values[test_index]
-        data_total = df.loc[:, "Data"].values
-        labels_train = df.loc[:, "Labels"].values[train_index]
-        labels_test = df.loc[:, "Labels"].values[test_index]
-        labels_total = df.loc[:, "Labels"].values
-
-        mode = "load"
-        if mode == "save":
-            generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2000)  # High Performance
-
-        # 4. Load the labels
-        return_tuple = load_from_files(fold_split)
-        df = return_tuple[0]
-        fold_split = return_tuple[1]
-
-        # SOME ABSURD CRAZY BUG, WHEN I SELECT THE LAST 1068 INSTANCES IT GIVES 50%, WHEN ANYTHING ELSE IT WORKS CORRECTLY
-        #fold_split = np.arange(1066, 10662)
-        #quit()
-
-        # 5. Go
-
-        # Model
-        hmm = HMM_Framework_Hotfix_Artificial.HMM_Framework()
-        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
-                state_labels_pandas=df.loc[:,"Artificial_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-                text_instead_of_sequences=[], text_enable=False,                                                                              \
-                n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
-                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-                pome_algorithm_t="map",                                                                                                       \
-                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-                architecture_b_algorithm="forward", formula_magic_smoothing=0.0001                                                             \
-                )     
-        
-        hmm.print_average_results(decimals=3)
-        hmm.print_best_results(detailed=False, decimals=3) 
-
-        #hmm.print_probability_parameters()
-        #print(hmm.cross_val_prediction_matrix[0])
-        quit()
+    #hmm.print_probability_parameters()
+    #print(hmm.cross_val_prediction_matrix[0])
+    quit()
 
 elif False:
     # ensemble

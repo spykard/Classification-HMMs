@@ -430,7 +430,7 @@ class HMM_Framework:
 
             mode = "save"
             if mode == "save":
-                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=3000)  # High Performance
+                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2800)  # High Performance
 
             # X.2 Load the labels
             return_tuple = RAHIF.load_from_files()
@@ -489,8 +489,8 @@ class HMM_Framework:
                 self.ensemble_stored["Mapping"].append(self.hmm_to_label_mapping)
             self.ensemble_stored["Curr_Cross_Val_Golden_Truth"].append(y_test)
 
-            print(self.cross_val_metrics["F1-score"])
-            quit()
+            #print(self.cross_val_metrics["F1-score"])
+            #quit()
 
             self.reset()
 

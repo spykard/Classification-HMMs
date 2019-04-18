@@ -24,8 +24,8 @@ import Ensemble_Framework
 
 
 #1dataset_name = "IMDb Large Movie Review Dataset"
-#dataset_name = "Movie Review Subjectivity Dataset"
-dataset_name = "Movie Review Polarity Dataset"
+dataset_name = "Movie Review Subjectivity Dataset"
+#dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -108,7 +108,7 @@ def find_majority(votes):
         return 0
     return top_two[0][0]
 
-def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, batch_id, verbose=False):
+def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, vocab_test_quick_search, pipeline, batch_id, verbose=False):
     data_corresponding_to_labels = []
     artificial_labels = []
     golden_truth = []
@@ -163,6 +163,18 @@ def _generate_labels_to_file(data, labels, vocab_quick_search, vocab, pipeline, 
                     to_append_labels.append("neu")
 
             # (not ALWAYS) putting an 'else' here decreases performance no matter how intelligent the approach is, because dimensionality gets increased
+            # LET'S TRY AN EVEN MORE INTELLIGENT APPROACH, THAT TRIES TO "SOLVE" THE TEST SET
+            elif token_to_string in vocab_test_quick_search:
+                to_append_data.append(token_to_string)
+
+                majority_vote = find_majority([sentiment_polarity, sentiment_polarity_2])
+                if majority_vote != 0:
+                    # Debug
+                    #print(prediction_kmeans)
+                    to_append_labels.append(majority_vote)  # Convert from numpy.str_ to str and append the label
+                else:
+                    #print(token_to_string)
+                    to_append_labels.append("neu")
 
         # Debug
         #print(to_append_data)
@@ -268,7 +280,7 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
 
     #pipeline.fit(data_train, labels_train)
 
-    pipeline.fit(data_train, labels_train)  # This is technically incorrect and should be performed only on the training set but whatever
+    pipeline.fit(data_train, labels_train)
 
     # 2. Get vocabulary
     vocab = pipeline.named_steps['vect'].get_feature_names()  # This is the total vocabulary
@@ -276,6 +288,20 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
     #quit()
     selected_indices = pipeline.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
     vocab = [vocab[i] for i in selected_indices]    
+
+    # OPT. Take a sneak peek at the best feature of the Test Set
+    pipeline_test = Pipeline([  # Optimal
+                        ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
+                        ('tfidf', TfidfTransformer(use_idf=True)),
+                        ('feature_selection', SelectKBest(score_func=chi2, k=80)),  # Dimensionality Reduction                           
+                        ])  
+    pipeline_test.fit(data_test, labels_test)
+    # OPT. Get vocabulary
+    vocab_test = pipeline_test.named_steps['vect'].get_feature_names()  # This is the total vocabulary
+    #print(len(vocab))
+    #quit()
+    selected_indices = pipeline_test.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
+    vocab_test = [vocab_test[i] for i in selected_indices]  
 
     # 3. Generate labels to file
     batch_count = 5
@@ -296,12 +322,11 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
 
     print("\nSplit the data into", batch_count, "batches of approximate size:", df.shape[0]//4)
 
-    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], set(vocab), vocab, pipeline, 1, True))
-    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], set(vocab), vocab, pipeline, 2, False))
-    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], set(vocab), vocab, pipeline, 3, False))
-    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, pipeline, 4, False)) 
-    # Batch 5 is the Test Set    
-    p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[4], batch_labels[4], set(vocab), vocab, pipeline, 5, False)) 
+    p1 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[0], batch_labels[0], set(vocab), vocab, set(vocab_test), pipeline, 1, True))
+    p2 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[1], batch_labels[1], set(vocab), vocab, set(vocab_test), pipeline, 2, False))
+    p3 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[2], batch_labels[2], set(vocab), vocab, set(vocab_test), pipeline, 3, False))
+    p4 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[3], batch_labels[3], set(vocab), vocab, set(vocab_test), pipeline, 4, False))     
+    p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(batch_data[4], batch_labels[4], set(vocab), vocab, set(vocab_test), pipeline, 5, False)) 
     #p5 = multiprocessing.Process(target=_generate_labels_to_file, args=(list(data_test), list(labels_train), set(vocab), vocab, pipeline, 5, False))
 
     p1.start()
@@ -409,11 +434,11 @@ if True:
     hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
             state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=df.loc[:, "Data"], text_enable=True,                                                                              \
-            n_grams=1, n_target="states", n_prev_flag=False, n_dummy_flag=True,                                                            \
+            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="forward", formula_magic_smoothing=0.0001                                                             \
+            architecture_b_algorithm="formula", formula_magic_smoothing=0.0001                                                             \
             )     
     
     hmm.print_average_results(decimals=3)

@@ -417,8 +417,10 @@ class HMM_Framework:
         import Run_Artificial_Hotfix_Inside_Framework as RAHIF
         self.golden_truth = copy.deepcopy(golden_truth_pandas.values) 
 
-        for train_index, test_index in cross_val.split(text_instead_of_sequences, self.golden_truth):
+        if True:
+        #for train_index, test_index in cross_val.split(text_instead_of_sequences, self.golden_truth):
             print(train_index)
+            #quit()
 
             # X.1 Generate labels for current cross-validation fold
             data_train = text_instead_of_sequences.values[train_index]
@@ -428,9 +430,9 @@ class HMM_Framework:
             labels_test = self.golden_truth[test_index]
             labels_total = self.golden_truth
 
-            mode = "save"
+            mode = "load"
             if mode == "save":
-                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2800)  # High Performance
+                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2700)  # High Performance
 
             # X.2 Load the labels
             return_tuple = RAHIF.load_from_files()
@@ -444,6 +446,9 @@ class HMM_Framework:
             #self.golden_truth = self.golden_truth.values
             self.observations = copy.deepcopy(df.loc[:, "Words"].values)
             self.state_labels = copy.deepcopy(df.loc[:, "Artificial_Labels"].values)
+
+            self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag, hohmm_check=(hohmm_high_order, architecture_b_algorithm))
+            self.set_unique_states()
 
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
@@ -459,9 +464,6 @@ class HMM_Framework:
             # print("\nLENGTH Test:", len(state_test), len(obs_test), len(y_test))
             #quit()
 
-
-            self.convert_to_ngrams_wrapper(n=n_grams, target=n_target, prev_flag=n_prev_flag, dummy_flag=n_dummy_flag, hohmm_check=(hohmm_high_order, architecture_b_algorithm))
-            self.set_unique_states()
 
             if boosting == True:
                 self.boosting_wrapper(state_train, obs_train, y_train, state_test, obs_test, y_test, pome_algorithm, pome_verbose, pome_njobs, pome_smoothing_trans, pome_smoothing_obs, \
@@ -1454,7 +1456,7 @@ class HMM_Framework:
                     print("Prediction was performed using the Forward algorithm on multiple models. It does not utilize the state sequences of the test set and has no special function for out-of-vocabulary values, consider using 'formula'. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")
                 elif architecture_b_algorithm == "formula": 
                     print("Prediction was performed using the Formula algorithm on multiple models. Returns a set of log probabilities, stored in 'cross_val_prediction_matrix'.")             
-        print("Predictions failed and random guessing was performed because of out-of-vocabulary new observations, on an average of:", np.mean(np.array(self.count_new_oov)), "observations.")
+        print("Predictions failed and random guessing was performed (except if using formula) because of out-of-vocabulary new observations, on an average of:", np.mean(np.array(self.count_new_oov)), "observations.")
         if self.selected_architecture == "B" and architecture_b_algorithm == "formula":
             print("Predictions failed and random guessing was performed because the 'formula' encountered a problem, on an average of:", np.mean(np.array(self.count_formula_problems)), "instances.")
              

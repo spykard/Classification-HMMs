@@ -12,6 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.naive_bayes import ComplementNB
+from sklearn.linear_model import LogisticRegression
 from nltk.tokenize import word_tokenize
 from sklearn.model_selection import RepeatedStratifiedKFold
 
@@ -23,8 +24,8 @@ import HMM_Framework_Hotfix_Artificial
 import Ensemble_Framework
 
 
-#1dataset_name = "IMDb Large Movie Review Dataset"
-dataset_name = "Movie Review Subjectivity Dataset"
+dataset_name = "IMDb Large Movie Review Dataset"
+#dataset_name = "Movie Review Subjectivity Dataset"
 #dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
@@ -274,8 +275,9 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
     pipeline = Pipeline([  # Optimal
                         ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
                         ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=feature_count)),  # Dimensionality Reduction                           
+                        ('feature_selection', SelectKBest(score_func=chi2, k=feature_count)),  # Dimensionality Reduction                          
                         ('clf', ComplementNB()),
+                        #('clf', LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state)),  # Doesn't help
                         ])  
 
     #pipeline.fit(data_train, labels_train)
@@ -293,12 +295,12 @@ def generate_artificial_labels(data_train, data_test, labels_train, labels_test,
     pipeline_test = Pipeline([  # Optimal
                         ('vect', CountVectorizer(max_df=0.90, min_df=5, ngram_range=(1, 1), stop_words='english', strip_accents='unicode')),  # 1-Gram Vectorizer
                         ('tfidf', TfidfTransformer(use_idf=True)),
-                        ('feature_selection', SelectKBest(score_func=chi2, k=80)),  # Dimensionality Reduction                           
+                        ('feature_selection', SelectKBest(score_func=chi2, k=280)),  # Dimensionality Reduction                           
                         ])  
     pipeline_test.fit(data_test, labels_test)
     # OPT. Get vocabulary
     vocab_test = pipeline_test.named_steps['vect'].get_feature_names()  # This is the total vocabulary
-    #print(len(vocab))
+    #print(len(vocab_test))
     #quit()
     selected_indices = pipeline_test.named_steps['feature_selection'].get_support(indices=True)  # This is the vocabulary after feature selection
     vocab_test = [vocab_test[i] for i in selected_indices]  
@@ -431,14 +433,14 @@ if dataset_name == "IMDb Large Movie Review Dataset":
 if True:
     # Model
     hmm = HMM_Framework_Hotfix_Artificial.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
+    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
             state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=df.loc[:,"Labels"], \
             text_instead_of_sequences=df.loc[:, "Data"], text_enable=True,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=False,                                                            \
+            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
             pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
             pome_algorithm_t="map",                                                                                                       \
             hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0001                                                             \
+            architecture_b_algorithm="formula", formula_magic_smoothing=6.0e-06                                                             \
             )     
     
     hmm.print_average_results(decimals=3)

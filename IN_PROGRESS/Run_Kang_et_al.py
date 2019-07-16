@@ -295,73 +295,74 @@ def load_from_files():
 #       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
 #       Any Framework Prediction Settings (Architecture B)
 
-mode = "load"
-if mode == "save":
-    df = load_dataset()
-    generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
-    quit()
-elif mode == "load":
-    df = load_from_files()
+if __name__ == "__main__":
+    mode = "load"
+    if mode == "save":
+        df = load_dataset()
+        generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
+        quit()
+    elif mode == "load":
+        df = load_from_files()
 
-# IMDb only
-if dataset_name == "IMDb Large Movie Review Dataset":
-    df_init = load_dataset()
-    fold_split = df_init.index[df_init["Type"] == "train"].values
+    # IMDb only
+    if dataset_name == "IMDb Large Movie Review Dataset":
+        df_init = load_dataset()
+        fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-if False:
-    # Model
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-            )     
-    
-    hmm.print_average_results(decimals=3)
-    hmm.print_best_results(detailed=False, decimals=3) 
+    if False:
+        # Model
+        hmm = HMM_Framework.HMM_Framework()
+        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
+                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+                text_instead_of_sequences=[], text_enable=False,                                                                              \
+                n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+                pome_algorithm_t="map",                                                                                                       \
+                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+                )     
+        
+        hmm.print_average_results(decimals=3)
+        hmm.print_best_results(detailed=False, decimals=3) 
 
-    #hmm.print_probability_parameters()
-    #print(hmm.cross_val_prediction_matrix[0])
+        #hmm.print_probability_parameters()
+        #print(hmm.cross_val_prediction_matrix[0])
 
-elif True:
-    # ensemble
-    cross_val_prediction_matrix = []
-    mapping = []
-    golden_truth = []
+    elif True:
+        # ensemble
+        cross_val_prediction_matrix = []
+        mapping = []
+        golden_truth = []
 
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-            )     
+        hmm = HMM_Framework.HMM_Framework()
+        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
+                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+                text_instead_of_sequences=[], text_enable=False,                                                                              \
+                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+                pome_algorithm_t="map",                                                                                                       \
+                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
+                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+                )     
 
-    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
-    mapping.append(hmm.ensemble_stored["Mapping"])
-    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+        cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
+        mapping.append(hmm.ensemble_stored["Mapping"])
+        golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    hmm = HMM_Framework.HMM_Framework()
-    hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
-            state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-            text_instead_of_sequences=[], text_enable=False,                                                                              \
-            n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-            pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-            pome_algorithm_t="map",                                                                                                       \
-            hohmm_high_order=1, hohmm_smoothing=1.5, hohmm_synthesize=False,                                                              \
-            architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-            )     
+        hmm = HMM_Framework.HMM_Framework()
+        hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
+                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
+                text_instead_of_sequences=[], text_enable=False,                                                                              \
+                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
+                pome_algorithm_t="map",                                                                                                       \
+                hohmm_high_order=1, hohmm_smoothing=1.5, hohmm_synthesize=False,                                                              \
+                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
+                )     
 
-    cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
-    mapping.append(hmm.ensemble_stored["Mapping"])
-    golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
+        cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
+        mapping.append(hmm.ensemble_stored["Mapping"])
+        golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
 
-    Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.6, 0.4])
+        Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.6, 0.4])

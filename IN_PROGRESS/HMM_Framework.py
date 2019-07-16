@@ -518,7 +518,7 @@ class HMM_Framework:
         index_sets = [np.where(i == y_train) for i in unique_golden_truths]
         for j in index_sets:            
             state_new, obs_new = self.validate_architecture_b_consistency(state_train[j], obs_train[j])  # Vital validation and transformation of the subsets, to avoid inconsistent number of states and observations across subsets
-            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_new, labels=state_new, weights=weights,         \
+            pome_HMM = pome.HiddenMarkovModel.from_samples(pome.DiscreteDistribution, n_components=len(self.unique_states_subset), X=obs_new, labels=state_new, weights=weights[j],         \
                                                         algorithm=pome_algorithm, end_state=False, transition_pseudocount=pome_smoothing_trans, emission_pseudocount=pome_smoothing_obs, \
                                                         max_iterations=1, state_names=sorted(list(self.unique_states_subset)),                                                           \
                                                         verbose=pome_verbose, n_jobs=pome_njobs                                                                                          \

@@ -390,10 +390,16 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print(tfidf_dense.shape)
     #quit()
 
+
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.ensemble import RandomForestClassifier
+
+    #clf = KNeighborsClassifier(40)
+    clf = RandomForestClassifier(max_depth=None)
     #clf = ComplementNB() # 1
     #clf = DecisionTreeClassifier(random_state=random_state) # 2
     #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.
-    clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
+    #clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
 
     
     clf.fit(tfidf_dense, labels_train)

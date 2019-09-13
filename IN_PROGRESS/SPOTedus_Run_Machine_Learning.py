@@ -395,7 +395,7 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     from sklearn.ensemble import RandomForestClassifier
 
     #clf = KNeighborsClassifier(40)
-    clf = RandomForestClassifier(max_depth=None)
+    clf = RandomForestClassifier(max_depth=None)  #clf = RandomForestClassifier(max_depth=None, max_features=10)
     #clf = ComplementNB() # 1
     #clf = DecisionTreeClassifier(random_state=random_state) # 2
     #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.

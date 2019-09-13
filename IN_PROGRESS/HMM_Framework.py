@@ -435,8 +435,9 @@ class HMM_Framework:
                 #weights = None
             #print(weights)
             #quit()
-            weights = None
-        
+            weights = np.ones(len(state_train)) # Equivalent to weights = None but actually correct
+
+
 
             time_counter = time.time()
             # Training Phase

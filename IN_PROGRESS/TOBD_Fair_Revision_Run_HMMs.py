@@ -20,20 +20,90 @@ random_state = 22
 
 def find_majority(votes):
     if(len(votes) == 0):
-        return 0
+        return "0"
     
     vote_count = Counter(votes)
     top_two = vote_count.most_common(2)
     if len(top_two)>1 and top_two[0][1] == top_two[1][1]:
         # It is a tie
-        return 0
+        return "0"
     return top_two[0][0]
 
-data = ["" for i in range(2031)]
-sequences = [[] for i in range(2031)]
-labels = ["" for i in range(2031)]
+data = [[] for i in range(2548)]
+sequences = [[] for i in range(2548)]
+labels = ["" for i in range(2548)]
 count = 0
 for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/cars"):
+    for name in files:
+        if name.startswith("._") != True and name.startswith("featureTaxonomy") != True:
+            fullpath = os.path.join(root, name)
+            handler = open(fullpath).read()
+            soup = BeautifulSoup(handler, "lxml")
+
+            rating = soup.find('review').attrs['rating']
+            if int(rating) >= 1 and int(rating) <= 2:
+                labels[count] = "neg"
+            elif int(rating) == 3:
+                labels[count] = "neu"
+            elif int(rating) >= 4 and int(rating) <= 5:
+                labels[count] = "pos"
+            
+            for tag in soup.find('text').select('sentence'):  # for every single sentence
+                opinion = tag.findAll('opinion')
+                polarities_of_sentence = []
+                for tag_2 in opinion:
+                    polarities_of_sentence.append(tag_2.attrs['polarity'])
+                polarity = find_majority(polarities_of_sentence)
+                if polarity == "+":
+                    sequences[count].append("pos") 
+                elif polarity == "-":   
+                    sequences[count].append("neg") 
+                elif polarity == "0":
+                    sequences[count].append("neu") 
+
+                temp_sentence = tag.get_text().split()
+                temp_sentence_final = ""
+                for word in temp_sentence:
+                    temp_sentence_final += re.sub(r'\(.*\)', "", word) + " "
+                data[count].append(temp_sentence_final) 
+            count += 1
+
+for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/headphones"):
+    for name in files:
+        if name.startswith("._") != True and name.startswith("featureTaxonomy") != True:
+            fullpath = os.path.join(root, name)
+            handler = open(fullpath).read()
+            soup = BeautifulSoup(handler, "lxml")
+
+            rating = soup.find('review').attrs['rating']
+            if int(rating) >= 1 and int(rating) <= 2:
+                labels[count] = "neg"
+            elif int(rating) == 3:
+                labels[count] = "neu"
+            elif int(rating) >= 4 and int(rating) <= 5:
+                labels[count] = "pos"
+            
+            for tag in soup.find('text').select('sentence'):  # for every single sentence
+                opinion = tag.findAll('opinion')
+                polarities_of_sentence = []
+                for tag_2 in opinion:
+                    polarities_of_sentence.append(tag_2.attrs['polarity'])
+                polarity = find_majority(polarities_of_sentence)
+                if polarity == "+":
+                    sequences[count].append("pos") 
+                elif polarity == "-":   
+                    sequences[count].append("neg") 
+                elif polarity == "0":
+                    sequences[count].append("neu") 
+
+                temp_sentence = tag.get_text().split()
+                temp_sentence_final = ""
+                for word in temp_sentence:
+                    temp_sentence_final += re.sub(r'\(.*\)', "", word) + " "
+                data[count].append(temp_sentence_final) 
+            count += 1
+
+for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/hotels"):
     for name in files:
         if name.startswith("._") != True and name.startswith("featureTaxonomy") != True:
             fullpath = os.path.join(root, name)
@@ -63,73 +133,10 @@ for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/cars"):
                     sequences[count].append("neu") 
 
                 temp_sentence = tag.get_text().split()
+                temp_sentence_final = ""
                 for word in temp_sentence:
-                    data[count] += re.sub(r'\(.*\)', "", word) + " "
-
-            print(data[count])
-            print(sequences[count])
-
-            input("Press Enter...\n\n")
-            count += 1
-
-for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/headphones"):
-    for name in files:
-        if name.startswith("._") != True and name.startswith("featureTaxonomy") != True:
-            fullpath = os.path.join(root, name)
-            handler = open(fullpath).read()
-            soup = BeautifulSoup(handler, "lxml")
-
-            rating = soup.find('review').attrs['rating']
-            if int(rating) >= 1 and int(rating) <= 2:
-                labels[count] = "neg"
-            elif int(rating) <= 3:
-                continue
-                #labels[count] = "neu"
-            elif int(rating) >= 4 and int(rating) <= 5:
-                labels[count] = "pos"
-            
-            for tag in soup.find('text').findAll('opinion'):
-                polarity = tag.attrs['polarity']
-                if polarity == "+":
-                    sequences[count].append("pos") 
-                elif polarity == "-":   
-                    sequences[count].append("neg")              
-
-            for sentence in soup.find('text').findAll('sentence'):
-                temp_sentence = sentence.get_text().split()
-                for word in temp_sentence:
-                    data[count] += re.sub(r'\(.*\)', "", word) + " "
-
-            count += 1
-
-for root, _, files in os.walk("./Datasets/Taxonomy-Based Opinion Dataset/hotels"):
-    for name in files:
-        if name.startswith("._") != True and name.startswith("featureTaxonomy") != True:
-            fullpath = os.path.join(root, name)
-            handler = open(fullpath).read()
-            soup = BeautifulSoup(handler, "lxml")
-
-            rating = soup.find('review').attrs['rating']
-            if int(rating) >= 1 and int(rating) <= 2:
-                labels[count] = "neg"
-            elif int(rating) <= 3:
-                continue
-                #labels[count] = "neu"
-            elif int(rating) >= 4 and int(rating) <= 5:
-                labels[count] = "pos"
-            
-            for tag in soup.find('text').findAll('opinion'):
-                polarity = tag.attrs['polarity']
-                if polarity == "+":
-                    sequences[count].append("pos") 
-                elif polarity == "-":   
-                    sequences[count].append("neg")              
-
-            for sentence in soup.find('text').findAll('sentence'):
-                temp_sentence = sentence.get_text().split()
-                for word in temp_sentence:
-                    data[count] += re.sub(r'\(.*\)', "", word) + " "
-
+                    temp_sentence_final += re.sub(r'\(.*\)', "", word) + " "
+                data[count].append(temp_sentence_final) 
             count += 1
 
 print("--\n--Processed", count+1, "documents", "\n--Dataset Name:", dataset_name)
@@ -145,7 +152,7 @@ if True:
     df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
 # 4. Print dataset information
-print("--Dataset Info:\n", df.describe(include="all"), "\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
+print("--Dataset Info:\n\n\n", df.head(3), "\n\n", df.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
 # 5. Balance the Dataset by Undersampling
 if False:
@@ -187,7 +194,7 @@ if False:
     hmm.print_average_results(decimals=3)
     hmm.print_best_results(detailed=False, decimals=3) 
 
-elif False:
+elif True:
     #  Model
     #  Just for State-emission HMM, might need to remove the "mix" label during preprocessing.
     hmm = HMM_Framework.HMM_Framework()

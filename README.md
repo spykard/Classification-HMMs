@@ -1,5 +1,11 @@
 # Dependencies
 
+### `function_xxx()`
+
+`function_yyy()`
+
+# Dependencies
+
 ```
 Python >= 3.6
 ```

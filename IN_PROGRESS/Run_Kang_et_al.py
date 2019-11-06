@@ -299,7 +299,7 @@ if __name__ == "__main__":
     mode = "load"
     if mode == "save":
         df = load_dataset()
-        generate_cluster_labels(df, mode="matlab", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
+        generate_cluster_labels(df, mode="spherical", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
         quit()
     elif mode == "load":
         df = load_from_files()
@@ -316,7 +316,7 @@ if __name__ == "__main__":
         hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
                 state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
                 text_instead_of_sequences=[], text_enable=False,                                                                              \
-                n_grams=2, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
+                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
                 pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
                 pome_algorithm_t="map",                                                                                                       \
                 hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \

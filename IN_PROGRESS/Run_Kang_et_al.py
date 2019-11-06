@@ -20,7 +20,7 @@ import string
 from re import sub
 from nltk.stem import WordNetLemmatizer
 
-import matlab.engine
+#import matlab.engine
 import HMM_Framework
 import Ensemble_Framework
 
@@ -310,7 +310,7 @@ if __name__ == "__main__":
         fold_split = df_init.index[df_init["Type"] == "train"].values
 
 
-    if False:
+    if True:
         # Model
         hmm = HMM_Framework.HMM_Framework()
         hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \

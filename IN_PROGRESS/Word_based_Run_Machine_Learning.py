@@ -45,9 +45,9 @@ cross_validation_average = defaultdict(list)                  # {Name: (Avg(Accu
 time_complexity_average = defaultdict(list)                   # {Name: [Avg(Train+Test_Time)]
 
 
-#dataset_name = "IMDb Large Movie Review Dataset"
+dataset_name = "IMDb Large Movie Review Dataset"
 #dataset_name = "Movie Review Subjectivity Dataset"
-dataset_name = "Movie Review Polarity Dataset"
+#dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 
@@ -383,10 +383,15 @@ for k, (train_indexes, test_indexes) in enumerate(k_fold.split(all_data, all_lab
     print(tfidf_matrix.shape)
     #quit()
 
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.ensemble import RandomForestClassifier
+
     #clf = ComplementNB() # 1
     #clf = DecisionTreeClassifier(random_state=random_state) # 2
     #clf = LogisticRegression(penalty='l2', solver='lbfgs', multi_class='multinomial', max_iter=1000, C=1.0, n_jobs=1, random_state=random_state) # 3, solver : str, {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}, default: ‘liblinear’.
-    clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
+    #clf = LinearSVC(penalty='l2', max_iter=1000, dual=True, random_state=random_state) # 4
+    clf = KNeighborsClassifier(150)
+    #clf = RandomForestClassifier(max_depth=None)  #cl72f = RandomForestClassifier(max_depth=None, max_features=10)   
 
     
     clf.fit(tfidf_matrix, labels_train)

@@ -430,9 +430,9 @@ class HMM_Framework:
             labels_test = self.golden_truth[test_index]
             labels_total = self.golden_truth
 
-            mode = "load"
+            mode = "save"
             if mode == "save":
-                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2700)  # High Performance
+                RAHIF.generate_artificial_labels(data_train, data_test, labels_train, labels_test, data_total, labels_total, feature_count=2800)  # High Performance
 
             # X.2 Load the labels
             return_tuple = RAHIF.load_from_files()

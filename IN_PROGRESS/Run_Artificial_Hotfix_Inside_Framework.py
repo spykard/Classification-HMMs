@@ -1,4 +1,7 @@
 """ 
+I THINK IT IS CALLED "INSIDE_FRAMEWORK" BECAUSE DOING THE LABEL GENERATION JUST ONCE WOULD BE CHEATING
+SO WE HAVE TO RUN IT ONCE ON EACH FOLD INSIDE THE FRAMEWORK
+
 Sentiment Analysis: Text Classification using Hidden Markov Models inspired by
 an idea of mine.
 """

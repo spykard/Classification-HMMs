@@ -28,6 +28,7 @@ import Ensemble_Framework
 
 
 dataset_name = "IMDb Large Movie Review Dataset"
+#dataset_name = "Stanford Sentiment Treebank"
 #dataset_name = "Movie Review Subjectivity Dataset"
 #dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
@@ -41,6 +42,40 @@ def load_dataset():
         df = init_df[init_df.loc[:,"Labels"] != "unsup"]
 
         print("--\n--Processed", df.shape[0], "documents", "\n--Dataset Name:", dataset_name)
+
+    elif dataset_name == "Stanford Sentiment Treebank":
+        data = ["" for i in range(8741)]
+        labels = ["" for i in range(8741)]
+        type_of = ["" for i in range(8741)]
+        count = 0
+        with open('./Datasets/Stanford Sentiment Treebank/Binary/stsa.binary.train', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                if line[0] == "1":
+                    labels[count] = "pos"
+                elif line[0] == "0":
+                    labels[count] = "neg"
+                else:
+                    raise ValueError("Unexpected label (not 0 or 1)")
+                
+                data[count] = line[2:].rstrip('\n')
+                type_of[count] = "train"
+                count += 1
+        with open('./Datasets/Stanford Sentiment Treebank/Binary/stsa.binary.test', 'r', encoding='iso-8859-15') as file:
+            for line in file:
+                if line[0] == "1":
+                    labels[count] = "pos"
+                elif line[0] == "0":
+                    labels[count] = "neg"
+                else:
+                    raise ValueError("Unexpected label (not 0 or 1)")
+                
+                data[count] = line[2:].rstrip('\n')
+                type_of[count] = "test"
+                count += 1
+        
+        print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
+
+        df = pd.DataFrame({'Type': type_of, 'Data': data, 'Labels': labels})
 
     elif dataset_name == "Movie Review Subjectivity Dataset":
         data = ["" for i in range(10000)]
@@ -428,7 +463,7 @@ df = load_dataset()
 
 
 # IMDb only
-if dataset_name == "IMDb Large Movie Review Dataset":
+if dataset_name == "IMDb Large Movie Review Dataset" or dataset_name == "Stanford Sentiment Treebank":
     df_init = load_dataset()
     fold_split = df_init.index[df_init["Type"] == "train"].values
 

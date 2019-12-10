@@ -7,6 +7,9 @@ x
 
 # Dependencies
 
+Windows: Requires "__name__ == "__main__":" to run on Windows (https://stackoverflow.com/questions/24374288/where-to-put-freeze-support-in-a-python-script)  
+and also SenticNet package can't be installed 
+
 ```
 Python >= 3.6
 ```

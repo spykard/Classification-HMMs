@@ -414,7 +414,8 @@ class HMM_Framework:
             print(train_index, len(train_index))
             print(test_index, len(test_index))
         
-        import Run_Artificial_Hotfix_Inside_Framework as RAHIF
+        #import Run_Artificial_Hotfix_Inside_Framework as RAHIF
+        import AAAGenerate_Artificial as RAHIF
         self.golden_truth = copy.deepcopy(golden_truth_pandas.values) 
 
         if True:

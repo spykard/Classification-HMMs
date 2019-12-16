@@ -412,8 +412,8 @@ class HMM_Framework:
             test_index = ~select
         
 
-        #if True:  # Used only with IMDb dataset and with the Artificial Approach
-        for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
+        if True:  # Used only with IMDb dataset and with the Artificial Approach
+        #for train_index, test_index in cross_val.split(self.observations, self.golden_truth):
             state_train, obs_train, y_train = self.state_labels[train_index], self.observations[train_index], self.golden_truth[train_index]  # Needs to be ndarray<list>, not list<list>
             state_test, obs_test, y_test = self.state_labels[test_index], self.observations[test_index], self.golden_truth[test_index]
 

@@ -1,7 +1,6 @@
 """ 
-Sentiment Analysis: Text Classification using Hidden Markov Models inspired by
-Kang, M., Ahn, J., & Lee, K. (2018). Opinion mining using ensemble text hidden Markov models for text classification. Expert Systems with Applications, 94, 218-227.
-"""
+The reason for creating this file is better structure of the code as well as support for Windows OS which requires if __name__== "__main__"
+""" 
 
 import pandas as pd
 import numpy as np
@@ -26,10 +25,8 @@ import Ensemble_Framework
 
 
 #dataset_name = "IMDb Large Movie Review Dataset"
-dataset_name = "Stanford Sentiment Treebank Binary"
-#dataset_name = "Stanford Sentiment Treebank Fine"
 #dataset_name = "Movie Review Subjectivity Dataset"
-#dataset_name = "Movie Review Polarity Dataset"
+dataset_name = "Movie Review Polarity Dataset"
 random_state = 22
 
 def load_dataset():
@@ -41,86 +38,6 @@ def load_dataset():
         df = init_df[init_df.loc[:,"Labels"] != "unsup"]
 
         print("--\n--Processed", df.shape[0], "documents", "\n--Dataset Name:", dataset_name)
-
-    elif dataset_name == "Stanford Sentiment Treebank Binary":
-        data = ["" for i in range(8741)]
-        labels = ["" for i in range(8741)]
-        type_of = ["" for i in range(8741)]
-        count = 0
-        with open('./Datasets/Stanford Sentiment Treebank/Binary/stsa.binary.train', 'r', encoding='iso-8859-15') as file:
-            for line in file:
-                if line[0] == "1":
-                    labels[count] = "pos"
-                elif line[0] == "0":
-                    labels[count] = "neg"
-                else:
-                    raise ValueError("Unexpected label (not 0 or 1)")
-                
-                data[count] = line[2:].rstrip('\n')
-                type_of[count] = "train"
-                count += 1
-        with open('./Datasets/Stanford Sentiment Treebank/Binary/stsa.binary.test', 'r', encoding='iso-8859-15') as file:
-            for line in file:
-                if line[0] == "1":
-                    labels[count] = "pos"
-                elif line[0] == "0":
-                    labels[count] = "neg"
-                else:
-                    raise ValueError("Unexpected label (not 0 or 1)")
-                
-                data[count] = line[2:].rstrip('\n')
-                type_of[count] = "test"
-                count += 1
-        
-        print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
-
-        df = pd.DataFrame({'Type': type_of, 'Data': data, 'Labels': labels})
-
-    elif dataset_name == "Stanford Sentiment Treebank Fine":
-        data = ["" for i in range(10754)]
-        labels = ["" for i in range(10754)]
-        type_of = ["" for i in range(10754)]
-        count = 0
-        with open('./Datasets/Stanford Sentiment Treebank/Fine/stsa.fine.train', 'r', encoding='iso-8859-15') as file:
-            for line in file:
-                if line[0] == "4":
-                    labels[count] = "4"
-                elif line[0] == "3":
-                    labels[count] = "3"
-                elif line[0] == "2":
-                    labels[count] = "2"
-                elif line[0] == "1":
-                    labels[count] = "1"
-                elif line[0] == "0":
-                    labels[count] = "0"
-                else:
-                    raise ValueError("Unexpected label")
-                
-                data[count] = line[2:].rstrip('\n')
-                type_of[count] = "train"
-                count += 1
-        with open('./Datasets/Stanford Sentiment Treebank/Fine/stsa.fine.test', 'r', encoding='iso-8859-15') as file:
-            for line in file:
-                if line[0] == "4":
-                    labels[count] = "4"
-                elif line[0] == "3":
-                    labels[count] = "3"
-                elif line[0] == "2":
-                    labels[count] = "2"
-                elif line[0] == "1":
-                    labels[count] = "1"
-                elif line[0] == "0":
-                    labels[count] = "0"
-                else:
-                    raise ValueError("Unexpected label")
-                
-                data[count] = line[2:].rstrip('\n')
-                type_of[count] = "test"
-                count += 1
-        
-        print("--\n--Processed", count, "documents", "\n--Dataset Name:", dataset_name)
-
-        df = pd.DataFrame({'Type': type_of, 'Data': data, 'Labels': labels})
 
     elif dataset_name == "Movie Review Subjectivity Dataset":
         data = ["" for i in range(10000)]
@@ -364,87 +281,3 @@ def load_from_files():
     print("--Dataset Info:\n", df_transformed.head(3), "\n\n", df_transformed.loc[:,'Labels'].value_counts(), "\n--\n", sep="")
 
     return df_transformed
-
-
-# MAIN
-# HMM_Framework.build
-#       General Settings
-#       Data
-#       Text Scenario
-#       n-gram Settings
-#       1st Framework Training Settings (High-Order done through the n-grams Settings)
-#       1st Framework Prediction Settings (Achitecture A)
-#       2nd Framework Training Settings (High-Order done through the 'hohmm_high_order' parameter)
-#       Any Framework Prediction Settings (Architecture B)
-
-if __name__ == "__main__":
-    mode = "load"
-    if mode == "save":
-        df = load_dataset()
-        generate_cluster_labels(df, mode="spherical", n_components=700, cosine_sim_flag=False, cluster_count=60)  # High Performance
-        quit()
-    elif mode == "load":
-        df = load_from_files()
-
-    # IMDb only
-    if dataset_name == "IMDb Large Movie Review Dataset" or dataset_name.startswith("Stanford Sentiment Treebank"):
-        df_init = load_dataset()
-        fold_split = df_init.index[df_init["Type"] == "train"].values
-
-
-    if True:
-        # Model
-        hmm = HMM_Framework.HMM_Framework()
-        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=fold_split, boosting=False,                                \
-                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-                text_instead_of_sequences=[], text_enable=False,                                                                              \
-                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-                pome_algorithm_t="map",                                                                                                       \
-                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-                )     
-        
-        hmm.print_average_results(decimals=3)
-        hmm.print_best_results(detailed=False, decimals=3) 
-
-        #hmm.print_probability_parameters()
-        #print(hmm.cross_val_prediction_matrix[0])
-
-    elif True:
-        # ensemble
-        cross_val_prediction_matrix = []
-        mapping = []
-        golden_truth = []
-
-        hmm = HMM_Framework.HMM_Framework()
-        hmm.build(architecture="B", model="Classic HMM", framework="pome", k_fold=10, boosting=False,                                \
-                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-                text_instead_of_sequences=[], text_enable=False,                                                                              \
-                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-                pome_algorithm_t="map",                                                                                                       \
-                hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,                                                              \
-                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-                )     
-
-        cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
-        mapping.append(hmm.ensemble_stored["Mapping"])
-        golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
-
-        hmm = HMM_Framework.HMM_Framework()
-        hmm.build(architecture="B", model="Classic HMM", framework="hohmm", k_fold=10, boosting=False,                                \
-                state_labels_pandas=df.loc[:,"Clustering_Labels"], observations_pandas=df.loc[:,"Words"], golden_truth_pandas=df.loc[:,"Labels"], \
-                text_instead_of_sequences=[], text_enable=False,                                                                              \
-                n_grams=1, n_target="obs", n_prev_flag=False, n_dummy_flag=True,                                                            \
-                pome_algorithm="baum-welch", pome_verbose=True, pome_njobs=-1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,              \
-                pome_algorithm_t="map",                                                                                                       \
-                hohmm_high_order=1, hohmm_smoothing=1.5, hohmm_synthesize=False,                                                              \
-                architecture_b_algorithm="formula", formula_magic_smoothing=0.0005                                                              \
-                )     
-
-        cross_val_prediction_matrix.append(hmm.cross_val_prediction_matrix)
-        mapping.append(hmm.ensemble_stored["Mapping"])
-        golden_truth.append(hmm.ensemble_stored["Curr_Cross_Val_Golden_Truth"])
-
-        Ensemble_Framework.ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode="sum", weights=[0.6, 0.4])

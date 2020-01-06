@@ -72,6 +72,8 @@ At first I thought our best bet was (3), but we stil have the last 2 bugs. Just 
   ...
 ```
 
+Conclusion: Labeled is actually not implemented. Whatever is executed inside viterbi and baum-welch is missing. If I make a call to _viterbi, labeled gets fixed. Even though in the docs it explicitly says that the labels parameter only work for "lableed", all algorithms take them into consideration (at the start of from_samples) and work perfectly well.
+
 * The emission-pseudocount does not work for algorithm='labeled'.
 
 * The emission-pseudocount is not added to states that only occur at the start of sequences, e.g. observations:`[["234", "123", "234"], ["651", "1"]]` and state_labels:`[["s234", "s123", "s234"], ["s651", "s1"]]` means that state651 will have probability of 1 for 651 and 0 for everything else.

@@ -34,10 +34,6 @@ Required for n-grams and high-order implementations:
 nltk
 ```
 
-# Mistakes
-
-I'm using the word "observations" to refer to hidden states but the correct word would be "emissions". And "observations" should be used for "state to state".
-
 # Hidden Markov Models
 
 ## Coding Notes - Overall

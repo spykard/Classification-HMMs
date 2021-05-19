@@ -1,5 +1,5 @@
 """ 
-Ensemble-Framework: An collection of functions that implement Ensemble Learning techniques such as Voting and Boosting.
+Ensemble-Framework: A collection of functions that implement Ensemble Learning techniques such as Voting and Boosting.
 """
 
 import numpy as np

@@ -1,15 +1,36 @@
+# A state-of-the-art Hidden Markov Model Framework for classification tasks.
+
+Code for the Paper
+
+**Sentiment Analysis Using Novel and Interpretable Architectures of Hidden Markov Models (2021).**
+
+## Getting Started
+
+* [Introduction](#introduction)
+* [Dependencies](#dependencies)
+* [Running the Model](#running-the-model)
+* [Implementation Details](#useful-links)
+* [Credits](#installation)
+
+## Introduction
+
+A wide variety of architectures and parameters are available for the training of Hidden Markov Models.
+
+A traditional architecture, denoted as "Approach A".
+
+![Approach A](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Approach%20A.png?raw=true "Architecture of Approach A for training HMMs")
+
+An architecture denoted a "Approach B", where a single supervised HMM is trained for every class *y* in the data, by utilizing a set of labels and observations. These labels can take any form such as labels of sentences, labels of phrases or even labels of words. For instance, a set of data contains *n* documents, each one consists of a set of sentences *S*, which form a sequential vector: *d =* [*s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>n</sub>*]. Every one of the aforementioned sentences is annotated with a label *x*.
+
+![Approach B](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Approach%20B.png?raw=true "Architecture of Approach B for training HMMs")
+
+An ensemble of Models.
+
+![Ensemble](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Ensemble.png?raw=true "Overview of the proposed ranked weighted vote Ensemble")
+
 # Dependencies
-x
 
-### `function_xxx()`
-
-`function_yyy()`
-
-# Dependencies
-
-Windows: Requires "__name__ == "__main__":" to run on Windows (https://stackoverflow.com/questions/24374288/where-to-put-freeze-support-in-a-python-script)  
-and also SenticNet package can't be installed 
-
+**Python** Version:
 ```
 Python >= 3.6
 ```
@@ -32,6 +53,33 @@ matplotlib
 Required for n-grams and high-order implementations:
 ```
 nltk
+```
+
+## Running the Model
+
+The preprocessing as well as the model training are executed from a single .py script at a time.
+
+Important Framework Functions:
+
+### `HMM_Framework.build()`
+
+``` python
+def build(self, architecture, model, framework, k_fold, boosting=False,
+          state_labels_pandas=[], observations_pandas=[], golden_truth_pandas=[],
+          text_instead_of_sequences=[], text_enable=False, 
+          n_grams=1, n_target="", n_prev_flag=False, n_dummy_flag=False, 
+          pome_algorithm="baum-welch", pome_verbose=False, pome_njobs=1, pome_smoothing_trans=0.0, pome_smoothing_obs=0.0,
+          pome_algorithm_t="map",
+          hohmm_high_order=1, hohmm_smoothing=0.0, hohmm_synthesize=False,
+          architecture_b_algorithm="formula", formula_magic_smoothing=0.0
+          ):
+```
+
+### `Ensemble_Framework.ensemble_run()`
+
+``` python
+def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None, 
+                 use_log_prob=True, detailed=False):
 ```
 
 # Hidden Markov Models
@@ -229,6 +277,9 @@ Architecture B, effectively applicable to classification tasks (a pure classific
 ## Known Issues
 
 * Training on the "neg" subset of the IMDb dataset on Pomegranate completely bugs when using emission_pseudocount or higher-order represented as first-order; possibly semi-supervised learning gets enabled; sequence are slightly longer than "pos" ones. Temporary fix is to shorten the "neg" sequences by 1.
+
+Windows: Requires "__name__ == "__main__":" to run on Windows (https://stackoverflow.com/questions/24374288/where-to-put-freeze-support-in-a-python-script)  
+and also SenticNet package can't be installed 
 
 <br><br/>
 

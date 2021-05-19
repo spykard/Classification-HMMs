@@ -61,7 +61,7 @@ The preprocessing as well as the model training are executed from a single .py s
 
 Important Framework Functions:
 
-### `HMM_Framework.build()`
+#### `HMM_Framework.build()`
 
 ``` python
 def build(self, architecture, model, framework, k_fold, boosting=False,
@@ -75,7 +75,7 @@ def build(self, architecture, model, framework, k_fold, boosting=False,
           ):
 ```
 
-### `Ensemble_Framework.ensemble_run()`
+#### `Ensemble_Framework.ensemble_run()`
 
 ``` python
 def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weights=None, 

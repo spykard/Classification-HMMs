@@ -9,7 +9,7 @@ Code for the Paper
 * [Introduction](#introduction)
 * [Dependencies](#dependencies)
 * [Running the Model](#running-the-model)
-* [Implementation Details](#useful-links)
+* [Implementation Details](#implementation-details)
 * [Credits](#installation)
 
 ## Introduction
@@ -82,15 +82,15 @@ def ensemble_run(cross_val_prediction_matrix, mapping, golden_truth, mode, weigh
                  use_log_prob=True, detailed=False):
 ```
 
-# Hidden Markov Models
+## Implementation Details
 
-## Coding Notes - Overall
+### Coding Notes - Overall
 
 * On architecture B's 'formula' algorithm, to get log probabilities we have to normalize the result of the math formula. [Kang et al.](https://www.sciencedirect.com/science/article/pii/S0957417417304979) divide the multiplied probability score by the length of the sequence.
 * On architecture B's 'formula' algorithm, the ideal magic smoothing factor is around half of the smallest possible probability of observations, code is on "print_probability_parameters()".
 * Sample_weights parameter only works when n_jobs=1  
 
-## Coding Notes - Pomegranate
+### Coding Notes - Pomegranate
 
 * The states in Pomegranate, represented as strings _s<sub>i</sub>_ are mapped to the input state labels in an alphabetical order, e.g. `['bbb', 'aaa', 'ccc']` means: _s<sub>0</sub>='aaa', s<sub>1</sub>='bbb', s<sub>2</sub>='ccc', s<sub>3</sub>='None-start', s<sub>4</sub>='None-end'_.
 

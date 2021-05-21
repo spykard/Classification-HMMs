@@ -66,7 +66,7 @@ nltk
 
 ## Running the Model
 
-The preprocessing as well as the model training are executed from a single .py script at a time.
+The preprocessing as well as the model training are executed by running a single .py script at a time.
 
 Important Framework Functions:
 

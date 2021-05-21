@@ -1,12 +1,11 @@
-# A state-of-the-art Hidden Markov Model Framework for classification tasks.
+# A state-of-the-art Hidden Markov Model Framework.
 
-Code for the Paper
-
-**Sentiment Analysis Using Novel and Interpretable Architectures of Hidden Markov Models (2021).**
+Code for the Submission: **Sentiment Analysis Using Novel and Interpretable Architectures of Hidden Markov Models (2021).**
 
 ## Getting Started
 
 * [Introduction](#introduction)
+* [Interpretability](#interpretability)
 * [Dependencies](#dependencies)
 * [Running the Model](#running-the-model)
 * [Implementation Details](#implementation-details)
@@ -23,13 +22,14 @@ Code for the Paper
 
 ## Introduction
 
-A wide variety of architectures and parameters are available for the training of Hidden Markov Models.
+This work comprises a **framework** that implements a wide variety of **Hidden Markov Models**. The main focus of the performed experiments is mainly on natural language processing, but the proposed approach can be applied to any classification task in general.  
+The number of **implemented models**, whether that is different **architectures**, **algorithms** or **high-order** Hidden Markov Model variants, is unprecedented. Some major examples are provided below.
 
 A traditional architecture, denoted as "Approach A".
 
 ![Approach A](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Approach%20A.png?raw=true "Architecture of Approach A for training HMMs")
 
-An architecture denoted a "Approach B", where a single supervised HMM is trained for every class *y* in the data, by utilizing a set of labels and observations. These labels can take any form such as labels of sentences, labels of phrases or even labels of words. For instance, a set of data contains *n* documents, each one consists of a set of sentences *S*, which form a sequential vector: *d =* [*s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>n</sub>*]. Every one of the aforementioned sentences is annotated with a label *x*.
+An architecture denoted as "Approach B", where a single supervised HMM is trained for every class *y* in the data, by utilizing a set of labels and observations. These labels can take any form such as labels of sentences, labels of phrases or even labels of words. For instance, a set of data contains *n* documents, each one consists of a set of sentences *S*, which form a sequential vector: *d =* [*s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>n</sub>*]. Every one of the aforementioned sentences is annotated with a label *x*.
 
 ![Approach B](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Approach%20B.png?raw=true "Architecture of Approach B for training HMMs")
 
@@ -37,7 +37,19 @@ An ensemble of Models.
 
 ![Ensemble](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Ensemble.png?raw=true "Overview of the proposed ranked weighted vote Ensemble")
 
-# Dependencies
+## Interpretability
+
+The proposed models are not only an effective and potent tool for classification, but they also possess **extremely high interpretability**.  
+The HMMs can not only indicate the sentiment of parts of a sentence but they can also showcase the way that sentiment evolves from the start to the end of a sentence. **Unlike neural networks** and most machine learning approaches that operate as a **black box**, our approach has extremely high interpretability. Interpretability is important and desired in learning systems for a wide variety of reasons. First and foremost, in most cases, it is not enough to merely get a prediction, but we also want to know the reasoning behind that prediction, especially in cases of incompleteness in problem formalization ([Arrieta et al.](https://www.sciencedirect.com/science/article/pii/S1566253519308103), [Doshi-Velez et al.](https://arxiv.org/abs/1702.08608)).  
+Furthermore, the original goal of **science** was to gain knowledge, not solve problems with big datasets and black box machine learning models ([Molnar](https://christophm.github.io/interpretable-ml-book/)) that achieve low, or even no interpretability. Thus, the proposed HMMs are reliable, trust-worthy, highly interpretable predictive models.  
+
+Some raw in-practice examples of the model operating on random sentences are provided below.
+
+![Example #1](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Example%202.png?raw=true "Example #1 illustrating the model in-practice on a random sentence")
+
+![Example #2](https://github.com/spykard/Classification-HMMs/blob/master/Documentation%20Images/Example%204.png?raw=true "Example #2 illustrating the model in-practice on a random sentence")
+
+## Dependencies
 
 **Python** Version:
 ```

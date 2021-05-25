@@ -1,4 +1,4 @@
-# A state-of-the-art Hidden Markov Model Framework.
+# A state-of-the-art Hidden Markov Model Framework
 
 Code for the Submission: **Sentiment Analysis Using Novel and Interpretable Architectures of Hidden Markov Models (2021).**
 

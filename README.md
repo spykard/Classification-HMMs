@@ -4,7 +4,9 @@ Code for the papers:
 
 [Sentiment Analysis using Novel and Interpretable Architectures of Hidden Markov Models](https://www.sciencedirect.com/science/article/abs/pii/S0950705121005943) (Elsevier 2021).
 
-[Hidden Markov Models for Sentiment Analysis in Social Media](https://ieeexplore.ieee.org/abstract/document/8885272) (BCD 2021).
+[Hidden Markov Models for Sentiment Analysis in Social Media](https://ieeexplore.ieee.org/abstract/document/8885272) (BCD 2019).
+
+[Machine Learning Techniques for Sentiment Analysis and Emotion Recognition in Natural Language](http://hdl.handle.net/10889/12628).
 
 ## Getting Started
 

@@ -1,6 +1,10 @@
 # A state-of-the-art Hidden Markov Model Framework
 
-Code for the Submission: **Sentiment Analysis Using Novel and Interpretable Architectures of Hidden Markov Models (2021).**
+Code for the papers:  
+
+[Sentiment Analysis using Novel and Interpretable Architectures of Hidden Markov Models](https://www.sciencedirect.com/science/article/abs/pii/S0950705121005943) (Elsevier 2021).
+
+[Hidden Markov Models for Sentiment Analysis in Social Media](https://ieeexplore.ieee.org/abstract/document/8885272) (BCD 2021).
 
 ## Getting Started
 
@@ -18,11 +22,12 @@ Code for the Submission: **Sentiment Analysis Using Novel and Interpretable Arch
   * [Experiment Notes](#Experiment-Notes)
   * [Random Notes](#Random-Notes)
   * [To Do - Future Work](#To-Do---Future-Work)
+* [Citation](#citation)
 * [Credits](#credits)
 
 ## Introduction
 
-This work comprises a **framework** that implements a wide variety of **Hidden Markov Models**. The main focus of the performed experiments is mainly on natural language processing, but the proposed approach can be applied to any classification task in general.  
+A **framework** that implements a wide variety of **Hidden Markov Models**. The main focus of the performed experiments is mainly on natural language processing, but the proposed approach can be applied to any classification task in general.  
 The number of **implemented models**, whether that is different **architectures**, **algorithms** or **high-order** Hidden Markov Model variants, is unprecedented. Some major examples are provided below.
 
 A traditional architecture, denoted as "Approach A".
@@ -267,6 +272,30 @@ Successful setup with: sudo /home/s/anaconda3/envs/matlabCompatiblePython/bin/py
 * Implement 'text_instead_of_sequences' on build().
 * Make weights on the Ensemble be relative to the exact accuracy of each base classifier.
 * Implement BIRCH before the Spherical k-Means for a better initialization
+
+## Citation
+
+Please cite this work using the first paper below:
+
+```
+@article{kardakis2021sentiment,
+  title={Sentiment analysis using novel and interpretable architectures of Hidden Markov Models},
+  author={Perikos, Isidoros and Kardakis, Spyridon and Hatzilygeroudis, Ioannis},
+  journal={Knowledge-Based Systems},
+  pages={107332},
+  year={2021},
+  publisher={Elsevier}
+}
+
+@inproceedings{kardakis2019hidden,
+  title={Hidden Markov Models for Sentiment Analysis in Social Media},
+  author={Perikos, Isidoros and Kardakis, Spyridon and Paraskevas, Michael and Hatzilygeroudis, Ioannis},
+  booktitle={2019 IEEE International Conference on Big Data, Cloud Computing, Data Science \& Engineering (BCD)},
+  pages={130--135},
+  year={2019},
+  organization={IEEE}
+}
+```
 
 ## Credits
 

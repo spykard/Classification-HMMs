@@ -6,7 +6,7 @@ Code for the papers:
 
 [Hidden Markov Models for Sentiment Analysis in Social Media](https://ieeexplore.ieee.org/abstract/document/8885272) (BCD 2019).
 
-[Machine Learning Techniques for Sentiment Analysis and Emotion Recognition in Natural Language](http://hdl.handle.net/10889/12628).
+[Machine Learning Techniques for Sentiment Analysis and Emotion Recognition in Natural Language](http://hdl.handle.net/10889/12628) (Thesis).
 
 ## Getting Started
 
@@ -284,6 +284,7 @@ Please cite this work using the first paper below:
   title={Sentiment analysis using novel and interpretable architectures of Hidden Markov Models},
   author={Perikos, Isidoros and Kardakis, Spyridon and Hatzilygeroudis, Ioannis},
   journal={Knowledge-Based Systems},
+  volume={229},
   pages={107332},
   year={2021},
   publisher={Elsevier}
